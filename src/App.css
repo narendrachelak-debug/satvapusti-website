@@ -1,0 +1,402 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #fffaf0;
+  color: #14351f;
+}
+
+.header {
+  min-height: 82px;
+  padding: 14px 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 2px 14px #0002;
+}
+
+.logo {
+  font-size: 32px;
+  font-weight: 900;
+  color: #007a3d;
+}
+
+nav {
+  display: flex;
+  gap: 24px;
+}
+
+nav a {
+  color: #14351f;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.btn,
+.buyBtn,
+.contact a,
+.upiBtn {
+  border: none;
+  background: #008037;
+  color: white;
+  padding: 13px 24px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 900;
+  display: inline-block;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.upiBtn {
+  background: #b46b00;
+}
+
+.hero {
+  width: 100%;
+  overflow: hidden;
+  background: #fff;
+}
+
+.slider {
+  display: flex;
+  width: 300%;
+  animation: slide 15s infinite;
+}
+
+.slider img {
+  width: 100vw;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+@keyframes slide {
+  0%, 28% { transform: translateX(0); }
+  33%, 61% { transform: translateX(-100vw); }
+  66%, 94% { transform: translateX(-200vw); }
+  100% { transform: translateX(0); }
+}
+
+.trust {
+  background: #004f28;
+  color: white;
+  padding: 26px 6%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.section {
+  padding: 60px 6%;
+  text-align: center;
+}
+
+.section h2 {
+  font-size: 42px;
+  color: #004f28;
+  margin-bottom: 12px;
+}
+
+.sectionText {
+  font-size: 18px;
+  margin-bottom: 36px;
+}
+
+.productSlider {
+  display: flex;
+  gap: 30px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 20px 0 40px;
+}
+
+.productCard {
+  min-width: 430px;
+  max-width: 430px;
+  scroll-snap-align: center;
+  background: #fff;
+  border: 2px solid #e7c76f;
+  border-radius: 22px;
+  padding: 30px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+.productCard h3 {
+  color: #006b35;
+  font-size: 28px;
+  margin: 0;
+}
+
+.productCard h4 {
+  color: #b46b00;
+  margin: 10px 0;
+}
+
+.mainProductImg {
+  width: 100%;
+  height: 280px;
+  object-fit: contain;
+  margin: 20px 0;
+}
+
+.weightButtons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.weightButtons button {
+  border: 2px solid #008037;
+  background: white;
+  color: #008037;
+  padding: 10px 18px;
+  border-radius: 24px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.weightButtons .activeWeight {
+  background: #008037;
+  color: white;
+}
+
+.priceBox {
+  background: #fff5d9;
+  border: 1px solid #e7c76f;
+  border-radius: 16px;
+  padding: 12px;
+  margin: 15px 0;
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.qtyBox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  margin: 18px 0;
+}
+
+.qtyBox button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: #008037;
+  color: white;
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.qtyBox span {
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.orderActions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.ordersSection {
+  background: #f7ffe9;
+}
+
+.ordersGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.orderCard {
+  background: white;
+  padding: 24px;
+  border-radius: 18px;
+  border: 1px solid #e7c76f;
+  box-shadow: 0 5px 18px rgba(0,0,0,0.08);
+}
+
+.orderCard h3 {
+  color: #008037;
+}
+
+.cream {
+  background: #fff1d2;
+}
+
+.ingredientGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+}
+
+.ingredientCard {
+  background: white;
+  border-radius: 18px;
+  padding: 15px;
+  box-shadow: 0 5px 18px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.ingredientCard img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.ingredientCard b {
+  display: block;
+  margin-top: 12px;
+  font-size: 18px;
+}
+
+.aboutText {
+  max-width: 950px;
+  margin: 0 auto 35px;
+  font-size: 18px;
+  line-height: 1.8;
+  color: #333;
+}
+
+.whyGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  font-weight: 900;
+  font-size: 20px;
+}
+
+.whyGrid div {
+  background: white;
+  padding: 24px;
+  border-radius: 18px;
+  border: 1px solid #e7c76f;
+}
+
+.contact {
+  background: #003d20;
+  color: white;
+  text-align: center;
+  padding: 60px 6%;
+}
+
+.contact h2 {
+  font-size: 40px;
+}
+
+.contact p {
+  font-size: 18px;
+}
+
+.footerText {
+  margin-top: 25px;
+  opacity: 0.85;
+}
+
+@media (max-width: 900px) {
+  .header {
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .logo {
+    font-size: 26px;
+    text-align: center;
+  }
+
+  nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px;
+  }
+
+  .trust,
+  .ingredientGrid,
+  .whyGrid,
+  .ordersGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .productCard {
+    min-width: 90%;
+    max-width: 90%;
+  }
+
+  .mainProductImg {
+    height: 240px;
+  }
+
+  .ingredientCard img {
+    height: 220px;
+    object-fit: contain;
+    padding: 10px;
+  }
+
+  .section h2 {
+    font-size: 30px;
+  }
+}
+.cutPrice {
+  text-decoration: line-through;
+  color: #999;
+  font-weight: 700;
+}
+
+.offerPrice {
+  color: #008037;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.saveText {
+  color: #b46b00;
+  font-weight: 900;
+}
+
+.codBtn {
+  border: none;
+  background: #14351f;
+  color: white;
+  padding: 13px 24px;
+  border-radius: 30px;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.upiBtn {
+  border: none;
+  background: #b46b00;
+  color: white;
+  padding: 13px 24px;
+  border-radius: 30px;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.freeShipping {
+  color: #008037;
+  font-weight: 900;
+  margin-top: 10px;
+}
