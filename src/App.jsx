@@ -3,6 +3,7 @@ import "./App.css";
 
 const phone = "919639630828";
 const upiId = "9993265857@ybl";
+const API_URL = "https://YOUR_BACKEND_URL";
 
 const banners = [
   "/banners/banner-family.png",
@@ -92,6 +93,7 @@ export default function App() {
 
   const [address, setAddress] = useState({
     name: "",
+    email: "",
     mobile: "",
     fullAddress: "",
     city: "",
@@ -110,8 +112,7 @@ export default function App() {
     const weight = getWeight(product);
     const quantity = getQty(product);
     const price = product.prices[weight];
-
-    const cartId = `${product.id}-${weight}`;
+    const cartId = ${product.id}-${weight};
     const existing = cart.find((item) => item.cartId === cartId);
 
     if (existing) {
@@ -155,17 +156,22 @@ export default function App() {
     );
   };
 
-  const cartTotal = cart.reduce(
-    (sum, item) => sum + item.offer * item.quantity,
-    0
-  );
-
+  const cartTotal = cart.reduce((sum, item) => sum + item.offer * item.quantity, 0);
   const cartSaving = cart.reduce(
     (sum, item) => sum + (item.mrp - item.offer) * item.quantity,
     0
   );
-
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const makeUpiLink = () => {
+    return (
+      upi://pay?pa=${upiId} +
+      &pn=SatvaPusti%20Nutrition +
+      &am=${cartTotal} +
+      &cu=INR +
+      &tn=${encodeURIComponent("SatvaPusti Order")}
+    );
+  };
 
   const openCheckout = () => {
     if (cart.length === 0) {
@@ -179,6 +185,7 @@ export default function App() {
     setPaymentMode("");
     setAddress({
       name: "",
+      email: "",
       mobile: "",
       fullAddress: "",
       city: "",
@@ -192,15 +199,16 @@ export default function App() {
     setOrderSuccess(false);
   };
 
-  const submitOrder = () => {
+  const submitOrder = async () => {
     if (
       !address.name ||
+      !address.email ||
       !address.mobile ||
       !address.fullAddress ||
       !address.city ||
       !address.pincode
     ) {
-      alert("Please shipping address complete karo.");
+      alert("Please name, email, mobile aur shipping address complete karo.");
       return;
     }
 
@@ -223,48 +231,66 @@ export default function App() {
       status: "Order Placed Successfully",
     };
 
+    try {
+      await fetch(${API_URL}/api/orders/create, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customerName: address.name,
+          email: address.email,
+          mobile: address.mobile,
+          address: address.fullAddress,
+          city: address.city,
+          pincode: address.pincode,
+          items: cart,
+          totalAmount: cartTotal,
+          saving: cartSaving,
+          paymentMethod: paymentMode,
+          shipping,
+        }),
+      });
+    } catch (error) {
+      console.log("Backend order save error:", error);
+    }
+
     setLastOrder(order);
     setOrderSuccess(true);
 
     const itemsMessage = cart
       .map(
         (item, index) =>
-          `${index + 1}) ${item.name}%0A` +
-          `Pack: ${item.weight}%0A` +
-          `Qty: ${item.quantity}%0A` +
-          `Price: ₹${item.offer}%0A` +
-          `Amount: ₹${item.offer * item.quantity}%0A`
+          ${index + 1}) ${item.name}%0A +
+          Pack: ${item.weight}%0A +
+          Qty: ${item.quantity}%0A +
+          Price: ₹${item.offer}%0A +
+          Amount: ₹${item.offer * item.quantity}%0A
       )
       .join("%0A");
 
     const message =
-      `🛒 New SatvaPusti Order%0A%0A` +
-      `${itemsMessage}%0A` +
-      `----------------------%0A` +
-      `Total Amount: ₹${cartTotal}%0A` +
-      `You Save: ₹${cartSaving}%0A` +
-      `Payment Method: ${paymentMode}%0A` +
-      `Shipping: ${shipping}%0A%0A` +
-      `Customer Name: ${address.name}%0A` +
-      `Mobile: ${address.mobile}%0A` +
-      `Address: ${address.fullAddress}%0A` +
-      `City: ${address.city}%0A` +
-      `Pincode: ${address.pincode}%0A%0A` +
-      `Please confirm this order.`;
+      🛒 New SatvaPusti Order%0A%0A +
+      ${itemsMessage}%0A +
+      ----------------------%0A +
+      Total Amount: ₹${cartTotal}%0A +
+      You Save: ₹${cartSaving}%0A +
+      Payment Method: ${paymentMode}%0A +
+      Shipping: ${shipping}%0A%0A +
+      Customer Name: ${address.name}%0A +
+      Email: ${address.email}%0A +
+      Mobile: ${address.mobile}%0A +
+      Address: ${address.fullAddress}%0A +
+      City: ${address.city}%0A +
+      Pincode: ${address.pincode}%0A%0A +
+      Please confirm this order.;
 
-    window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
+    window.open(https://wa.me/${phone}?text=${message}, "_blank");
 
     if (paymentMode === "UPI") {
-      const upiLink =
-        `upi://pay?pa=${upiId}` +
-        `&pn=SatvaPusti%20Nutrition` +
-        `&am=${cartTotal}` +
-        `&cu=INR` +
-        `&tn=${encodeURIComponent("SatvaPusti Order")}`;
-
       setTimeout(() => {
-        window.location.href = upiLink;
-      }, 1200);
+        window.open(makeUpiLink(), "_self");
+      }, 800);
     }
   };
 
@@ -287,7 +313,7 @@ export default function App() {
           <a href="#contact">Contact</a>
         </nav>
 
-        <a className="btn" href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
+        <a className="btn" href={https://wa.me/${phone}} target="_blank" rel="noreferrer">
           WhatsApp
         </a>
       </header>
@@ -439,10 +465,12 @@ export default function App() {
                 )}
 
                 <p className="successNote">Company ko order WhatsApp par send ho gaya hai.</p>
-                <p className="successNote">Hamari team jaldi contact karegi.</p>
+                <p className="successNote">Customer ko email confirmation bheja jayega.</p>
 
                 {paymentMode === "UPI" && (
-                  <p className="successNote">UPI payment window open ho gayi hai. Payment complete karo.</p>
+                  <a className="upiPayBtn" href={makeUpiLink()}>
+                    Pay Now via UPI
+                  </a>
                 )}
 
                 <button className="submitOrderBtn" onClick={continueShopping}>
@@ -467,6 +495,13 @@ export default function App() {
                   placeholder="Full Name"
                   value={address.name}
                   onChange={(e) => setAddress({ ...address, name: e.target.value })}
+                />
+
+                <input
+                  placeholder="Email Address"
+                  type="email"
+                  value={address.email}
+                  onChange={(e) => setAddress({ ...address, email: e.target.value })}
                 />
 
                 <input
@@ -512,7 +547,12 @@ export default function App() {
                 </div>
 
                 {paymentMode === "UPI" && (
-                  <p className="freeShipping">UPI Payment पर Shipping Free</p>
+                  <>
+                    <p className="freeShipping">UPI Payment पर Shipping Free</p>
+                    <a className="upiPayBtn" href={makeUpiLink()}>
+                      Pay Now via UPI
+                    </a>
+                  </>
                 )}
 
                 <button className="submitOrderBtn" onClick={submitOrder}>
@@ -530,7 +570,7 @@ export default function App() {
         <div className="ingredientGrid">
           {ingredients.map(([img, name]) => (
             <div className="ingredientCard" key={img}>
-              <img src={`/ingridients/${img}`} alt={name} />
+              <img src={/ingridients/${img}} alt={name} />
               <b>{name}</b>
             </div>
           ))}
@@ -570,7 +610,7 @@ export default function App() {
         <p><strong>FSSAI License No:</strong> XXXXXXXX</p>
         <p><strong>UPI ID:</strong> 9993265857@ybl</p>
 
-        <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
+        <a href={https://wa.me/${phone}} target="_blank" rel="noreferrer">
           Contact on WhatsApp
         </a>
 
