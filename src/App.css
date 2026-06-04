@@ -747,3 +747,31 @@ nav a {
   font-weight: 800;
   text-decoration: none;
 }
+.legalPolicyBox {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.legalPolicyBox h3 {
+  margin-bottom: 10px;
+  color: #06451f;
+}
+
+.legalPolicyBox details {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ead9a8;
+  border-radius: 10px;
+  background: #fffaf0;
+}
+
+.legalPolicyBox summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: #06451f;
+}
+
+.legalPolicyBox p {
+  font-size: 14px;
+  line-height: 1.5;
+}

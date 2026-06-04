@@ -518,11 +518,62 @@ export default function App() {
                   </span>
                 </label>
 
-                <div className="policyLinks">
-                  <p><b>Terms:</b> Product order website use ke liye basic terms apply honge.</p>
-                  <p><b>Disclaimer:</b> Ye nutrition product hai, medicine nahi.</p>
-                  <p><b>Return Policy:</b> Opened food products return nahi honge except damaged/wrong product.</p>
-                </div>
+                <div className="policyLinks legalPolicyBox">
+  <h3>Legal Agreement</h3>
+
+  <p>
+    By creating a profile or placing an order on SatvaPusti Nutrition, you agree
+    to our Terms & Conditions, Privacy Policy, Product Disclaimer, and Return &
+    Refund Policy.
+  </p>
+
+  <details>
+    <summary>Terms & Conditions</summary>
+    <p>
+      SatvaPusti Nutrition provides food and nutrition products through this
+      website. Product prices, offers, availability, packaging, and delivery
+      timelines may change without prior notice. Orders are accepted only after
+      confirmation by SatvaPusti Nutrition. Customers must provide correct name,
+      mobile number, email address, and shipping address. Any misuse of the
+      website, false order, fake information, or fraudulent activity may result
+      in order cancellation.
+    </p>
+  </details>
+
+  <details>
+    <summary>Privacy Policy</summary>
+    <p>
+      We collect customer name, mobile number, email address, shipping address,
+      order details, and payment mode only for order processing, delivery,
+      customer support, and communication. We do not sell customer personal data.
+      Customer information may be shared only with delivery partners, payment
+      service providers, or legal authorities when required by law.
+    </p>
+  </details>
+
+  <details>
+    <summary>Product Disclaimer</summary>
+    <p>
+      SatvaPusti products are food and nutrition products, not medicines. They
+      are not intended to diagnose, treat, cure, or prevent any disease. Results
+      may vary from person to person. Pregnant women, nursing mothers, children,
+      elderly persons, and people with medical conditions should consult a doctor
+      before use. Please read ingredients carefully before consumption.
+    </p>
+  </details>
+
+  <details>
+    <summary>Return & Refund Policy</summary>
+    <p>
+      Due to food safety reasons, opened or used products are not returnable.
+      Return or replacement may be accepted only if the customer receives a
+      damaged product, wrong product, expired product, or manufacturing defect.
+      The customer must report the issue within 48 hours of delivery with clear
+      photo or video proof. Refund approval is subject to verification by
+      SatvaPusti Nutrition.
+    </p>
+  </details>
+</div>
 
                 <button className="submitOrderBtn" onClick={saveProfile}>
                   Login / Save Profile
