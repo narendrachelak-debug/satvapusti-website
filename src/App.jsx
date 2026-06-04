@@ -83,10 +83,12 @@ const ingredients = [
 export default function App() {
   const [selected, setSelected] = useState({});
   const [qty, setQty] = useState({});
-  const [checkoutProduct, setCheckoutProduct] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [showCart, setShowCart] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
   const [paymentMode, setPaymentMode] = useState("");
-  const [orders, setOrders] = useState([]);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [lastOrder, setLastOrder] = useState(null);
 
   const [address, setAddress] = useState({
     name: "",
@@ -104,10 +106,77 @@ export default function App() {
     setQty({ ...qty, [product.id]: nextQty });
   };
 
-  const openCheckout = (product) => {
-    setCheckoutProduct(product);
-    setPaymentMode("");
+  const addToCart = (product) => {
+    const weight = getWeight(product);
+    const quantity = getQty(product);
+    const price = product.prices[weight];
+
+    const cartId = `${product.id}-${weight}`;
+    const existing = cart.find((item) => item.cartId === cartId);
+
+    if (existing) {
+      setCart(
+        cart.map((item) =>
+          item.cartId === cartId
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        )
+      );
+    } else {
+      setCart([
+        ...cart,
+        {
+          cartId,
+          productId: product.id,
+          name: product.name,
+          weight,
+          quantity,
+          mrp: price.mrp,
+          offer: price.offer,
+          image: product.images[weight],
+        },
+      ]);
+    }
+
+    setShowCart(true);
+  };
+
+  const removeFromCart = (cartId) => {
+    setCart(cart.filter((item) => item.cartId !== cartId));
+  };
+
+  const updateCartQty = (cartId, value) => {
+    setCart(
+      cart.map((item) =>
+        item.cartId === cartId
+          ? { ...item, quantity: Math.max(1, item.quantity + value) }
+          : item
+      )
+    );
+  };
+
+  const cartTotal = cart.reduce(
+    (sum, item) => sum + item.offer * item.quantity,
+    0
+  );
+
+  const cartSaving = cart.reduce(
+    (sum, item) => sum + (item.mrp - item.offer) * item.quantity,
+    0
+  );
+
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const openCheckout = () => {
+    if (cart.length === 0) {
+      alert("Cart empty hai. Pehle product add karo.");
+      return;
+    }
+
+    setShowCart(false);
+    setShowCheckout(true);
     setOrderSuccess(false);
+    setPaymentMode("");
     setAddress({
       name: "",
       mobile: "",
@@ -118,7 +187,7 @@ export default function App() {
   };
 
   const closeCheckout = () => {
-    setCheckoutProduct(null);
+    setShowCheckout(false);
     setPaymentMode("");
     setOrderSuccess(false);
   };
@@ -140,42 +209,40 @@ export default function App() {
       return;
     }
 
-    const product = checkoutProduct;
-    const weight = getWeight(product);
-    const quantity = getQty(product);
-    const mrp = product.prices[weight].mrp;
-    const offer = product.prices[weight].offer;
-    const save = (mrp - offer) * quantity;
-    const total = offer * quantity;
-    const shipping = paymentMode === "UPI" ? "Free Shipping" : "Shipping charges as applicable";
+    const shipping =
+      paymentMode === "UPI" ? "Free Shipping" : "Shipping charges as applicable";
 
     const order = {
       id: Date.now(),
-      product: product.name,
-      weight,
-      quantity,
-      mrp,
-      offer,
-      save,
-      total,
+      items: cart,
+      total: cartTotal,
+      saving: cartSaving,
       paymentMode,
       shipping,
       customer: { ...address },
       status: "Order Placed Successfully",
     };
 
-    setOrders([order, ...orders]);
+    setLastOrder(order);
     setOrderSuccess(true);
+
+    const itemsMessage = cart
+      .map(
+        (item, index) =>
+          `${index + 1}) ${item.name}%0A` +
+          `Pack: ${item.weight}%0A` +
+          `Qty: ${item.quantity}%0A` +
+          `Price: ₹${item.offer}%0A` +
+          `Amount: ₹${item.offer * item.quantity}%0A`
+      )
+      .join("%0A");
 
     const message =
       `🛒 New SatvaPusti Order%0A%0A` +
-      `Product: ${product.name}%0A` +
-      `Pack Size: ${weight}%0A` +
-      `Quantity: ${quantity}%0A` +
-      `MRP: ₹${mrp}%0A` +
-      `Offer Price: ₹${offer}%0A` +
-      `You Save: ₹${save}%0A` +
-      `Total Amount: ₹${total}%0A` +
+      `${itemsMessage}%0A` +
+      `----------------------%0A` +
+      `Total Amount: ₹${cartTotal}%0A` +
+      `You Save: ₹${cartSaving}%0A` +
       `Payment Method: ${paymentMode}%0A` +
       `Shipping: ${shipping}%0A%0A` +
       `Customer Name: ${address.name}%0A` +
@@ -191,14 +258,21 @@ export default function App() {
       const upiLink =
         `upi://pay?pa=${upiId}` +
         `&pn=SatvaPusti%20Nutrition` +
-        `&am=${total}` +
+        `&am=${cartTotal}` +
         `&cu=INR` +
-        `&tn=${encodeURIComponent(product.name + " " + weight)}`;
+        `&tn=${encodeURIComponent("SatvaPusti Order")}`;
 
       setTimeout(() => {
         window.location.href = upiLink;
       }, 1200);
     }
+  };
+
+  const continueShopping = () => {
+    setCart([]);
+    setShowCheckout(false);
+    setOrderSuccess(false);
+    setLastOrder(null);
   };
 
   return (
@@ -209,7 +283,6 @@ export default function App() {
         <nav>
           <a href="#products">Products</a>
           <a href="#ingredients">Ingredients</a>
-          <a href="#orders">Orders</a>
           <a href="#about">About</a>
           <a href="#contact">Contact</a>
         </nav>
@@ -218,6 +291,10 @@ export default function App() {
           WhatsApp
         </a>
       </header>
+
+      <button className="cartFloatBtn" onClick={() => setShowCart(true)}>
+        🛒 Cart ({cartCount})
+      </button>
 
       <section className="hero">
         <div className="slider">
@@ -236,7 +313,7 @@ export default function App() {
 
       <section id="products" className="section">
         <h2>Order SatvaPusti Products</h2>
-        <p className="sectionText">Product select karo, address bharo, COD ya UPI choose karo.</p>
+        <p className="sectionText">Product select karo, cart me add karo, ek saath order karo.</p>
 
         <div className="productSlider">
           {products.map((product) => {
@@ -280,8 +357,8 @@ export default function App() {
                   <button onClick={() => changeQty(product, 1)}>+</button>
                 </div>
 
-                <button className="placeBtn" onClick={() => openCheckout(product)}>
-                  Place Order
+                <button className="placeBtn" onClick={() => addToCart(product)}>
+                  Add to Cart
                 </button>
               </div>
             );
@@ -289,7 +366,56 @@ export default function App() {
         </div>
       </section>
 
-      {checkoutProduct && (
+      {showCart && (
+        <div className="modalBg">
+          <div className="checkoutBox">
+            <button className="closeBtn" onClick={() => setShowCart(false)}>×</button>
+
+            <h2>🛒 Your Cart</h2>
+
+            {cart.length === 0 ? (
+              <p className="sectionText">Cart empty hai.</p>
+            ) : (
+              <>
+                <div className="cartItems">
+                  {cart.map((item) => (
+                    <div className="cartItem" key={item.cartId}>
+                      <img src={item.image} alt={item.name} />
+                      <div>
+                        <h4>{item.name}</h4>
+                        <p>{item.weight} | ₹{item.offer}</p>
+
+                        <div className="cartQty">
+                          <button onClick={() => updateCartQty(item.cartId, -1)}>-</button>
+                          <span>{item.quantity}</span>
+                          <button onClick={() => updateCartQty(item.cartId, 1)}>+</button>
+                        </div>
+
+                        <p><b>Amount:</b> ₹{item.offer * item.quantity}</p>
+                      </div>
+
+                      <button className="removeBtn" onClick={() => removeFromCart(item.cartId)}>
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="cartTotalBox">
+                  <p><b>You Save:</b> ₹{cartSaving}</p>
+                  <h3>Total: ₹{cartTotal}</h3>
+                </div>
+
+                <button className="submitOrderBtn" onClick={openCheckout}>
+                  Proceed to Checkout
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showCheckout && (
         <div className="modalBg">
           <div className="checkoutBox">
             <button className="closeBtn" onClick={closeCheckout}>×</button>
@@ -297,14 +423,45 @@ export default function App() {
             {orderSuccess ? (
               <div className="successBox">
                 <h2>✅ Order Placed Successfully</h2>
-                <p>Order details company WhatsApp par send ho gaye hain.</p>
-                {paymentMode === "UPI" && (
-                  <p>UPI payment window open ho gayi hai. Payment complete karo.</p>
+
+                {lastOrder && (
+                  <div className="successDetails">
+                    {lastOrder.items.map((item) => (
+                      <p key={item.cartId}>
+                        <b>{item.name}</b> - {item.weight} × {item.quantity} = ₹
+                        {item.offer * item.quantity}
+                      </p>
+                    ))}
+                    <hr />
+                    <p><b>Total:</b> ₹{lastOrder.total}</p>
+                    <p><b>Payment:</b> {lastOrder.paymentMode}</p>
+                  </div>
                 )}
+
+                <p className="successNote">Company ko order WhatsApp par send ho gaya hai.</p>
+                <p className="successNote">Hamari team jaldi contact karegi.</p>
+
+                {paymentMode === "UPI" && (
+                  <p className="successNote">UPI payment window open ho gayi hai. Payment complete karo.</p>
+                )}
+
+                <button className="submitOrderBtn" onClick={continueShopping}>
+                  Continue Shopping
+                </button>
               </div>
             ) : (
               <>
                 <h2>Shipping Address</h2>
+
+                <div className="checkoutSummary">
+                  {cart.map((item) => (
+                    <p key={item.cartId}>
+                      {item.name} - {item.weight} × {item.quantity} = ₹
+                      {item.offer * item.quantity}
+                    </p>
+                  ))}
+                  <h3>Total: ₹{cartTotal}</h3>
+                </div>
 
                 <input
                   placeholder="Full Name"
@@ -366,30 +523,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      <section id="orders" className="section ordersSection">
-        <h2>Order Records</h2>
-        <p className="sectionText">Latest orders placed from this device.</p>
-
-        {orders.length === 0 ? (
-          <p>No orders yet.</p>
-        ) : (
-          <div className="ordersGrid">
-            {orders.map((order) => (
-              <div className="orderCard" key={order.id}>
-                <h3>{order.status}</h3>
-                <p><b>Product:</b> {order.product}</p>
-                <p><b>Pack:</b> {order.weight}</p>
-                <p><b>Qty:</b> {order.quantity}</p>
-                <p><b>Total:</b> ₹{order.total}</p>
-                <p><b>Payment:</b> {order.paymentMode}</p>
-                <p><b>Customer:</b> {order.customer.name}</p>
-                <p><b>Mobile:</b> {order.customer.mobile}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
 
       <section id="ingredients" className="section cream">
         <h2>Real Ingredients We Use</h2>
