@@ -672,3 +672,78 @@ nav a {
   font-weight: 800;
   text-decoration: none;
 }
+.profileNavBtn,
+.guestBtn {
+  border: none;
+  background: transparent;
+  color: #14351f;
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.termsBox {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 12px 0;
+  font-size: 14px;
+  color: #14351f;
+}
+
+.termsBox input {
+  width: auto !important;
+  margin-top: 3px;
+}
+
+.policyLinks {
+  background: #fff;
+  border: 1px solid #ead9a8;
+  border-radius: 14px;
+  padding: 12px;
+  margin: 12px 0;
+  font-size: 14px;
+  text-align: left;
+}
+
+.guestBtn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 13px;
+  border-radius: 28px;
+  background: #e8d39a;
+  color: #06451f;
+}
+
+.myOrdersBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.myOrderCard {
+  background: white;
+  border: 1px solid #ead9a8;
+  border-radius: 14px;
+  padding: 12px;
+  text-align: left;
+}
+
+.upiBox {
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px;
+  margin: 14px 0;
+}
+
+.upiPayBtn {
+  display: block;
+  text-align: center;
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: 30px;
+  background: #0b6b35;
+  color: white;
+  font-weight: 800;
+  text-decoration: none;
+}

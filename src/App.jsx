@@ -82,19 +82,35 @@ const ingredients = [
 ];
 
 export default function App() {
+  const savedProfile = JSON.parse(localStorage.getItem("satvapustiProfile") || "null");
+  const savedOrders = JSON.parse(localStorage.getItem("satvapustiOrders") || "[]");
+
   const [selected, setSelected] = useState({});
   const [qty, setQty] = useState({});
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [paymentMode, setPaymentMode] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [lastOrder, setLastOrder] = useState(null);
 
+  const [profile, setProfile] = useState(
+    savedProfile || {
+      name: "",
+      email: "",
+      mobile: "",
+      acceptedTerms: false,
+      guest: true,
+    }
+  );
+
+  const [myOrders, setMyOrders] = useState(savedOrders);
+
   const [address, setAddress] = useState({
-    name: "",
-    email: "",
-    mobile: "",
+    name: savedProfile?.name || "",
+    email: savedProfile?.email || "",
+    mobile: savedProfile?.mobile || "",
     fullAddress: "",
     city: "",
     pincode: "",
@@ -112,7 +128,7 @@ export default function App() {
     const weight = getWeight(product);
     const quantity = getQty(product);
     const price = product.prices[weight];
-    const cartId = ${product.id}-${weight};
+    const cartId = `${product.id}-${weight}`;
     const existing = cart.find((item) => item.cartId === cartId);
 
     if (existing) {
@@ -165,12 +181,70 @@ export default function App() {
 
   const makeUpiLink = () => {
     return (
-      upi://pay?pa=${upiId} +
-      &pn=SatvaPusti%20Nutrition +
-      &am=${cartTotal} +
-      &cu=INR +
-      &tn=${encodeURIComponent("SatvaPusti Order")}
+      `upi://pay?pa=${upiId}` +
+      `&pn=SatvaPusti%20Nutrition` +
+      `&am=${cartTotal}` +
+      `&cu=INR` +
+      `&tn=${encodeURIComponent("SatvaPusti Order")}`
     );
+  };
+
+  const saveProfile = () => {
+    if (!profile.name || !profile.email || !profile.mobile) {
+      alert("Name, email aur mobile fill karo.");
+      return;
+    }
+
+    if (!profile.acceptedTerms) {
+      alert("Terms, Disclaimer, Privacy Policy aur Return Policy accept karna zaroori hai.");
+      return;
+    }
+
+    const finalProfile = { ...profile, guest: false };
+    setProfile(finalProfile);
+    localStorage.setItem("satvapustiProfile", JSON.stringify(finalProfile));
+
+    setAddress({
+      ...address,
+      name: finalProfile.name,
+      email: finalProfile.email,
+      mobile: finalProfile.mobile,
+    });
+
+    alert("Profile saved successfully.");
+  };
+
+  const continueAsGuest = () => {
+    const guestProfile = {
+      name: "",
+      email: "",
+      mobile: "",
+      acceptedTerms: false,
+      guest: true,
+    };
+
+    setProfile(guestProfile);
+    localStorage.setItem("satvapustiProfile", JSON.stringify(guestProfile));
+    setShowProfile(false);
+  };
+
+  const logoutProfile = () => {
+    localStorage.removeItem("satvapustiProfile");
+    setProfile({
+      name: "",
+      email: "",
+      mobile: "",
+      acceptedTerms: false,
+      guest: true,
+    });
+    setAddress({
+      name: "",
+      email: "",
+      mobile: "",
+      fullAddress: "",
+      city: "",
+      pincode: "",
+    });
   };
 
   const openCheckout = () => {
@@ -183,10 +257,11 @@ export default function App() {
     setShowCheckout(true);
     setOrderSuccess(false);
     setPaymentMode("");
+
     setAddress({
-      name: "",
-      email: "",
-      mobile: "",
+      name: profile?.name || "",
+      email: profile?.email || "",
+      mobile: profile?.mobile || "",
       fullAddress: "",
       city: "",
       pincode: "",
@@ -220,8 +295,10 @@ export default function App() {
     const shipping =
       paymentMode === "UPI" ? "Free Shipping" : "Shipping charges as applicable";
 
+    const orderId = `SP${Date.now()}`;
+
     const order = {
-      id: Date.now(),
+      id: orderId,
       items: cart,
       total: cartTotal,
       saving: cartSaving,
@@ -229,15 +306,18 @@ export default function App() {
       shipping,
       customer: { ...address },
       status: "Order Placed Successfully",
+      orderStatus: paymentMode === "UPI" ? "Payment Pending" : "COD Pending",
+      createdAt: new Date().toLocaleString(),
     };
 
     try {
-      await fetch(${API_URL}/api/orders/create, {
+      await fetch(`${API_URL}/api/orders/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          orderId,
           customerName: address.name,
           email: address.email,
           mobile: address.mobile,
@@ -249,11 +329,16 @@ export default function App() {
           saving: cartSaving,
           paymentMethod: paymentMode,
           shipping,
+          orderStatus: order.orderStatus,
         }),
       });
     } catch (error) {
       console.log("Backend order save error:", error);
     }
+
+    const updatedOrders = [order, ...myOrders];
+    setMyOrders(updatedOrders);
+    localStorage.setItem("satvapustiOrders", JSON.stringify(updatedOrders));
 
     setLastOrder(order);
     setOrderSuccess(true);
@@ -261,36 +346,33 @@ export default function App() {
     const itemsMessage = cart
       .map(
         (item, index) =>
-          ${index + 1}) ${item.name}%0A +
-          Pack: ${item.weight}%0A +
-          Qty: ${item.quantity}%0A +
-          Price: ₹${item.offer}%0A +
-          Amount: ₹${item.offer * item.quantity}%0A
+          `${index + 1}) ${item.name}%0A` +
+          `Pack: ${item.weight}%0A` +
+          `Qty: ${item.quantity}%0A` +
+          `Price: ₹${item.offer}%0A` +
+          `Amount: ₹${item.offer * item.quantity}%0A`
       )
       .join("%0A");
 
     const message =
-      🛒 New SatvaPusti Order%0A%0A +
-      ${itemsMessage}%0A +
-      ----------------------%0A +
-      Total Amount: ₹${cartTotal}%0A +
-      You Save: ₹${cartSaving}%0A +
-      Payment Method: ${paymentMode}%0A +
-      Shipping: ${shipping}%0A%0A +
-      Customer Name: ${address.name}%0A +
-      Email: ${address.email}%0A +
-      Mobile: ${address.mobile}%0A +
-      Address: ${address.fullAddress}%0A +
-      City: ${address.city}%0A +
-      Pincode: ${address.pincode}%0A%0A +
-      Please confirm this order.;
+      `🛒 New SatvaPusti Order%0A%0A` +
+      `Order ID: ${orderId}%0A%0A` +
+      `${itemsMessage}%0A` +
+      `----------------------%0A` +
+      `Total Amount: ₹${cartTotal}%0A` +
+      `You Save: ₹${cartSaving}%0A` +
+      `Payment Method: ${paymentMode}%0A` +
+      `Shipping: ${shipping}%0A%0A` +
+      `Customer Name: ${address.name}%0A` +
+      `Email: ${address.email}%0A` +
+      `Mobile: ${address.mobile}%0A` +
+      `Address: ${address.fullAddress}%0A` +
+      `City: ${address.city}%0A` +
+      `Pincode: ${address.pincode}%0A%0A` +
+      `Please confirm this order.`;
 
-    window.open(https://wa.me/${phone}?text=${message}, "_blank");
-
-    if (paymentMode === "UPI") {
-      setTimeout(() => {
-        window.open(makeUpiLink(), "_self");
-      }, 800);
+    if (paymentMode === "COD") {
+      window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
     }
   };
 
@@ -309,11 +391,14 @@ export default function App() {
         <nav>
           <a href="#products">Products</a>
           <a href="#ingredients">Ingredients</a>
+          <button className="profileNavBtn" onClick={() => setShowProfile(true)}>
+            Profile
+          </button>
           <a href="#about">About</a>
           <a href="#contact">Contact</a>
         </nav>
 
-        <a className="btn" href={https://wa.me/${phone}} target="_blank" rel="noreferrer">
+        <a className="btn" href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
           WhatsApp
         </a>
       </header>
@@ -392,6 +477,96 @@ export default function App() {
         </div>
       </section>
 
+      {showProfile && (
+        <div className="modalBg">
+          <div className="checkoutBox">
+            <button className="closeBtn" onClick={() => setShowProfile(false)}>×</button>
+
+            <h2>👤 My Profile</h2>
+
+            {profile?.guest ? (
+              <>
+                <input
+                  placeholder="Full Name"
+                  value={profile.name}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                />
+
+                <input
+                  placeholder="Email Address"
+                  type="email"
+                  value={profile.email}
+                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                />
+
+                <input
+                  placeholder="Mobile Number"
+                  value={profile.mobile}
+                  onChange={(e) => setProfile({ ...profile, mobile: e.target.value })}
+                />
+
+                <label className="termsBox">
+                  <input
+                    type="checkbox"
+                    checked={profile.acceptedTerms}
+                    onChange={(e) =>
+                      setProfile({ ...profile, acceptedTerms: e.target.checked })
+                    }
+                  />
+                  <span>
+                    I agree to Terms of Use, Disclaimer, Privacy Policy and Return Policy.
+                  </span>
+                </label>
+
+                <div className="policyLinks">
+                  <p><b>Terms:</b> Product order website use ke liye basic terms apply honge.</p>
+                  <p><b>Disclaimer:</b> Ye nutrition product hai, medicine nahi.</p>
+                  <p><b>Return Policy:</b> Opened food products return nahi honge except damaged/wrong product.</p>
+                </div>
+
+                <button className="submitOrderBtn" onClick={saveProfile}>
+                  Login / Save Profile
+                </button>
+
+                <button className="guestBtn" onClick={continueAsGuest}>
+                  Skip / Continue as Guest
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="successDetails">
+                  <p><b>Name:</b> {profile.name}</p>
+                  <p><b>Email:</b> {profile.email}</p>
+                  <p><b>Mobile:</b> {profile.mobile}</p>
+                </div>
+
+                <button className="guestBtn" onClick={logoutProfile}>
+                  Logout
+                </button>
+              </>
+            )}
+
+            <h3>My Orders</h3>
+
+            {myOrders.length === 0 ? (
+              <p>No orders yet.</p>
+            ) : (
+              <div className="myOrdersBox">
+                {myOrders.map((order) => (
+                  <div className="myOrderCard" key={order.id}>
+                    <p><b>Order ID:</b> {order.id}</p>
+                    <p><b>Total:</b> ₹{order.total}</p>
+                    <p><b>Payment:</b> {order.paymentMode}</p>
+                    <p><b>Status:</b> {order.orderStatus}</p>
+                    <p><b>Date:</b> {order.createdAt}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {showCart && (
         <div className="modalBg">
           <div className="checkoutBox">
@@ -452,6 +627,7 @@ export default function App() {
 
                 {lastOrder && (
                   <div className="successDetails">
+                    <p><b>Order ID:</b> {lastOrder.id}</p>
                     {lastOrder.items.map((item) => (
                       <p key={item.cartId}>
                         <b>{item.name}</b> - {item.weight} × {item.quantity} = ₹
@@ -461,17 +637,23 @@ export default function App() {
                     <hr />
                     <p><b>Total:</b> ₹{lastOrder.total}</p>
                     <p><b>Payment:</b> {lastOrder.paymentMode}</p>
+                    <p><b>Status:</b> {lastOrder.orderStatus}</p>
                   </div>
                 )}
 
-                <p className="successNote">Company ko order WhatsApp par send ho gaya hai.</p>
-                <p className="successNote">Customer ko email confirmation bheja jayega.</p>
-
                 {paymentMode === "UPI" && (
-                  <a className="upiPayBtn" href={makeUpiLink()}>
-                    Pay Now via UPI
-                  </a>
+                  <div className="upiBox">
+                    <a className="upiPayBtn" href={makeUpiLink()}>
+                      Pay Now via UPI App
+                    </a>
+                    <p><b>UPI ID:</b> {upiId}</p>
+                    <p><b>Amount:</b> ₹{cartTotal}</p>
+                    <p>Desktop par UPI app open na ho to UPI ID copy karke payment karo.</p>
+                  </div>
                 )}
+
+                <p className="successNote">Order successfully place ho gaya hai.</p>
+                <p className="successNote">Customer ko email confirmation bheja jayega.</p>
 
                 <button className="submitOrderBtn" onClick={continueShopping}>
                   Continue Shopping
@@ -570,7 +752,7 @@ export default function App() {
         <div className="ingredientGrid">
           {ingredients.map(([img, name]) => (
             <div className="ingredientCard" key={img}>
-              <img src={/ingridients/${img}} alt={name} />
+              <img src={`/ingridients/${img}`} alt={name} />
               <b>{name}</b>
             </div>
           ))}
@@ -610,7 +792,7 @@ export default function App() {
         <p><strong>FSSAI License No:</strong> XXXXXXXX</p>
         <p><strong>UPI ID:</strong> 9993265857@ybl</p>
 
-        <a href={https://wa.me/${phone}} target="_blank" rel="noreferrer">
+        <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
           Contact on WhatsApp
         </a>
 
