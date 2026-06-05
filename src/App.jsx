@@ -522,10 +522,10 @@ export default function App() {
   <h3>Legal Agreement</h3>
 
   <p>
-    By creating a profile or placing an order on SatvaPusti Nutrition, you agree
-    to our Terms & Conditions, Privacy Policy, Product Disclaimer, and Return &
-    Refund Policy.
-  </p>
+  SatvaPusti Nutrition is registered under FSSAI Registration No.
+  <b> 20526034000204</b>, issued under the Food Safety and Standards Act, 2006.
+</p>
+  
 
   <details>
     <summary>Terms & Conditions</summary>
@@ -812,6 +812,10 @@ export default function App() {
 
       <section id="about" className="section about">
         <h2>About SatvaPusti Nutrition</h2>
+        <p>
+  SatvaPusti Nutrition is a registered food business under FSSAI Registration
+  No. <b>20526034000204</b>, approved for General Manufacturing.
+</p>
 
         <div className="aboutText">
           <p>
@@ -840,7 +844,10 @@ export default function App() {
         <p><strong>Phone:</strong> +91 96396 30828</p>
         <p><strong>Email:</strong> info@satvapusti.com</p>
         <p><strong>Website:</strong> www.satvapusti.com</p>
-        <p><strong>FSSAI License No:</strong> XXXXXXXX</p>
+        <p><strong>FSSAI Registration No:</strong> 20526034000204</p>
+<p><strong>FBO Name:</strong> Satvapusti Nutrition</p>
+<p><strong>Business Type:</strong> General Manufacturing</p>
+<p><strong>Registered Address:</strong> H No 59, Pendri, Pandri, Berla, Bemetara, Chhattisgarh - 491335</p>
         <p><strong>UPI ID:</strong> 9993265857@ybl</p>
 
         <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">

@@ -2,33 +2,53 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
-    customerName: String,
-    mobile: String,
-    address: String,
-    city: String,
-    pincode: String,
+    orderId: { type: String, unique: true },
+
+    customerName: { type: String, required: true },
+    email: { type: String, required: true },
+    mobile: { type: String, required: true },
+    address: { type: String, required: true },
+    city: { type: String, required: true },
+    pincode: { type: String, required: true },
+
+    items: [
+      {
+        cartId: String,
+        productId: String,
+        name: String,
+        weight: String,
+        quantity: Number,
+        mrp: Number,
+        offer: Number,
+        image: String,
+      },
+    ],
 
     product: String,
     weight: String,
     quantity: Number,
-
     mrp: Number,
     offerPrice: Number,
     totalAmount: Number,
-
     paymentMethod: String,
+
     paymentStatus: {
       type: String,
+      enum: ["Pending", "Paid", "Failed"],
       default: "Pending",
     },
+
     orderStatus: {
       type: String,
-      default: "New",
+      enum: ["Received", "Processing", "Packed", "Shipped", "Delivered", "Cancelled"],
+      default: "Received",
     },
+
+    courierName: { type: String, default: "" },
+    trackingNumber: { type: String, default: "" },
+    trackingUrl: { type: String, default: "" },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Order", orderSchema);
