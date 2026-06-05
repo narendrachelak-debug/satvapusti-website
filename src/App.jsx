@@ -369,12 +369,14 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
       `----------------------%0A` +
       `Total Amount: ₹${cartTotal}%0A` +
       `You Save: ₹${cartSaving}%0A` +
-      `Payment Method: ${paymentMode}%0A` +
-Payment Status: ${order.paymentStatus}%0A +
-Order Status: ${order.orderStatus}%0A +
-UPI Note: ${orderId}|${cartTotal}%0A +
-Shipping: ${shipping}%0A%0A +
-      `Customer Name: ${address.name}%0A` +
+      `Total Amount: ₹${cartTotal}%0A` +
+`You Save: ₹${cartSaving}%0A` +
+`Payment Method: ${paymentMode}%0A` +
+`Payment Status: ${order.paymentStatus}%0A` +
+`Order Status: ${order.orderStatus}%0A` +
+`UPI Note: ${orderId}|${cartTotal}%0A` +
+`Shipping: ${shipping}%0A%0A` +
+`Customer Name: ${address.name}%0A` +
       `Email: ${address.email}%0A` +
       `Mobile: ${address.mobile}%0A` +
       `Address: ${address.fullAddress}%0A` +
