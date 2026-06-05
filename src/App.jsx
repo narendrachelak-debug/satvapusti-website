@@ -309,7 +309,7 @@ export default function App() {
       paymentMode,
       shipping,
       customer: { ...address },
-      status: "Order Placed Successfully",
+      status: "Order Creed Successfully",
 
 orderStatus: "Received",
 
@@ -383,7 +383,7 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
       `City: ${address.city}%0A` +
       `Pincode: ${address.pincode}%0A%0A` +
       `Please confirm this order.`;
-
+order.whatsappMessage = message;
     if (paymentMode === "COD") {
       window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
     }
@@ -588,9 +588,14 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
   </details>
 </div>
 
-                <button className="submitOrderBtn" onClick={saveProfile}>
-                  Login / Save Profile
-                </button>
+                <a
+  className="submitOrderBtn"
+  href={`https://wa.me/${phone}?text=${lastOrder?.whatsappMessage || ""}`}
+  target="_blank"
+  rel="noreferrer"
+>
+  ✅ I Have Completed Payment
+</a>
 
                 <button className="guestBtn" onClick={continueAsGuest}>
                   Skip / Continue as Guest
@@ -706,22 +711,30 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
                 )}
 
                 {paymentMode === "UPI" && (
-                  <div className="upiBox">
-                    <a className="upiPayBtn" href={makeUpiLink(lastOrder?.id)}>
-  Pay Now via UPI App
-</a>
-                    <p><b>UPI ID:</b> {upiId}</p>
-                    <p><b>Amount:</b> ₹{cartTotal}</p>
-                    <p>Desktop par UPI app open na ho to UPI ID copy karke payment karo.</p>
-                  </div>
-                )}
+  <div className="upiBox">
+    <a
+      className="upiPayBtn"
+      href={makeUpiLink(lastOrder?.id)}
+    >
+      Pay Now via UPI App
+    </a>
 
-                <p className="successNote">Order successfully place ho gaya hai.</p>
-                <p className="successNote">Customer ko email confirmation bheja jayega.</p>
+    <a
+      className="submitOrderBtn"
+      href={`https://wa.me/${phone}?text=${lastOrder?.whatsappMessage || ""}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      Send Order on WhatsApp
+    </a>
 
-                <button className="submitOrderBtn" onClick={continueShopping}>
-                  Continue Shopping
-                </button>
+    <p><b>UPI ID:</b> {upiId}</p>
+    <p><b>Amount:</b> ₹{cartTotal}</p>
+    <p>
+      If the UPI app does not open on desktop, copy the UPI ID and complete the payment manually.
+    </p>
+  </div>
+)}
               </div>
             ) : (
               <>
