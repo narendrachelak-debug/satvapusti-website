@@ -313,7 +313,7 @@ export default function App() {
 
 orderStatus: "Received",
 
-paymentStatus: "Pending",
+paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
       createdAt: new Date().toLocaleString(),
     };
 
@@ -370,9 +370,10 @@ paymentStatus: "Pending",
       `Total Amount: ₹${cartTotal}%0A` +
       `You Save: ₹${cartSaving}%0A` +
       `Payment Method: ${paymentMode}%0A` +
-      Payment Status: ${order.paymentStatus}%0A +
+Payment Status: ${order.paymentStatus}%0A +
 Order Status: ${order.orderStatus}%0A +
-      `Shipping: ${shipping}%0A%0A` +
+UPI Note: ${orderId}|${cartTotal}%0A +
+Shipping: ${shipping}%0A%0A +
       `Customer Name: ${address.name}%0A` +
       `Email: ${address.email}%0A` +
       `Mobile: ${address.mobile}%0A` +
@@ -705,8 +706,8 @@ Order Status: ${order.orderStatus}%0A +
                 {paymentMode === "UPI" && (
                   <div className="upiBox">
                     <a className="upiPayBtn" href={makeUpiLink(lastOrder?.id)}>
-                      Pay Now via UPI App
-                    </a>
+  Pay Now via UPI App
+</a>
                     <p><b>UPI ID:</b> {upiId}</p>
                     <p><b>Amount:</b> ₹{cartTotal}</p>
                     <p>Desktop par UPI app open na ho to UPI ID copy karke payment karo.</p>
