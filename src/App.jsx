@@ -309,7 +309,7 @@ export default function App() {
       paymentMode,
       shipping,
       customer: { ...address },
-      status: "Order Creed Successfully",
+      status: "Order Created Successfully",
 
 orderStatus: "Received",
 
@@ -587,7 +587,6 @@ order.whatsappMessage = message;
     </p>
   </details>
 </div>
-<a
 
 
                 <button className="guestBtn" onClick={continueAsGuest}>
@@ -792,17 +791,20 @@ order.whatsappMessage = message;
                 </div>
 
                 {paymentMode === "UPI" && (
-                  <>
-                    <p className="freeShipping">UPI Payment पर Shipping Free</p>
-                    <a className="upiPayBtn" href={makeUpiLink()}>
-                      Pay Now via UPI
-                    </a>
-                  </>
-                )}
+  <>
+    <p className="freeShipping">
+      UPI Payment = Free Shipping
+    </p>
+  </>
+)}
 
-                <button className="submitOrderBtn" onClick={submitOrder}>
-                  Confirm Order
-                </button>
+<button
+  className="submitOrderBtn"
+  onClick={submitOrder}
+>
+  Confirm Order
+</button>
+                 
               </>
             )}
           </div>
