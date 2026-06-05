@@ -179,15 +179,19 @@ export default function App() {
   );
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const makeUpiLink = () => {
-    return (
-      `upi://pay?pa=${upiId}` +
-      `&pn=SatvaPusti%20Nutrition` +
-      `&am=${cartTotal}` +
-      `&cu=INR` +
-      `&tn=${encodeURIComponent("SatvaPusti Order")}`
-    );
-  };
+ const makeUpiLink = (currentOrderId = lastOrder?.id) => {
+  const note = currentOrderId
+    ? `${currentOrderId}|${cartTotal}`
+    : `SatvaPusti|${cartTotal}`;
+
+  return (
+    `upi://pay?pa=${upiId}` +
+    `&pn=SatvaPusti%20Nutrition` +
+    `&am=${cartTotal}` +
+    `&cu=INR` +
+    `&tn=${encodeURIComponent(note)}`
+  );
+};
 
   const saveProfile = () => {
     if (!profile.name || !profile.email || !profile.mobile) {
@@ -366,6 +370,8 @@ paymentStatus: "Pending",
       `Total Amount: ₹${cartTotal}%0A` +
       `You Save: ₹${cartSaving}%0A` +
       `Payment Method: ${paymentMode}%0A` +
+      Payment Status: ${order.paymentStatus}%0A +
+Order Status: ${order.orderStatus}%0A +
       `Shipping: ${shipping}%0A%0A` +
       `Customer Name: ${address.name}%0A` +
       `Email: ${address.email}%0A` +
@@ -698,7 +704,7 @@ paymentStatus: "Pending",
 
                 {paymentMode === "UPI" && (
                   <div className="upiBox">
-                    <a className="upiPayBtn" href={makeUpiLink()}>
+                    <a className="upiPayBtn" href={makeUpiLink(lastOrder?.id)}>
                       Pay Now via UPI App
                     </a>
                     <p><b>UPI ID:</b> {upiId}</p>
