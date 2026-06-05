@@ -309,9 +309,7 @@ export default function App() {
 
 orderStatus: "Received",
 
-paymentStatus: paymentMode === "UPI"
-  ? "Payment Pending"
-  : "COD Pending",
+paymentStatus: "Pending",
       createdAt: new Date().toLocaleString(),
     };
 
@@ -335,6 +333,7 @@ paymentStatus: paymentMode === "UPI"
           paymentMethod: paymentMode,
           shipping,
           orderStatus: order.orderStatus,
+          paymentStatus: order.paymentStatus,
         }),
       });
     } catch (error) {
