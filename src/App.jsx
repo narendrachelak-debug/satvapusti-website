@@ -3,7 +3,7 @@ import "./App.css";
 
 const phone = "919639630828";
 const upiId = "9993265857@ybl";
-const API_URL = "https://YOUR_BACKEND_URL";
+const API_URL = "https://satvapusti-website.onrender.com";
 
 const banners = [
   "/banners/banner-family.png",
