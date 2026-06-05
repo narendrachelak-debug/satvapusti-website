@@ -306,7 +306,12 @@ export default function App() {
       shipping,
       customer: { ...address },
       status: "Order Placed Successfully",
-      orderStatus: paymentMode === "UPI" ? "Payment Pending" : "COD Pending",
+
+orderStatus: "Received",
+
+paymentStatus: paymentMode === "UPI"
+  ? "Payment Pending"
+  : "COD Pending",
       createdAt: new Date().toLocaleString(),
     };
 
