@@ -587,15 +587,8 @@ order.whatsappMessage = message;
     </p>
   </details>
 </div>
+<a
 
-                <a
-  className="submitOrderBtn"
-  href={`https://wa.me/${phone}?text=${lastOrder?.whatsappMessage || ""}`}
-  target="_blank"
-  rel="noreferrer"
->
-  ✅ I Have Completed Payment
-</a>
 
                 <button className="guestBtn" onClick={continueAsGuest}>
                   Skip / Continue as Guest
@@ -718,21 +711,14 @@ order.whatsappMessage = message;
     >
       Pay Now via UPI App
     </a>
-
-    <a
-      className="submitOrderBtn"
-      href={`https://wa.me/${phone}?text=${lastOrder?.whatsappMessage || ""}`}
-      target="_blank"
-      rel="noreferrer"
-    >
-      Send Order on WhatsApp
-    </a>
-
-    <p><b>UPI ID:</b> {upiId}</p>
-    <p><b>Amount:</b> ₹{cartTotal}</p>
-    <p>
-      If the UPI app does not open on desktop, copy the UPI ID and complete the payment manually.
-    </p>
+<a
+  className="submitOrderBtn"
+  href={`https://wa.me/${phone}?text=${lastOrder?.whatsappMessage || ""}`}
+  target="_blank"
+  rel="noreferrer"
+>
+  ✅ I Have Completed Payment
+</a>
   </div>
 )}
               </div>
