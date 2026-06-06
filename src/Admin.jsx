@@ -76,13 +76,18 @@ export default function Admin() {
 
       const data = await res.json();
 
-      if (!data.success) {
-        alert(data.message || "Order update failed");
-        return;
-      }
+     if (!data.success) {
+  alert(data.message || "Order update failed");
+  return;
+}
 
-      await loadOrders();
-      alert("Order updated successfully");
+setOrders((prev) =>
+  prev.map((item) =>
+    item._id === order._id ? data.order : item
+  )
+);
+
+alert("Order updated successfully");
     } catch (error) {
       console.log("Save order error:", error);
       alert("Order update failed");
