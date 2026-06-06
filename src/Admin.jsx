@@ -54,6 +54,7 @@ export default function Admin() {
 
   const saveOrder = async (order) => {
     try {
+        alert("Save button clicked");
       setSavingId(order._id);
 
       const res = await fetch(
@@ -263,13 +264,19 @@ Amount: ₹${order.totalAmount}`;
 
             <label><b>Payment Status</b></label>
             <br />
-            <select
-              value={order.paymentStatus || "Pending"}
-              onChange={(e) =>
-                updateLocalOrder(order._id, "paymentStatus", e.target.value)
-              }
-              style={selectStyle}
-            >
+           <select
+  value={order.paymentStatus || "Pending"}
+  onChange={(e) => {
+    const updatedOrder = {
+      ...order,
+      paymentStatus: e.target.value,
+    };
+
+    updateLocalOrder(order._id, "paymentStatus", e.target.value);
+    saveOrder(updatedOrder);
+  }}
+  style={selectStyle}
+>
               <option>Pending</option>
               <option>Paid</option>
               <option>Failed</option>
@@ -281,12 +288,18 @@ Amount: ₹${order.totalAmount}`;
             <label><b>Order Status</b></label>
             <br />
             <select
-              value={order.orderStatus || "Received"}
-              onChange={(e) =>
-                updateLocalOrder(order._id, "orderStatus", e.target.value)
-              }
-              style={selectStyle}
-            >
+  value={order.orderStatus || "Received"}
+  onChange={(e) => {
+    const updatedOrder = {
+      ...order,
+      orderStatus: e.target.value,
+    };
+
+    updateLocalOrder(order._id, "orderStatus", e.target.value);
+    saveOrder(updatedOrder);
+  }}
+  style={selectStyle}
+>
               <option>Received</option>
               <option>Processing</option>
               <option>Packed</option>

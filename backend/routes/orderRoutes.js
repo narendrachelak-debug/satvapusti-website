@@ -175,6 +175,14 @@ router.put("/status/:id", async (req, res) => {
 
 router.put("/admin/update/:id", async (req, res) => {
   try {
+    const oldOrder = await Order.findById(req.params.id);
+
+    if (!oldOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
 
     const updateData = {
       paymentStatus: req.body.paymentStatus,
@@ -184,25 +192,20 @@ router.put("/admin/update/:id", async (req, res) => {
       trackingUrl: req.body.trackingUrl || "",
     };
 
-    // Payment Date Auto Save
-    if (
-      req.body.paymentStatus === "Paid" &&
-      !req.body.paymentDate
-    ) {
-      updateData.paymentDate = new Date();
-    }
-
-    // Delivery Date Auto Save
-    if (
-      req.body.orderStatus === "Delivered" &&
-      !req.body.deliveryDate
-    ) {
-      updateData.deliveryDate = new Date();
-    }
-
-    // Delivered => Auto Paid
     if (req.body.orderStatus === "Delivered") {
       updateData.paymentStatus = "Paid";
+
+      if (!oldOrder.deliveryDate) {
+        updateData.deliveryDate = new Date();
+      }
+
+      if (!oldOrder.paymentDate) {
+        updateData.paymentDate = new Date();
+      }
+    }
+
+    if (req.body.paymentStatus === "Paid" && !oldOrder.paymentDate) {
+      updateData.paymentDate = new Date();
     }
 
     const order = await Order.findByIdAndUpdate(
@@ -215,14 +218,11 @@ router.put("/admin/update/:id", async (req, res) => {
       success: true,
       order,
     });
-
   } catch (error) {
-
     res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 });
 module.exports = router;
