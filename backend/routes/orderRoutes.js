@@ -176,15 +176,38 @@ router.put("/status/:id", async (req, res) => {
 router.put("/admin/update/:id", async (req, res) => {
   try {
 
+    const updateData = {
+      paymentStatus: req.body.paymentStatus,
+      orderStatus: req.body.orderStatus,
+      courierName: req.body.courierName || "",
+      trackingNumber: req.body.trackingNumber || "",
+      trackingUrl: req.body.trackingUrl || "",
+    };
+
+    // Payment Date Auto Save
+    if (
+      req.body.paymentStatus === "Paid" &&
+      !req.body.paymentDate
+    ) {
+      updateData.paymentDate = new Date();
+    }
+
+    // Delivery Date Auto Save
+    if (
+      req.body.orderStatus === "Delivered" &&
+      !req.body.deliveryDate
+    ) {
+      updateData.deliveryDate = new Date();
+    }
+
+    // Delivered => Auto Paid
+    if (req.body.orderStatus === "Delivered") {
+      updateData.paymentStatus = "Paid";
+    }
+
     const order = await Order.findByIdAndUpdate(
       req.params.id,
-      {
-        paymentStatus: req.body.paymentStatus,
-        orderStatus: req.body.orderStatus,
-        courierName: req.body.courierName || "",
-        trackingNumber: req.body.trackingNumber || "",
-        trackingUrl: req.body.trackingUrl || "",
-      },
+      updateData,
       { new: true }
     );
 

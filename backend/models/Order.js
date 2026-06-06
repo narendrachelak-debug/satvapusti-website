@@ -54,6 +54,16 @@ deliveryDate: {
   default: null,
 },
 
+paymentDate: {
+  type: Date,
+  default: null,
+},
+
+deliveryDate: {
+  type: Date,
+  default: null,
+},
+
     courierName: { type: String, default: "" },
     trackingNumber: { type: String, default: "" },
     trackingUrl: { type: String, default: "" },
