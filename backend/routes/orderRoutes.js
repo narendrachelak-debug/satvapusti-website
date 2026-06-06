@@ -171,4 +171,35 @@ router.put("/status/:id", async (req, res) => {
   }
 });
 
+// UPDATE PAYMENT + ORDER STATUS
+
+router.put("/admin/update/:id", async (req, res) => {
+  try {
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      {
+        paymentStatus: req.body.paymentStatus,
+        orderStatus: req.body.orderStatus,
+        courierName: req.body.courierName || "",
+        trackingNumber: req.body.trackingNumber || "",
+        trackingUrl: req.body.trackingUrl || "",
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      order,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+});
 module.exports = router;
