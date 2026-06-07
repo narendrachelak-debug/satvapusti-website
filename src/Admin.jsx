@@ -235,6 +235,76 @@ Amount: ₹${order.totalAmount}`;
     }
   };
 
+  const exportToCSV = (data) => {
+    if (!data || data.length === 0) {
+      alert("No orders to export");
+      return;
+    }
+
+    const headers = [
+      "Order ID",
+      "Customer Name",
+      "Mobile",
+      "Email",
+      "Address",
+      "City",
+      "Pincode",
+      "Total Amount",
+      "Payment Method",
+      "Payment Status",
+      "Order Status",
+      "Courier Name",
+      "Tracking Number",
+      "Order Date",
+      "Payment Date",
+      "Delivery Date",
+    ];
+
+    const rows = data.map((order) => [
+      order.orderId || "",
+      order.customerName || "",
+      order.mobile || "",
+      order.email || "",
+      order.address || "",
+      order.city || "",
+      order.pincode || "",
+      order.totalAmount || "",
+      order.paymentMethod || "",
+      order.paymentStatus || "",
+      order.orderStatus || "",
+      order.courierName || "",
+      order.trackingNumber || "",
+      order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "",
+      order.paymentDate ? new Date(order.paymentDate).toLocaleDateString() : "",
+      order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : "",
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row
+          .map((cell) => {
+            const escaped = String(cell).replace(/"/g, '""');
+            return escaped.includes(",") ? `"${escaped}"` : escaped;
+          })
+          .join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `satvapusti_orders_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div style={pageStyle}>
       <h1>SatvaPusti Admin Panel</h1>
@@ -324,6 +394,40 @@ Amount: ₹${order.totalAmount}`;
           placeholder="To Date"
         />
         <button
+          onClick={() => {
+            setSearch("");
+            setDateFrom("");
+            setDateTo("");
+          }}
+          style={{
+            padding: "12px 14px",
+            background: "#6c757d",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "14px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          🔄 Clear Filters
+        </button>
+        <button
+          onClick={() => exportToCSV(filteredOrders)}
+          style={{
+            padding: "12px 14px",
+            background: "#28a745",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "14px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          📥 Export CSV
+        </button>
+        <button
           onClick={() => setShowPasswordModal(true)}
           style={{
             padding: "12px 14px",
@@ -333,6 +437,7 @@ Amount: ₹${order.totalAmount}`;
             borderRadius: "6px",
             cursor: "pointer",
             fontSize: "14px",
+            whiteSpace: "nowrap",
           }}
         >
           🔐 Change Password
