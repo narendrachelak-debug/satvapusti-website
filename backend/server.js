@@ -52,6 +52,75 @@ app.post("/api/admin/verify-password", (req, res) => {
   });
 });
 
+// INVENTORY ENDPOINTS
+app.get("/api/inventory", async (req, res) => {
+  try {
+    const Inventory = require("./models/Inventory");
+    const inventory = await Inventory.find();
+    res.json(inventory);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get("/api/inventory/:productId/:weight", async (req, res) => {
+  try {
+    const Inventory = require("./models/Inventory");
+    const item = await Inventory.findOne({
+      productId: req.params.productId,
+      weight: req.params.weight,
+    });
+    res.json(item || { stock: 0 });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.put("/api/inventory/:productId/:weight", async (req, res) => {
+  try {
+    const Inventory = require("./models/Inventory");
+    const { stock, reorderLevel } = req.body;
+    
+    const item = await Inventory.findOneAndUpdate(
+      { productId: req.params.productId, weight: req.params.weight },
+      {
+        stock: stock !== undefined ? stock : undefined,
+        reorderLevel: reorderLevel !== undefined ? reorderLevel : undefined,
+        lastRestocked: Date.now(),
+      },
+      { new: true, upsert: true }
+    );
+    
+    res.json({ success: true, item });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post("/api/inventory/reduce/:orderId", async (req, res) => {
+  try {
+    const Order = require("./models/Order");
+    const Inventory = require("./models/Inventory");
+    
+    const order = await Order.findById(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+    
+    for (const item of order.items || []) {
+      await Inventory.findOneAndUpdate(
+        { productId: item.productId, weight: item.weight },
+        { $inc: { stock: -item.quantity } },
+        { upsert: true }
+      );
+    }
+    
+    res.json({ success: true, message: "Inventory reduced" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 app.use("/api/orders", orderRoutes);
 
 mongoose
@@ -63,10 +132,38 @@ mongoose
   })
   .then(() => {
     console.log("MongoDB Connected");
+    initializeInventory();
   })
   .catch((error) => {
     console.log("MongoDB Connection Error:", error.message);
   });
+
+const initializeInventory = async () => {
+  try {
+    const Inventory = require("./models/Inventory");
+    const products = [
+      { productId: "family", weight: "250G" },
+      { productId: "family", weight: "500G" },
+      { productId: "family", weight: "1KG" },
+      { productId: "kids", weight: "250G" },
+      { productId: "kids", weight: "500G" },
+      { productId: "kids", weight: "1KG" },
+      { productId: "active", weight: "250G" },
+      { productId: "active", weight: "500G" },
+      { productId: "active", weight: "1KG" },
+    ];
+
+    for (const product of products) {
+      await Inventory.findOneAndUpdate(
+        { productId: product.productId, weight: product.weight },
+        { $setOnInsert: { stock: 100 } },
+        { upsert: true }
+      );
+    }
+  } catch (error) {
+    console.log("Inventory initialization error:", error.message);
+  }
+};
 
 const PORT = process.env.PORT || 5000;
 

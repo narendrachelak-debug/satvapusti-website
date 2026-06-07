@@ -19,6 +19,9 @@ export default function Admin() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
+  const [inventory, setInventory] = useState([]);
+  const [showInventoryModal, setShowInventoryModal] = useState(false);
+  const [editingInventory, setEditingInventory] = useState(null);
 
   const loadOrders = async () => {
     try {
@@ -37,11 +40,23 @@ export default function Admin() {
     }
   };
 
+  const loadInventory = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/inventory`);
+      const data = await res.json();
+      setInventory(data);
+    } catch (error) {
+      console.log("Load inventory error:", error);
+    }
+  };
+
   useEffect(() => {
     loadOrders();
+    loadInventory();
 
     const interval = setInterval(() => {
       loadOrders();
+      loadInventory();
     }, 10000);
 
     return () => clearInterval(interval);
@@ -165,6 +180,27 @@ alert("Order updated successfully");
     (o) => o.orderStatus === "Delivered"
   ).length;
 
+  const totalRevenue = orders
+    .filter(o => o.paymentStatus === "Paid")
+    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const revenueToday = orders
+    .filter(o => o.paymentStatus === "Paid" && new Date(o.paymentDate || o.createdAt) >= today)
+    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+  const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const revenueThisMonth = orders
+    .filter(o => o.paymentStatus === "Paid" && new Date(o.paymentDate || o.createdAt) >= thisMonthStart)
+    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+  const totalCODOrders = orders.filter(o => o.paymentMethod === "COD").length;
+
+  const totalPaidOrders = orders.filter(o => o.paymentStatus === "Paid").length;
+
   const copyAddress = (order) => {
     const text = `${order.customerName || ""}
 ${order.address || ""}
@@ -194,7 +230,10 @@ Your SatvaPusti order update:
 Order ID: ${order.orderId}
 Payment Status: ${order.paymentStatus}
 Order Status: ${order.orderStatus}
-Amount: ₹${order.totalAmount}`;
+Amount: ₹${order.totalAmount}
+${order.courierName ? `Courier: ${order.courierName}` : ""}
+${order.trackingNumber ? `Tracking: ${order.trackingNumber}` : ""}
+${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
 
     window.open(
       `https://wa.me/${finalMobile}?text=${encodeURIComponent(message)}`,
@@ -305,6 +344,46 @@ Amount: ₹${order.totalAmount}`;
     document.body.removeChild(link);
   };
 
+  const exportToJSON = (data) => {
+    if (!data || data.length === 0) {
+      alert("No orders to export");
+      return;
+    }
+
+    const jsonContent = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonContent], { type: "application/json;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `satvapusti_orders_${new Date().toISOString().split("T")[0]}.json`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const updateInventoryStock = async (productId, weight, newStock) => {
+    try {
+      const res = await fetch(`${API_URL}/api/inventory/${productId}/${weight}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stock: newStock }),
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        alert("Stock updated successfully");
+        loadInventory();
+      }
+    } catch (error) {
+      alert("Error updating stock");
+      console.error(error);
+    }
+  };
+
   return (
     <div style={pageStyle}>
       <h1>SatvaPusti Admin Panel</h1>
@@ -369,6 +448,36 @@ Amount: ₹${order.totalAmount}`;
           <br />
           <b>{deliveredOrders}</b>
         </div>
+
+        <div style={boxStyle}>
+          💰 Total Revenue
+          <br />
+          <b>₹{totalRevenue.toLocaleString()}</b>
+        </div>
+
+        <div style={boxStyle}>
+          📊 Revenue Today
+          <br />
+          <b>₹{revenueToday.toLocaleString()}</b>
+        </div>
+
+        <div style={boxStyle}>
+          📈 Revenue This Month
+          <br />
+          <b>₹{revenueThisMonth.toLocaleString()}</b>
+        </div>
+
+        <div style={boxStyle}>
+          📦 COD Orders
+          <br />
+          <b>{totalCODOrders}</b>
+        </div>
+
+        <div style={boxStyle}>
+          ✅ Paid Orders
+          <br />
+          <b>{totalPaidOrders}</b>
+        </div>
       </div>
 
       <input
@@ -426,6 +535,36 @@ Amount: ₹${order.totalAmount}`;
           }}
         >
           📥 Export CSV
+        </button>
+        <button
+          onClick={() => exportToJSON(filteredOrders)}
+          style={{
+            padding: "12px 14px",
+            background: "#6f42c1",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "14px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          📄 Export JSON
+        </button>
+        <button
+          onClick={() => setShowInventoryModal(true)}
+          style={{
+            padding: "12px 14px",
+            background: "#dc3545",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "14px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          📦 Manage Inventory
         </button>
         <button
           onClick={() => setShowPasswordModal(true)}
@@ -507,6 +646,71 @@ Amount: ₹${order.totalAmount}`;
             >
               Verify Password
             </button>
+          </div>
+        </div>
+      )}
+
+      {showInventoryModal && (
+        <div style={modalBgStyle}>
+          <div style={{ ...modalBoxStyle, maxWidth: "700px" }}>
+            <button
+              onClick={() => setShowInventoryModal(false)}
+              style={{
+                position: "absolute",
+                top: "10px",
+                right: "10px",
+                background: "none",
+                border: "none",
+                fontSize: "24px",
+                cursor: "pointer",
+              }}
+            >
+              ×
+            </button>
+
+            <h2>📦 Manage Inventory</h2>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px", maxHeight: "400px", overflowY: "auto" }}>
+              {inventory.map((item) => (
+                <div
+                  key={`${item.productId}-${item.weight}`}
+                  style={{
+                    border: "1px solid #ddd",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    background: item.stock === 0 ? "#ffebee" : item.stock < 10 ? "#fff3cd" : "#fff",
+                  }}
+                >
+                  <p><b>{item.productId.toUpperCase()} - {item.weight}</b></p>
+                  <p>Stock: <b style={{ color: item.stock === 0 ? "red" : item.stock < 10 ? "orange" : "green" }}>{item.stock}</b></p>
+                  {item.stock === 0 && <p style={{ color: "red", fontWeight: "bold", margin: "5px 0" }}>🔴 OUT OF STOCK</p>}
+                  {item.stock > 0 && item.stock < 10 && <p style={{ color: "orange", fontWeight: "bold", margin: "5px 0" }}>⚠️ LOW STOCK</p>}
+                  <input
+                    type="number"
+                    placeholder="New stock"
+                    defaultValue={item.stock}
+                    style={{ width: "100%", padding: "5px", marginTop: "5px", boxSizing: "border-box" }}
+                    onChange={(e) => setEditingInventory({ ...item, stock: parseInt(e.target.value) })}
+                  />
+                  <button
+                    onClick={() => updateInventoryStock(item.productId, item.weight, editingInventory?.stock || item.stock)}
+                    style={{
+                      width: "100%",
+                      padding: "5px",
+                      marginTop: "5px",
+                      background: "#007bff",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                    }}
+                  >
+                    Update Stock
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
