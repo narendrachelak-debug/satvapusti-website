@@ -32,7 +32,7 @@ export default function AdminLogin() {
         "admin_logged_in"
       );
 
-      window.location.href = "/admin";
+      window.location.href = "/?page=admin";
     } catch (error) {
       console.error(error);
       alert("Login failed");
