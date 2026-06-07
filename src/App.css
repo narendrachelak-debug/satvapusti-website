@@ -813,17 +813,36 @@ nav a {
   gap: 8px;
 }
 
-.adminSidebarNav span {
+.adminSidebarNav button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
   padding: 12px 14px;
+  border: none;
   border-radius: 8px;
+  background: transparent;
   color: #9da4bf;
   font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+
+.adminSidebarNav button b {
+  color: #d8dcff;
+  font-size: 13px;
 }
 
 .adminSidebarNav .active,
-.adminSidebarNav span:hover {
+.adminSidebarNav button:hover {
   background: #2a2f4a;
   color: #8f8cff;
+}
+
+.adminSidebarNav .active b,
+.adminSidebarNav button:hover b {
+  color: #fff;
 }
 
 .adminMainPanel {
@@ -848,6 +867,13 @@ nav a {
   color: #f7f8ff;
   font-size: 26px;
   line-height: 1.15;
+}
+
+.adminViewSubtitle {
+  margin: 6px 0 0;
+  color: #9da4bf;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .adminLogoutBtn {
@@ -888,6 +914,55 @@ nav a {
   padding: 14px;
   margin: 0 0 16px;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+}
+
+.adminViewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.adminInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.adminInfoPanel {
+  min-height: 120px;
+  padding: 16px;
+  border: 1px solid #373b56;
+  border-radius: 12px;
+  background: #252941;
+}
+
+.adminInfoPanel h3 {
+  margin-top: 0;
+}
+
+.adminInfoPanel b {
+  color: #fff;
+}
+
+.adminSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 0 12px;
+}
+
+.adminSectionHeader h2 {
+  margin: 0;
+  color: #f7f8ff;
+  font-size: 22px;
+}
+
+.adminSectionHeader span {
+  color: #9da4bf;
+  font-weight: 800;
 }
 
 .adminSearchRow {

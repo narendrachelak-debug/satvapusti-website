@@ -39,6 +39,7 @@ export default function Admin() {
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [editingInventory, setEditingInventory] = useState(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [activeAdminView, setActiveAdminView] = useState("dashboard");
   const [filters, setFilters] = useState({
     orderDateFrom: "",
     orderDateTo: "",
@@ -324,6 +325,59 @@ alert("Order updated successfully");
   const dailySalesReport = buildSalesReport("daily");
   const monthlySalesReport = buildSalesReport("monthly");
 
+  const customerSummaries = useMemo(() => {
+    const customerMap = new Map();
+
+    orders.forEach((order) => {
+      const key = order.mobile || order.email || order.customerName || order._id;
+      const existing = customerMap.get(key) || {
+        name: order.customerName || "Unknown Customer",
+        mobile: order.mobile || "N/A",
+        email: order.email || "N/A",
+        orders: 0,
+        paidOrders: 0,
+        totalSpent: 0,
+      };
+
+      existing.orders += 1;
+      if (order.paymentStatus === "Paid") {
+        existing.paidOrders += 1;
+        existing.totalSpent += Number(order.totalAmount || 0);
+      }
+
+      customerMap.set(key, existing);
+    });
+
+    return Array.from(customerMap.values()).sort((a, b) => b.orders - a.orders);
+  }, [orders]);
+
+  const lowStockItems = inventory.filter((item) => Number(item.stock || 0) < 10);
+  const paymentOrders = filteredOrders.filter((order) =>
+    ["Pending", "Awaiting Verification", "Paid", "Failed"].includes(
+      order.paymentStatus || "Pending"
+    )
+  );
+  const visibleOrders =
+    activeAdminView === "payments" ? paymentOrders : filteredOrders;
+  const showSummary = activeAdminView === "dashboard" || activeAdminView === "payments";
+  const showControls =
+    activeAdminView === "dashboard" ||
+    activeAdminView === "orders" ||
+    activeAdminView === "payments";
+  const showReports = activeAdminView === "dashboard" || activeAdminView === "reports";
+  const showOrders =
+    activeAdminView === "dashboard" ||
+    activeAdminView === "orders" ||
+    activeAdminView === "payments";
+  const viewTitleMap = {
+    dashboard: "Dashboard Overview",
+    orders: "Order Management",
+    payments: "Payment Review",
+    inventory: "Inventory Control",
+    reports: "Sales Reports",
+    customers: "Customer Directory",
+  };
+
   const copyAddress = (order) => {
     const text = `${order.customerName || ""}
 ${order.address || ""}
@@ -553,18 +607,57 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
       <aside className="adminSidebar">
         <div className="adminBrandMark">SP</div>
         <nav className="adminSidebarNav" aria-label="Admin sections">
-          <span className="active">Dashboard</span>
-          <span>Orders</span>
-          <span>Payments</span>
-          <span>Inventory</span>
-          <span>Reports</span>
-          <span>Customers</span>
+          <button
+            className={activeAdminView === "dashboard" ? "active" : ""}
+            onClick={() => setActiveAdminView("dashboard")}
+          >
+            <span>Dashboard</span>
+            <b>{totalOrders}</b>
+          </button>
+          <button
+            className={activeAdminView === "orders" ? "active" : ""}
+            onClick={() => setActiveAdminView("orders")}
+          >
+            <span>Orders</span>
+            <b>{filteredOrders.length}</b>
+          </button>
+          <button
+            className={activeAdminView === "payments" ? "active" : ""}
+            onClick={() => setActiveAdminView("payments")}
+          >
+            <span>Payments</span>
+            <b>{pendingPayments}</b>
+          </button>
+          <button
+            className={activeAdminView === "inventory" ? "active" : ""}
+            onClick={() => setActiveAdminView("inventory")}
+          >
+            <span>Inventory</span>
+            <b>{lowStockItems.length}</b>
+          </button>
+          <button
+            className={activeAdminView === "reports" ? "active" : ""}
+            onClick={() => setActiveAdminView("reports")}
+          >
+            <span>Reports</span>
+            <b>{dailySalesReport.length}</b>
+          </button>
+          <button
+            className={activeAdminView === "customers" ? "active" : ""}
+            onClick={() => setActiveAdminView("customers")}
+          >
+            <span>Customers</span>
+            <b>{customerSummaries.length}</b>
+          </button>
         </nav>
       </aside>
 
       <main className="adminMainPanel">
       <div className="adminTopBar">
-        <h1>SatvaPusti Admin Panel</h1>
+        <div>
+          <h1>SatvaPusti Admin Panel</h1>
+          <p className="adminViewSubtitle">{viewTitleMap[activeAdminView]}</p>
+        </div>
         <button
           className="adminLogoutBtn"
           onClick={() => {
@@ -577,6 +670,73 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         </button>
       </div>
 
+      {(activeAdminView === "inventory" || activeAdminView === "customers") && (
+        <div className="adminViewActions">
+          {activeAdminView === "inventory" && (
+            <button
+              onClick={() => setShowInventoryModal(true)}
+              className="admin-action-button admin-inventory-button"
+            >
+              ðŸ“¦ Manage Inventory
+            </button>
+          )}
+          {activeAdminView === "customers" && (
+            <button
+              className="adminSecondaryBtn"
+              onClick={() => {
+                setActiveAdminView("orders");
+                setShowAdvancedFilters(true);
+              }}
+            >
+              Search Customer Orders
+            </button>
+          )}
+        </div>
+      )}
+
+      {activeAdminView === "inventory" && (
+        <div className="adminInfoGrid">
+          <div className="adminInfoPanel">
+            <h3>Inventory Snapshot</h3>
+            <p>Total inventory items: <b>{inventory.length}</b></p>
+            <p>Low or out of stock: <b>{lowStockItems.length}</b></p>
+          </div>
+          {lowStockItems.slice(0, 8).map((item) => (
+            <div className="adminInfoPanel" key={`${item.productId}-${item.weight}`}>
+              <h3>{String(item.productId || "").toUpperCase()} - {item.weight}</h3>
+              <p>Stock: <b>{item.stock}</b></p>
+              <button
+                onClick={() => setShowInventoryModal(true)}
+                className="adminSecondaryBtn"
+              >
+                Update Stock
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeAdminView === "customers" && (
+        <div className="adminInfoGrid">
+          {customerSummaries.length === 0 ? (
+            <div className="adminInfoPanel">
+              <h3>No customers found.</h3>
+            </div>
+          ) : (
+            customerSummaries.map((customer) => (
+              <div className="adminInfoPanel" key={`${customer.mobile}-${customer.email}`}>
+                <h3>{customer.name}</h3>
+                <p>Mobile: <b>{customer.mobile}</b></p>
+                <p>Email: <b>{customer.email}</b></p>
+                <p>Orders: <b>{customer.orders}</b> | Paid: <b>{customer.paidOrders}</b></p>
+                <p>Total spent: <b>₹{customer.totalSpent.toLocaleString()}</b></p>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {showSummary && (
       <div className="admin-summary-grid" style={{ marginBottom: "18px" }}>
         <div style={boxStyle}>
           Total Orders
@@ -651,7 +811,9 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         </div>
 
       </div>
+      )}
 
+      {showControls && (
       <div className="adminControls">
         <div className="adminSearchRow">
       <input
@@ -696,8 +858,9 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         </button>
       </div>
       </div>
+      )}
 
-      {showAdvancedFilters && (
+      {showControls && showAdvancedFilters && (
         <div className="adminAdvancedFilters">
           <input
             placeholder="Customer name"
@@ -809,6 +972,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         </div>
       )}
 
+      {showReports && (
       <div style={reportsGridStyle}>
         <div style={reportBoxStyle}>
           <h3>Daily Sales Report</h3>
@@ -836,6 +1000,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           )}
         </div>
       </div>
+      )}
 
       {showPasswordModal && (
         <div style={{ ...modalBgStyle }}>
@@ -1002,10 +1167,16 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         </div>
       )}
 
-      {filteredOrders.length === 0 ? (
+      {showOrders && (
+        <>
+          <div className="adminSectionHeader">
+            <h2>{activeAdminView === "payments" ? "Payment Orders" : "Orders"}</h2>
+            <span>{visibleOrders.length} visible</span>
+          </div>
+      {visibleOrders.length === 0 ? (
         <p>No orders found.</p>
       ) : (
-        filteredOrders.map((order) => (
+        visibleOrders.map((order) => (
           <div key={order._id} style={orderCardStyle}>
             <h3>{order.orderId}</h3>
 
@@ -1188,6 +1359,8 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
             </div>
           </div>
         ))
+      )}
+        </>
       )}
       </main>
     </div>
