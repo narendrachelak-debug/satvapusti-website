@@ -1,19 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { useNavigate } from "react-router-dom";
-
 const API_URL = "https://satvapusti-website.onrender.com";
 
 export default function Admin() {
-  const navigate = useNavigate();
+  useEffect(() => {
+    const token = localStorage.getItem("satvapustiAdminToken");
 
-useEffect(() => {
-  const token = localStorage.getItem("satvapustiAdminToken");
+    if (token !== "admin_logged_in") {
+      window.location.href = "/admin-login";
+    }
+  }, []);
 
-  if (token !== "admin_logged_in") {
-    navigate("/admin-login");
-  }
-}, [navigate]);
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [savingId, setSavingId] = useState("");
