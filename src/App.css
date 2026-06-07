@@ -67,13 +67,15 @@ nav a {
 
 .slider {
   display: flex;
-  width: 300%;
+  width: 300vw;
   animation: slide 15s infinite;
 }
 
 .slider img {
-  width: 100vw;
+  flex: 0 0 100vw;
+  width: 100%;
   height: auto;
+  max-width: 100%;
   object-fit: contain;
   display: block;
 }
@@ -774,6 +776,137 @@ nav a {
 .legalPolicyBox p {
   font-size: 14px;
   line-height: 1.5;
+}
+
+.admin-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.adminAdvancedFilters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.adminButtonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.adminSecondaryBtn {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.admin-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.admin-action-button {
+  flex: 1 1 160px;
+  min-width: 140px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.admin-action-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.admin-clear-button {
+  background: #6c757d;
+}
+
+.admin-filter-button {
+  background: #34495e;
+}
+
+.admin-csv-button {
+  background: #28a745;
+}
+
+.admin-json-button {
+  background: #6f42c1;
+}
+
+.admin-inventory-button {
+  background: #dc3545;
+}
+
+.admin-password-button {
+  background: #007bff;
+}
+
+.admin-advanced-filters {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.admin-advanced-filters input,
+.admin-advanced-filters select {
+  background: #fff;
+}
+
+.admin-order-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.admin-summary-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+@media (max-width: 1024px) {
+  .admin-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .admin-action-button {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .admin-advanced-filters {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .placeBtn {

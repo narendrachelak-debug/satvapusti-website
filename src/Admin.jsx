@@ -38,6 +38,7 @@ export default function Admin() {
   const [inventory, setInventory] = useState([]);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [editingInventory, setEditingInventory] = useState(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filters, setFilters] = useState({
     orderDateFrom: "",
     orderDateTo: "",
@@ -569,7 +570,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
   Logout
 </button>
 
-      <div style={summaryGridStyle}>
+      <div className="admin-summary-grid" style={{ marginBottom: "18px" }}>
         <div style={boxStyle}>
           Total Orders
           <br />
@@ -657,201 +658,151 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         style={searchStyle}
       />
 
-      <div style={filterGridStyle}>
-        <input
-          placeholder="Customer name"
-          value={filters.customerName}
-          onChange={(e) => setFilters({ ...filters, customerName: e.target.value })}
-          style={filterInputStyle}
-        />
-        <input
-          placeholder="Customer mobile"
-          value={filters.customerMobile}
-          onChange={(e) => setFilters({ ...filters, customerMobile: e.target.value })}
-          style={filterInputStyle}
-        />
-        <input
-          placeholder="Customer email"
-          value={filters.customerEmail}
-          onChange={(e) => setFilters({ ...filters, customerEmail: e.target.value })}
-          style={filterInputStyle}
-        />
-        <select
-          value={filters.orderStatus}
-          onChange={(e) => setFilters({ ...filters, orderStatus: e.target.value })}
-          style={filterInputStyle}
-        >
-          <option value="">All Order Status</option>
-          <option>Received</option>
-          <option>Processing</option>
-          <option>Packed</option>
-          <option>Shipped</option>
-          <option>Delivered</option>
-          <option>Cancelled</option>
-        </select>
-        <select
-          value={filters.paymentStatus}
-          onChange={(e) => setFilters({ ...filters, paymentStatus: e.target.value })}
-          style={filterInputStyle}
-        >
-          <option value="">All Payment Status</option>
-          <option>Pending</option>
-          <option>Awaiting Verification</option>
-          <option>Paid</option>
-          <option>Failed</option>
-        </select>
-        <input
-          type="date"
-          value={filters.orderDateFrom}
-          onChange={(e) => setFilters({ ...filters, orderDateFrom: e.target.value })}
-          style={filterInputStyle}
-          title="Order date from"
-        />
-        <input
-          type="date"
-          value={filters.orderDateTo}
-          onChange={(e) => setFilters({ ...filters, orderDateTo: e.target.value })}
-          style={filterInputStyle}
-          title="Order date to"
-        />
-        <input
-          type="date"
-          value={filters.paymentDateFrom}
-          onChange={(e) => setFilters({ ...filters, paymentDateFrom: e.target.value })}
-          style={filterInputStyle}
-          title="Payment date from"
-        />
-        <input
-          type="date"
-          value={filters.paymentDateTo}
-          onChange={(e) => setFilters({ ...filters, paymentDateTo: e.target.value })}
-          style={filterInputStyle}
-          title="Payment date to"
-        />
-        <input
-          type="date"
-          value={filters.deliveryDateFrom}
-          onChange={(e) => setFilters({ ...filters, deliveryDateFrom: e.target.value })}
-          style={filterInputStyle}
-          title="Delivery date from"
-        />
-        <input
-          type="date"
-          value={filters.deliveryDateTo}
-          onChange={(e) => setFilters({ ...filters, deliveryDateTo: e.target.value })}
-          style={filterInputStyle}
-          title="Delivery date to"
-        />
-      </div>
+      <button
+        className="adminSecondaryBtn"
+        onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+      >
+        {showAdvancedFilters ? "Hide Advanced Filters" : "Advanced Filters"}
+      </button>
 
-      <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          style={{ ...searchStyle, flex: 1, minWidth: "150px", marginBottom: 0 }}
-          placeholder="From Date"
-        />
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          style={{ ...searchStyle, flex: 1, minWidth: "150px", marginBottom: 0 }}
-          placeholder="To Date"
-        />
-        <button
-          onClick={() => {
-            setSearch("");
-            setDateFrom("");
-            setDateTo("");
-            setFilters({
-              orderDateFrom: "",
-              orderDateTo: "",
-              paymentDateFrom: "",
-              paymentDateTo: "",
-              deliveryDateFrom: "",
-              deliveryDateTo: "",
-              orderStatus: "",
-              paymentStatus: "",
-              customerName: "",
-              customerMobile: "",
-              customerEmail: "",
-            });
-          }}
-          style={{
-            padding: "12px 14px",
-            background: "#6c757d",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            whiteSpace: "nowrap",
-          }}
-        >
-          🔄 Clear Filters
-        </button>
+      <div className="adminButtonRow">
         <button
           onClick={() => exportToCSV(filteredOrders)}
-          style={{
-            padding: "12px 14px",
-            background: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            whiteSpace: "nowrap",
-          }}
+          className="admin-action-button admin-csv-button"
         >
           📥 Export CSV
         </button>
         <button
           onClick={() => exportToJSON(filteredOrders)}
-          style={{
-            padding: "12px 14px",
-            background: "#6f42c1",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            whiteSpace: "nowrap",
-          }}
+          className="admin-action-button admin-json-button"
         >
           📄 Export JSON
         </button>
         <button
           onClick={() => setShowInventoryModal(true)}
-          style={{
-            padding: "12px 14px",
-            background: "#dc3545",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            whiteSpace: "nowrap",
-          }}
+          className="admin-action-button admin-inventory-button"
         >
           📦 Manage Inventory
         </button>
         <button
           onClick={() => setShowPasswordModal(true)}
-          style={{
-            padding: "12px 14px",
-            background: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            whiteSpace: "nowrap",
-          }}
+          className="admin-action-button admin-password-button"
         >
           🔐 Change Password
         </button>
       </div>
+
+      {showAdvancedFilters && (
+        <div className="adminAdvancedFilters">
+          <input
+            placeholder="Customer name"
+            value={filters.customerName}
+            onChange={(e) => setFilters({ ...filters, customerName: e.target.value })}
+            style={filterInputStyle}
+          />
+            <input
+              placeholder="Customer mobile"
+              value={filters.customerMobile}
+              onChange={(e) => setFilters({ ...filters, customerMobile: e.target.value })}
+              style={filterInputStyle}
+            />
+            <input
+              placeholder="Customer email"
+              value={filters.customerEmail}
+              onChange={(e) => setFilters({ ...filters, customerEmail: e.target.value })}
+              style={filterInputStyle}
+            />
+            <select
+              value={filters.orderStatus}
+              onChange={(e) => setFilters({ ...filters, orderStatus: e.target.value })}
+              style={filterInputStyle}
+            >
+              <option value="">All Order Status</option>
+              <option>Received</option>
+              <option>Processing</option>
+              <option>Packed</option>
+              <option>Shipped</option>
+              <option>Delivered</option>
+              <option>Cancelled</option>
+            </select>
+            <select
+              value={filters.paymentStatus}
+              onChange={(e) => setFilters({ ...filters, paymentStatus: e.target.value })}
+              style={filterInputStyle}
+            >
+              <option value="">All Payment Status</option>
+              <option>Pending</option>
+              <option>Awaiting Verification</option>
+              <option>Paid</option>
+              <option>Failed</option>
+            </select>
+            <input
+              type="date"
+              value={filters.orderDateFrom}
+              onChange={(e) => setFilters({ ...filters, orderDateFrom: e.target.value })}
+              style={filterInputStyle}
+              title="Order date from"
+            />
+            <input
+              type="date"
+              value={filters.orderDateTo}
+              onChange={(e) => setFilters({ ...filters, orderDateTo: e.target.value })}
+              style={filterInputStyle}
+              title="Order date to"
+            />
+            <input
+              type="date"
+              value={filters.paymentDateFrom}
+              onChange={(e) => setFilters({ ...filters, paymentDateFrom: e.target.value })}
+              style={filterInputStyle}
+              title="Payment date from"
+            />
+            <input
+              type="date"
+              value={filters.paymentDateTo}
+              onChange={(e) => setFilters({ ...filters, paymentDateTo: e.target.value })}
+              style={filterInputStyle}
+              title="Payment date to"
+            />
+            <input
+              type="date"
+              value={filters.deliveryDateFrom}
+              onChange={(e) => setFilters({ ...filters, deliveryDateFrom: e.target.value })}
+              style={filterInputStyle}
+              title="Delivery date from"
+            />
+            <input
+              type="date"
+              value={filters.deliveryDateTo}
+              onChange={(e) => setFilters({ ...filters, deliveryDateTo: e.target.value })}
+              style={filterInputStyle}
+              title="Delivery date to"
+            />
+            <button
+              onClick={() => {
+                setSearch("");
+                setDateFrom("");
+                setDateTo("");
+                setFilters({
+                  orderDateFrom: "",
+                  orderDateTo: "",
+                  paymentDateFrom: "",
+                  paymentDateTo: "",
+                  deliveryDateFrom: "",
+                  deliveryDateTo: "",
+                  orderStatus: "",
+                  paymentStatus: "",
+                  customerName: "",
+                  customerMobile: "",
+                  customerEmail: "",
+                });
+              }}
+              className="adminSecondaryBtn"
+            >
+              🔄 Clear Filters
+            </button>
+        </div>
+      )}
 
       <div style={reportsGridStyle}>
         <div style={reportBoxStyle}>
@@ -861,7 +812,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           ) : (
             dailySalesReport.map((item) => (
               <p key={item.period}>
-                <b>{item.period}</b> | Orders: {item.orders} | Revenue: â‚¹{item.revenue.toLocaleString()}
+                <b>{item.period}</b> | Orders: {item.orders} | Revenue: ₹{item.revenue.toLocaleString()}
               </p>
             ))
           )}
@@ -874,7 +825,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           ) : (
             monthlySalesReport.map((item) => (
               <p key={item.period}>
-                <b>{item.period}</b> | Orders: {item.orders} | Revenue: â‚¹{item.revenue.toLocaleString()}
+                <b>{item.period}</b> | Orders: {item.orders} | Revenue: ₹{item.revenue.toLocaleString()}
               </p>
             ))
           )}
@@ -1247,14 +1198,15 @@ const summaryGridStyle = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
   gap: "10px",
-  marginBottom: "20px",
+  marginBottom: "18px",
 };
 
 const boxStyle = {
   background: "#fff",
   border: "1px solid #ddd",
   borderRadius: "10px",
-  padding: "15px",
+  padding: "12px",
+  minHeight: "100px",
 };
 
 const searchStyle = {
@@ -1316,8 +1268,8 @@ const smallButtonStyle = {
 const orderCardStyle = {
   border: "1px solid #ddd",
   borderRadius: "10px",
-  padding: "15px",
-  marginBottom: "15px",
+  padding: "14px",
+  marginBottom: "12px",
   background: "#fff",
 };
 
@@ -1385,3 +1337,4 @@ const modalBoxStyle = {
   maxWidth: "500px",
   width: "90%",
 };
+
