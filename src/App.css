@@ -782,7 +782,7 @@ nav a {
   display: grid;
   grid-template-columns: 236px minmax(0, 1fr);
   min-height: 100vh;
-  background: #151829;
+  background: #07150f;
   color: #f7f8ff;
 }
 
@@ -791,8 +791,8 @@ nav a {
   top: 0;
   height: 100vh;
   padding: 22px 18px;
-  background: #20243a;
-  border-right: 1px solid #333750;
+  background: #0b1b13;
+  border-right: 1px solid #1f4a34;
 }
 
 .adminBrandMark {
@@ -803,7 +803,7 @@ nav a {
   height: 48px;
   margin-bottom: 24px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #6f42c1, #0dcaf0);
+  background: linear-gradient(135deg, #0f9d58, #14b8a6);
   color: #fff;
   font-weight: 900;
 }
@@ -836,8 +836,8 @@ nav a {
 
 .adminSidebarNav .active,
 .adminSidebarNav button:hover {
-  background: #2a2f4a;
-  color: #8f8cff;
+  background: #113822;
+  color: #74f0a7;
 }
 
 .adminSidebarNav .active b,
@@ -857,9 +857,9 @@ nav a {
   gap: 16px;
   margin: 0 0 18px;
   padding: 14px 16px;
-  border: 1px solid #333750;
+  border: 1px solid #1f4a34;
   border-radius: 12px;
-  background: #20243a;
+  background: #0b1b13;
 }
 
 .adminTopBar h1 {
@@ -880,7 +880,7 @@ nav a {
   padding: 10px 16px;
   border: none;
   border-radius: 8px;
-  background: #b00020;
+  background: #b4233a;
   color: #fff;
   font-weight: 800;
   cursor: pointer;
@@ -908,8 +908,8 @@ nav a {
 }
 
 .adminControls {
-  background: #20243a;
-  border: 1px solid #333750;
+  background: #0b1b13;
+  border: 1px solid #1f4a34;
   border-radius: 12px;
   padding: 14px;
   margin: 0 0 16px;
@@ -933,9 +933,9 @@ nav a {
 .adminInfoPanel {
   min-height: 120px;
   padding: 16px;
-  border: 1px solid #373b56;
+  border: 1px solid #1f4a34;
   border-radius: 12px;
-  background: #252941;
+  background: #0f2419;
 }
 
 .adminInfoPanel h3 {
@@ -978,9 +978,9 @@ nav a {
   gap: 10px;
   margin: 0 0 16px;
   padding: 14px;
-  border: 1px solid #333750;
+  border: 1px solid #1f4a34;
   border-radius: 12px;
-  background: #20243a;
+  background: #0b1b13;
 }
 
 .adminButtonRow {
@@ -994,8 +994,8 @@ nav a {
   min-height: 44px;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid #4d5578;
-  background: #2a2f4a;
+  border: 1px solid #2d6a4f;
+  background: #113822;
   color: #f7f8ff;
   font-weight: 700;
   cursor: pointer;
@@ -1038,19 +1038,19 @@ nav a {
 }
 
 .admin-csv-button {
-  background: #13a86b;
+  background: #0f9d58;
 }
 
 .admin-json-button {
-  background: #6f42c1;
+  background: #087f5b;
 }
 
 .admin-inventory-button {
-  background: #dc3545;
+  background: #0b7285;
 }
 
 .admin-password-button {
-  background: #007bff;
+  background: #1c7c54;
 }
 
 .adminDashboardShell h3 {
@@ -1064,7 +1064,7 @@ nav a {
 
 .adminDashboardShell hr {
   border: none;
-  border-top: 1px solid #373b56;
+  border-top: 1px solid #1f4a34;
 }
 
 .admin-advanced-filters {
@@ -1105,7 +1105,7 @@ nav a {
     height: auto;
     padding: 14px;
     border-right: none;
-    border-bottom: 1px solid #333750;
+    border-bottom: 1px solid #1f4a34;
   }
 
   .adminBrandMark {

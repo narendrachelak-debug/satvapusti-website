@@ -1071,7 +1071,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               style={{
                 width: "100%",
                 padding: "10px",
-                background: "#007bff",
+                background: "#0f9d58",
                 color: "white",
                 border: "none",
                 borderRadius: "6px",
@@ -1150,7 +1150,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
                       width: "100%",
                       padding: "5px",
                       marginTop: "5px",
-                      background: "#007bff",
+                      background: "#0f9d58",
                       color: "white",
                       border: "none",
                       borderRadius: "4px",
@@ -1369,7 +1369,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
 
 const pageStyle = {
   padding: 0,
-  background: "#151829",
+  background: "#07150f",
   minHeight: "100vh",
 };
 
@@ -1381,8 +1381,8 @@ const summaryGridStyle = {
 };
 
 const boxStyle = {
-  background: "#252941",
-  border: "1px solid #373b56",
+  background: "#0f2419",
+  border: "1px solid #1f4a34",
   borderRadius: "10px",
   padding: "14px 16px",
   minHeight: "78px",
@@ -1393,11 +1393,11 @@ const searchStyle = {
   width: "100%",
   padding: "12px",
   marginBottom: 0,
-  border: "1px solid #3b405f",
+  border: "1px solid #1f4a34",
   borderRadius: "8px",
   fontSize: "16px",
   boxSizing: "border-box",
-  background: "#1d2136",
+  background: "#0b1b13",
   color: "#f7f8ff",
 };
 
@@ -1411,11 +1411,11 @@ const filterGridStyle = {
 const filterInputStyle = {
   width: "100%",
   padding: "10px",
-  border: "1px solid #3b405f",
+  border: "1px solid #1f4a34",
   borderRadius: "6px",
   fontSize: "14px",
   boxSizing: "border-box",
-  background: "#1d2136",
+  background: "#0b1b13",
   color: "#f7f8ff",
 };
 
@@ -1427,8 +1427,8 @@ const reportsGridStyle = {
 };
 
 const reportBoxStyle = {
-  background: "#252941",
-  border: "1px solid #373b56",
+  background: "#0f2419",
+  border: "1px solid #1f4a34",
   borderRadius: "10px",
   padding: "15px",
   color: "#f7f8ff",
@@ -1443,20 +1443,20 @@ const templateButtonWrapStyle = {
 
 const smallButtonStyle = {
   padding: "7px 10px",
-  border: "1px solid #4d5578",
+  border: "1px solid #2d6a4f",
   borderRadius: "6px",
-  background: "#1d2136",
+  background: "#0b1b13",
   color: "#d8dcff",
   cursor: "pointer",
   fontSize: "12px",
 };
 
 const orderCardStyle = {
-  border: "1px solid #373b56",
+  border: "1px solid #1f4a34",
   borderRadius: "10px",
   padding: "14px",
   marginBottom: "12px",
-  background: "#252941",
+  background: "#0f2419",
   color: "#f7f8ff",
 };
 
@@ -1475,9 +1475,9 @@ const selectStyle = {
   padding: "8px",
   marginTop: "5px",
   minWidth: "220px",
-  background: "#1d2136",
+  background: "#0b1b13",
   color: "#f7f8ff",
-  border: "1px solid #3b405f",
+  border: "1px solid #1f4a34",
   borderRadius: "6px",
 };
 
@@ -1486,24 +1486,24 @@ const inputStyle = {
   width: "100%",
   padding: "10px",
   marginBottom: "8px",
-  border: "1px solid #3b405f",
+  border: "1px solid #1f4a34",
   borderRadius: "6px",
   boxSizing: "border-box",
-  background: "#1d2136",
+  background: "#0b1b13",
   color: "#f7f8ff",
 };
 
 const buttonStyle = {
   padding: "9px 14px",
-  border: "1px solid #4d5578",
+  border: "1px solid #2d6a4f",
   borderRadius: "6px",
   cursor: "pointer",
-  background: "#1d2136",
+  background: "#0b1b13",
   color: "#f7f8ff",
 };
 
 const productStyle = {
-  background: "#1d2136",
+  background: "#0b1b13",
   padding: "8px",
   borderRadius: "6px",
   marginBottom: "8px",
