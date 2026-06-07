@@ -549,7 +549,20 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
   };
 
   return (
-    <div style={pageStyle}>
+    <div className="adminDashboardShell" style={pageStyle}>
+      <aside className="adminSidebar">
+        <div className="adminBrandMark">SP</div>
+        <nav className="adminSidebarNav" aria-label="Admin sections">
+          <span className="active">Dashboard</span>
+          <span>Orders</span>
+          <span>Payments</span>
+          <span>Inventory</span>
+          <span>Reports</span>
+          <span>Customers</span>
+        </nav>
+      </aside>
+
+      <main className="adminMainPanel">
       <div className="adminTopBar">
         <h1>SatvaPusti Admin Panel</h1>
         <button
@@ -1176,13 +1189,14 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           </div>
         ))
       )}
+      </main>
     </div>
   );
 }
 
 const pageStyle = {
-  padding: "18px 24px 28px",
-  background: "#f4f6f8",
+  padding: 0,
+  background: "#151829",
   minHeight: "100vh",
 };
 
@@ -1194,22 +1208,24 @@ const summaryGridStyle = {
 };
 
 const boxStyle = {
-  background: "#fff",
-  border: "1px solid #e0e4e8",
-  borderRadius: "8px",
+  background: "#252941",
+  border: "1px solid #373b56",
+  borderRadius: "10px",
   padding: "14px 16px",
   minHeight: "78px",
-  boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
+  boxShadow: "0 12px 24px rgba(0, 0, 0, 0.14)",
 };
 
 const searchStyle = {
   width: "100%",
   padding: "12px",
   marginBottom: 0,
-  border: "1px solid #ccc",
+  border: "1px solid #3b405f",
   borderRadius: "8px",
   fontSize: "16px",
   boxSizing: "border-box",
+  background: "#1d2136",
+  color: "#f7f8ff",
 };
 
 const filterGridStyle = {
@@ -1222,10 +1238,12 @@ const filterGridStyle = {
 const filterInputStyle = {
   width: "100%",
   padding: "10px",
-  border: "1px solid #ccc",
+  border: "1px solid #3b405f",
   borderRadius: "6px",
   fontSize: "14px",
   boxSizing: "border-box",
+  background: "#1d2136",
+  color: "#f7f8ff",
 };
 
 const reportsGridStyle = {
@@ -1236,10 +1254,11 @@ const reportsGridStyle = {
 };
 
 const reportBoxStyle = {
-  background: "#fff",
-  border: "1px solid #ddd",
+  background: "#252941",
+  border: "1px solid #373b56",
   borderRadius: "10px",
   padding: "15px",
+  color: "#f7f8ff",
 };
 
 const templateButtonWrapStyle = {
@@ -1251,19 +1270,21 @@ const templateButtonWrapStyle = {
 
 const smallButtonStyle = {
   padding: "7px 10px",
-  border: "1px solid #ddd",
+  border: "1px solid #4d5578",
   borderRadius: "6px",
-  background: "#fff",
+  background: "#1d2136",
+  color: "#d8dcff",
   cursor: "pointer",
   fontSize: "12px",
 };
 
 const orderCardStyle = {
-  border: "1px solid #ddd",
+  border: "1px solid #373b56",
   borderRadius: "10px",
   padding: "14px",
   marginBottom: "12px",
-  background: "#fff",
+  background: "#252941",
+  color: "#f7f8ff",
 };
 
 const gridStyle = {
@@ -1281,6 +1302,10 @@ const selectStyle = {
   padding: "8px",
   marginTop: "5px",
   minWidth: "220px",
+  background: "#1d2136",
+  color: "#f7f8ff",
+  border: "1px solid #3b405f",
+  borderRadius: "6px",
 };
 
 const inputStyle = {
@@ -1288,21 +1313,24 @@ const inputStyle = {
   width: "100%",
   padding: "10px",
   marginBottom: "8px",
-  border: "1px solid #ccc",
+  border: "1px solid #3b405f",
   borderRadius: "6px",
   boxSizing: "border-box",
+  background: "#1d2136",
+  color: "#f7f8ff",
 };
 
 const buttonStyle = {
   padding: "9px 14px",
-  border: "1px solid #ccc",
+  border: "1px solid #4d5578",
   borderRadius: "6px",
   cursor: "pointer",
-  background: "#f5f5f5",
+  background: "#1d2136",
+  color: "#f7f8ff",
 };
 
 const productStyle = {
-  background: "#f9f9f9",
+  background: "#1d2136",
   padding: "8px",
   borderRadius: "6px",
   marginBottom: "8px",
