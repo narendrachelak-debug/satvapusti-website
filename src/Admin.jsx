@@ -677,7 +677,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               onClick={() => setShowInventoryModal(true)}
               className="admin-action-button admin-inventory-button"
             >
-              ðŸ“¦ Manage Inventory
+              Manage Inventory
             </button>
           )}
           {activeAdminView === "customers" && (
@@ -1173,193 +1173,186 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
             <h2>{activeAdminView === "payments" ? "Payment Orders" : "Orders"}</h2>
             <span>{visibleOrders.length} visible</span>
           </div>
-      {visibleOrders.length === 0 ? (
-        <p>No orders found.</p>
-      ) : (
-        visibleOrders.map((order) => (
-          <div key={order._id} style={orderCardStyle}>
-            <h3>{order.orderId}</h3>
-
-            {order.paymentMethod === "UPI" &&
-              order.paymentStatus !== "Paid" && (
-                <p style={alertStyle}>🔴 Verify UPI Payment</p>
-              )}
-
-            <div style={gridStyle}>
-              <div>
-                <p><b>Customer:</b> {order.customerName}</p>
-                <p><b>Mobile:</b> {order.mobile}</p>
-                <p><b>Email:</b> {order.email}</p>
-                <p><b>Address:</b> {order.address}</p>
-                <p><b>City:</b> {order.city}</p>
-                <p><b>Pincode:</b> {order.pincode}</p>
+          {visibleOrders.length === 0 ? (
+            <p>No orders found.</p>
+          ) : (
+            <div className="adminOrderList">
+              <div className="adminOrderHeader">
+                <span>Order</span>
+                <span>Customer</span>
+                <span>Amount</span>
+                <span>Payment</span>
+                <span>Status</span>
+                <span>Action</span>
               </div>
 
-              <div>
-                <p><b>Order Date:</b> {formatDate(order.createdAt)}</p>
-                <p><b>Payment Date:</b> {formatDate(order.paymentDate)}</p>
-                <p><b>Delivery Date:</b> {formatDate(order.deliveryDate)}</p>
-                <p><b>Amount:</b> ₹{order.totalAmount}</p>
-                <p><b>Payment Method:</b> {order.paymentMethod}</p>
-
-                {order.paymentMethod === "UPI" && (
-                  <p><b>UPI Note:</b> {order.orderId}|{order.totalAmount}</p>
-                )}
-              </div>
-            </div>
-
-            <hr />
-
-            <label><b>Payment Status</b></label>
-            <br />
-           <select
-  value={order.paymentStatus || "Pending"}
-  onChange={(e) => {
-    const updatedOrder = {
-      ...order,
-      paymentStatus: e.target.value,
-    };
-
-    updateLocalOrder(order._id, "paymentStatus", e.target.value);
-    saveOrder(updatedOrder);
-  }}
-  style={selectStyle}
->
-              <option>Pending</option>
-              <option>Paid</option>
-              <option>Failed</option>
-            </select>
-
-            <br />
-            <br />
-
-            <label><b>Order Status</b></label>
-            <br />
-            <select
-  value={order.orderStatus || "Received"}
-  onChange={(e) => {
-    const updatedOrder = {
-      ...order,
-      orderStatus: e.target.value,
-    };
-
-    updateLocalOrder(order._id, "orderStatus", e.target.value);
-    saveOrder(updatedOrder);
-  }}
-  style={selectStyle}
->
-              <option>Received</option>
-              <option>Processing</option>
-              <option>Packed</option>
-              <option>Shipped</option>
-              <option>Delivered</option>
-              <option>Cancelled</option>
-            </select>
-
-            <br />
-            <br />
-
-            <input
-              placeholder="Courier Name"
-              value={order.courierName || ""}
-              onChange={(e) =>
-                updateLocalOrder(order._id, "courierName", e.target.value)
-              }
-              style={inputStyle}
-            />
-
-            <input
-              placeholder="Tracking Number"
-              value={order.trackingNumber || ""}
-              onChange={(e) =>
-                updateLocalOrder(order._id, "trackingNumber", e.target.value)
-              }
-              style={inputStyle}
-            />
-
-            <input
-              placeholder="Tracking URL"
-              value={order.trackingUrl || ""}
-              onChange={(e) =>
-                updateLocalOrder(order._id, "trackingUrl", e.target.value)
-              }
-              style={inputStyle}
-            />
-
-            <textarea
-              placeholder="Customer tracking message"
-              value={order.customerTrackingMessage || ""}
-              onChange={(e) =>
-                updateLocalOrder(order._id, "customerTrackingMessage", e.target.value)
-              }
-              style={{ ...inputStyle, minHeight: "78px" }}
-            />
-
-            {Array.isArray(order.items) && order.items.length > 0 && (
-              <>
-                <hr />
-                <h4>Products</h4>
-
-                {order.items.map((item, index) => (
-                  <div key={index} style={productStyle}>
-                    <p><b>{item.name}</b></p>
-                    <p>
-                      Pack: {item.weight} | Qty: {item.quantity} | Price: ₹
-                      {item.offer}
-                    </p>
-                    <p>
-                      Amount: ₹
-                      {Number(item.offer || 0) * Number(item.quantity || 0)}
-                    </p>
+              {visibleOrders.map((order) => (
+                <div key={order._id} className="adminOrderCard">
+                  <div className="adminOrderSummary">
+                    <div>
+                      <h3>{order.orderId}</h3>
+                      <p>{formatDate(order.createdAt)}</p>
+                    </div>
+                    <div>
+                      <b>{order.customerName}</b>
+                      <p>{order.mobile}</p>
+                    </div>
+                    <div>
+                      <b>₹{Number(order.totalAmount || 0).toLocaleString()}</b>
+                      <p>{order.paymentMethod || "N/A"}</p>
+                    </div>
+                    <div>
+                      <span className={"adminStatusPill status-" + String(order.paymentStatus || "Pending").toLowerCase().replace(/\s+/g, "-")}>
+                        {order.paymentStatus || "Pending"}
+                      </span>
+                      {order.paymentMethod === "UPI" && order.paymentStatus !== "Paid" && (
+                        <p className="adminAlertText">Verify UPI</p>
+                      )}
+                    </div>
+                    <div>
+                      <span className={"adminStatusPill status-" + String(order.orderStatus || "Received").toLowerCase().replace(/\s+/g, "-")}>
+                        {order.orderStatus || "Received"}
+                      </span>
+                      <p>{formatDate(order.deliveryDate)}</p>
+                    </div>
+                    <div className="adminInlineActions">
+                      <button onClick={() => saveOrder(order)} disabled={savingId === order._id}>
+                        {savingId === order._id ? "Saving..." : "Save"}
+                      </button>
+                      <button onClick={() => openCustomerWhatsApp(order)}>WhatsApp</button>
+                    </div>
                   </div>
-                ))}
-              </>
-            )}
 
-            <hr />
+                  <div className="adminOrderDetails">
+                    <div className="adminDetailPanel">
+                      <h4>Customer</h4>
+                      <p><b>Email:</b> {order.email || "N/A"}</p>
+                      <p><b>Address:</b> {order.address || "N/A"}</p>
+                      <p><b>City:</b> {order.city || "N/A"} | <b>Pincode:</b> {order.pincode || "N/A"}</p>
+                      {order.paymentMethod === "UPI" && (
+                        <p><b>UPI Note:</b> {order.orderId}|{order.totalAmount}</p>
+                      )}
+                    </div>
 
-            <button
-              onClick={() => saveOrder(order)}
-              style={buttonStyle}
-              disabled={savingId === order._id}
-            >
-              {savingId === order._id ? "Saving..." : "Save Changes"}
-            </button>
+                    <div className="adminDetailPanel">
+                      <h4>Update</h4>
+                      <label><b>Payment Status</b></label>
+                      <select
+                        value={order.paymentStatus || "Pending"}
+                        onChange={(e) => {
+                          const updatedOrder = {
+                            ...order,
+                            paymentStatus: e.target.value,
+                          };
 
-            <button
-              onClick={() => openCustomerWhatsApp(order)}
-              style={{ ...buttonStyle, marginLeft: "10px" }}
-            >
-              WhatsApp Customer
-            </button>
+                          updateLocalOrder(order._id, "paymentStatus", e.target.value);
+                          saveOrder(updatedOrder);
+                        }}
+                        style={selectStyle}
+                      >
+                        <option>Pending</option>
+                        <option>Paid</option>
+                        <option>Failed</option>
+                      </select>
 
-            <button
-              onClick={() => copyAddress(order)}
-              style={{ ...buttonStyle, marginLeft: "10px" }}
-            >
-              Copy Address
-            </button>
+                      <label><b>Order Status</b></label>
+                      <select
+                        value={order.orderStatus || "Received"}
+                        onChange={(e) => {
+                          const updatedOrder = {
+                            ...order,
+                            orderStatus: e.target.value,
+                          };
 
-            <div style={templateButtonWrapStyle}>
-              <button onClick={() => openCustomerWhatsApp(order, "received")} style={smallButtonStyle}>
-                Order Received
-              </button>
-              <button onClick={() => openCustomerWhatsApp(order, "payment")} style={smallButtonStyle}>
-                Payment Confirmed
-              </button>
-              <button onClick={() => openCustomerWhatsApp(order, "processing")} style={smallButtonStyle}>
-                Processing
-              </button>
-              <button onClick={() => openCustomerWhatsApp(order, "shipped")} style={smallButtonStyle}>
-                Shipped
-              </button>
-              <button onClick={() => openCustomerWhatsApp(order, "delivered")} style={smallButtonStyle}>
-                Delivered
-              </button>
+                          updateLocalOrder(order._id, "orderStatus", e.target.value);
+                          saveOrder(updatedOrder);
+                        }}
+                        style={selectStyle}
+                      >
+                        <option>Received</option>
+                        <option>Processing</option>
+                        <option>Packed</option>
+                        <option>Shipped</option>
+                        <option>Delivered</option>
+                        <option>Cancelled</option>
+                      </select>
+                    </div>
+
+                    <div className="adminDetailPanel">
+                      <h4>Shipping</h4>
+                      <input
+                        placeholder="Courier Name"
+                        value={order.courierName || ""}
+                        onChange={(e) =>
+                          updateLocalOrder(order._id, "courierName", e.target.value)
+                        }
+                        style={inputStyle}
+                      />
+
+                      <input
+                        placeholder="Tracking Number"
+                        value={order.trackingNumber || ""}
+                        onChange={(e) =>
+                          updateLocalOrder(order._id, "trackingNumber", e.target.value)
+                        }
+                        style={inputStyle}
+                      />
+
+                      <input
+                        placeholder="Tracking URL"
+                        value={order.trackingUrl || ""}
+                        onChange={(e) =>
+                          updateLocalOrder(order._id, "trackingUrl", e.target.value)
+                        }
+                        style={inputStyle}
+                      />
+                    </div>
+                  </div>
+
+                  <textarea
+                    placeholder="Customer tracking message"
+                    value={order.customerTrackingMessage || ""}
+                    onChange={(e) =>
+                      updateLocalOrder(order._id, "customerTrackingMessage", e.target.value)
+                    }
+                    style={{ ...inputStyle, minHeight: "78px" }}
+                  />
+
+                  {Array.isArray(order.items) && order.items.length > 0 && (
+                    <div className="adminProductsStrip">
+                      {order.items.map((item, index) => (
+                        <div key={index} className="adminProductChip">
+                          <b>{item.name}</b>
+                          <span>{item.weight} | Qty {item.quantity} | ₹{item.offer}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="adminOrderFooter">
+                    <button onClick={() => copyAddress(order)} style={buttonStyle}>
+                      Copy Address
+                    </button>
+                    <button onClick={() => openCustomerWhatsApp(order, "received")} style={smallButtonStyle}>
+                      Order Received
+                    </button>
+                    <button onClick={() => openCustomerWhatsApp(order, "payment")} style={smallButtonStyle}>
+                      Payment Confirmed
+                    </button>
+                    <button onClick={() => openCustomerWhatsApp(order, "processing")} style={smallButtonStyle}>
+                      Processing
+                    </button>
+                    <button onClick={() => openCustomerWhatsApp(order, "shipped")} style={smallButtonStyle}>
+                      Shipped
+                    </button>
+                    <button onClick={() => openCustomerWhatsApp(order, "delivered")} style={smallButtonStyle}>
+                      Delivered
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        ))
-      )}
+          )}
         </>
       )}
       </main>

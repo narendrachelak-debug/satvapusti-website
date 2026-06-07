@@ -1067,6 +1067,161 @@ nav a {
   border-top: 1px solid #1f4a34;
 }
 
+.adminOrderList {
+  display: grid;
+  gap: 12px;
+}
+
+.adminOrderHeader,
+.adminOrderSummary {
+  display: grid;
+  grid-template-columns: 1.1fr 1.2fr 0.8fr 0.9fr 0.9fr 0.8fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.adminOrderHeader {
+  padding: 0 16px 2px;
+  color: #9da4bf;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.adminOrderCard {
+  padding: 16px;
+  border: 1px solid #1f4a34;
+  border-radius: 12px;
+  background: #0f2419;
+}
+
+.adminOrderSummary h3,
+.adminOrderSummary p,
+.adminOrderSummary b {
+  margin: 0;
+}
+
+.adminOrderSummary h3 {
+  font-size: 18px;
+}
+
+.adminOrderSummary p {
+  margin-top: 5px;
+  color: #9da4bf;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.adminStatusPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #163927;
+  color: #b9f6ca;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.status-pending,
+.status-awaiting-verification {
+  background: #3f3515;
+  color: #ffe08a;
+}
+
+.status-paid,
+.status-delivered {
+  background: #123d25;
+  color: #86efac;
+}
+
+.status-failed,
+.status-cancelled {
+  background: #471c24;
+  color: #ffb3c1;
+}
+
+.status-processing,
+.status-packed,
+.status-shipped,
+.status-received {
+  background: #17364a;
+  color: #a5d8ff;
+}
+
+.adminAlertText {
+  color: #ffd166 !important;
+  font-weight: 800;
+}
+
+.adminInlineActions {
+  display: grid;
+  gap: 8px;
+}
+
+.adminInlineActions button {
+  min-height: 34px;
+  border: 1px solid #2d6a4f;
+  border-radius: 8px;
+  background: #113822;
+  color: #f7f8ff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.adminInlineActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.adminOrderDetails {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.adminDetailPanel {
+  padding: 12px;
+  border: 1px solid #1f4a34;
+  border-radius: 10px;
+  background: #0b1b13;
+}
+
+.adminDetailPanel h4 {
+  margin: 0 0 10px;
+  color: #f7f8ff;
+}
+
+.adminDetailPanel p {
+  margin: 6px 0;
+  line-height: 1.45;
+}
+
+.adminProductsStrip,
+.adminOrderFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.adminProductChip {
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+  padding: 9px 10px;
+  border: 1px solid #1f4a34;
+  border-radius: 10px;
+  background: #0b1b13;
+}
+
+.adminProductChip span {
+  color: #9da4bf;
+  font-size: 13px;
+}
+
 .admin-advanced-filters {
   background: #fff;
   border: 1px solid #ddd;
@@ -1134,6 +1289,15 @@ nav a {
 
   .adminButtonRow {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .adminOrderHeader {
+    display: none;
+  }
+
+  .adminOrderSummary,
+  .adminOrderDetails {
+    grid-template-columns: 1fr;
   }
 }
 
