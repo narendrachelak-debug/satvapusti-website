@@ -187,6 +187,24 @@ Amount: ₹${order.totalAmount}`;
   return (
     <div style={pageStyle}>
       <h1>SatvaPusti Admin Panel</h1>
+      <button
+  onClick={() => {
+    localStorage.removeItem("satvapustiAdminToken");
+    localStorage.removeItem("satvapustiLoginTime");
+    window.location.href = "/?page=admin";
+  }}
+  style={{
+    padding: "8px 14px",
+    marginBottom: "15px",
+    background: "#b00020",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+  }}
+>
+  Logout
+</button>
 
       <div style={summaryGridStyle}>
         <div style={boxStyle}>
