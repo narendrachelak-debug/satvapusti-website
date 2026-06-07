@@ -45,24 +45,14 @@ const orderSchema = new mongoose.Schema(
     },
 
     paymentDate: {
-  type: Date,
-  default: null,
-},
+      type: Date,
+      default: null,
+    },
 
-deliveryDate: {
-  type: Date,
-  default: null,
-},
-
-paymentDate: {
-  type: Date,
-  default: null,
-},
-
-deliveryDate: {
-  type: Date,
-  default: null,
-},
+    deliveryDate: {
+      type: Date,
+      default: null,
+    },
 
     courierName: { type: String, default: "" },
     trackingNumber: { type: String, default: "" },

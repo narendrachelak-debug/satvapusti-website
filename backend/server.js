@@ -29,6 +29,29 @@ app.post("/api/admin/login", (req, res) => {
   });
 });
 
+app.post("/api/admin/verify-password", (req, res) => {
+  const { currentPassword } = req.body;
+
+  if (!currentPassword) {
+    return res.status(400).json({
+      success: false,
+      message: "Password required",
+    });
+  }
+
+  if (currentPassword === process.env.ADMIN_PASSWORD) {
+    return res.json({
+      success: true,
+      message: "Password verified",
+    });
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: "Invalid password",
+  });
+});
+
 app.use("/api/orders", orderRoutes);
 
 mongoose

@@ -14,6 +14,11 @@ export default function Admin() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [savingId, setSavingId] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
 
   const loadOrders = async () => {
     try {
@@ -105,21 +110,34 @@ alert("Order updated successfully");
   };
   const filteredOrders = useMemo(() => {
     const q = search.toLowerCase().trim();
+    let filtered = orders;
 
-    if (!q) return orders;
+    if (q) {
+      filtered = orders.filter((order) => {
+        return (
+          String(order.orderId || "").toLowerCase().includes(q) ||
+          String(order.customerName || "").toLowerCase().includes(q) ||
+          String(order.mobile || "").toLowerCase().includes(q) ||
+          String(order.email || "").toLowerCase().includes(q) ||
+          String(order.paymentMethod || "").toLowerCase().includes(q) ||
+          String(order.paymentStatus || "").toLowerCase().includes(q) ||
+          String(order.orderStatus || "").toLowerCase().includes(q)
+        );
+      });
+    }
 
-    return orders.filter((order) => {
-      return (
-        String(order.orderId || "").toLowerCase().includes(q) ||
-        String(order.customerName || "").toLowerCase().includes(q) ||
-        String(order.mobile || "").toLowerCase().includes(q) ||
-        String(order.email || "").toLowerCase().includes(q) ||
-        String(order.paymentMethod || "").toLowerCase().includes(q) ||
-        String(order.paymentStatus || "").toLowerCase().includes(q) ||
-        String(order.orderStatus || "").toLowerCase().includes(q)
-      );
-    });
-  }, [orders, search]);
+    if (dateFrom || dateTo) {
+      filtered = filtered.filter((order) => {
+        const orderDate = new Date(order.createdAt);
+        const from = dateFrom ? new Date(dateFrom) : new Date(0);
+        const to = dateTo ? new Date(dateTo) : new Date();
+        to.setHours(23, 59, 59, 999);
+        return orderDate >= from && orderDate <= to;
+      });
+    }
+
+    return filtered;
+  }, [orders, search, dateFrom, dateTo]);
 
   const totalOrders = orders.length;
 
@@ -182,6 +200,39 @@ Amount: ₹${order.totalAmount}`;
       `https://wa.me/${finalMobile}?text=${encodeURIComponent(message)}`,
       "_blank"
     );
+  };
+
+  const verifyPassword = async () => {
+    if (!currentPassword) {
+      setPasswordMessage("Please enter your password");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/admin/verify-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ currentPassword }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setPasswordMessage("✅ Password verified! To change password, update ADMIN_PASSWORD in your .env file and redeploy.");
+        setCurrentPassword("");
+        setTimeout(() => {
+          setShowPasswordModal(false);
+          setPasswordMessage("");
+        }, 3000);
+      } else {
+        setPasswordMessage("❌ " + (data.message || "Incorrect password"));
+      }
+    } catch (error) {
+      setPasswordMessage("❌ Error verifying password");
+      console.error(error);
+    }
   };
 
   return (
@@ -256,6 +307,105 @@ Amount: ₹${order.totalAmount}`;
         onChange={(e) => setSearch(e.target.value)}
         style={searchStyle}
       />
+
+      <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          style={{ ...searchStyle, flex: 1, minWidth: "150px", marginBottom: 0 }}
+          placeholder="From Date"
+        />
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          style={{ ...searchStyle, flex: 1, minWidth: "150px", marginBottom: 0 }}
+          placeholder="To Date"
+        />
+        <button
+          onClick={() => setShowPasswordModal(true)}
+          style={{
+            padding: "12px 14px",
+            background: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "14px",
+          }}
+        >
+          🔐 Change Password
+        </button>
+      </div>
+
+      {showPasswordModal && (
+        <div style={{ ...modalBgStyle }}>
+          <div style={{ ...modalBoxStyle, maxWidth: "400px" }}>
+            <button
+              onClick={() => {
+                setShowPasswordModal(false);
+                setPasswordMessage("");
+                setCurrentPassword("");
+              }}
+              style={{
+                position: "absolute",
+                top: "10px",
+                right: "10px",
+                background: "none",
+                border: "none",
+                fontSize: "24px",
+                cursor: "pointer",
+              }}
+            >
+              ×
+            </button>
+
+            <h2>🔐 Change Password</h2>
+            <p style={{ color: "#666", fontSize: "14px" }}>
+              Enter your current password to verify. To set a new password, update ADMIN_PASSWORD in your .env file.
+            </p>
+
+            <input
+              type="password"
+              placeholder="Enter current password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                marginBottom: "10px",
+                border: "1px solid #ccc",
+                borderRadius: "6px",
+                boxSizing: "border-box",
+              }}
+            />
+
+            {passwordMessage && (
+              <p style={{ marginBottom: "10px", fontSize: "14px", color: passwordMessage.includes("✅") ? "green" : "red" }}>
+                {passwordMessage}
+              </p>
+            )}
+
+            <button
+              onClick={verifyPassword}
+              style={{
+                width: "100%",
+                padding: "10px",
+                background: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "14px",
+              }}
+            >
+              Verify Password
+            </button>
+          </div>
+        </div>
+      )}
+
       {filteredOrders.length === 0 ? (
         <p>No orders found.</p>
       ) : (
@@ -498,4 +648,27 @@ const productStyle = {
   padding: "8px",
   borderRadius: "6px",
   marginBottom: "8px",
+};
+
+const modalBgStyle = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  background: "rgba(0,0,0,0.5)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 1000,
+};
+
+const modalBoxStyle = {
+  background: "#fff",
+  padding: "20px",
+  borderRadius: "10px",
+  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+  position: "relative",
+  maxWidth: "500px",
+  width: "90%",
 };
