@@ -27,12 +27,10 @@ export default function AdminLogin() {
         return;
       }
 
-      localStorage.setItem(
-        "satvapustiAdminToken",
-        "admin_logged_in"
-      );
+     localStorage.setItem("satvapustiAdminToken", "admin_logged_in");
+localStorage.setItem("satvapustiLoginTime", Date.now());
 
-      window.location.href = "/?page=admin";
+window.location.href = "/?page=admin";
     } catch (error) {
       console.error(error);
       alert("Login failed");
