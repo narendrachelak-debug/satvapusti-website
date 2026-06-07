@@ -61,20 +61,25 @@ nav a {
 
 .hero {
   width: 100%;
+  height: calc(100vh - 110px);
+  min-height: 420px;
+  max-height: 820px;
   overflow: hidden;
   background: #fff;
 }
 
 .slider {
   display: flex;
-  width: 300vw;
+  width: 100%;
+  height: 100%;
   animation: slide 15s infinite;
 }
 
 .slider img {
-  flex: 0 0 100vw;
+  flex: 0 0 100%;
   width: 100%;
-  height: auto;
+  min-width: 100%;
+  height: 100%;
   max-width: 100%;
   object-fit: contain;
   display: block;
@@ -82,8 +87,8 @@ nav a {
 
 @keyframes slide {
   0%, 28% { transform: translateX(0); }
-  33%, 61% { transform: translateX(-100vw); }
-  66%, 94% { transform: translateX(-200vw); }
+  33%, 61% { transform: translateX(-100%); }
+  66%, 94% { transform: translateX(-200%); }
   100% { transform: translateX(0); }
 }
 
@@ -436,10 +441,14 @@ nav a {
     margin-top: 4px;
   }
 
-  .slider img {
-    width: 100vw;
+  .hero {
     height: auto;
-    object-fit: contain;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .slider img {
+    height: auto;
   }
 }
 .cartFloatBtn {
