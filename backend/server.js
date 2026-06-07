@@ -13,6 +13,21 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("SatvaPusti Backend Running");
 });
+app.post("/api/admin/login", (req, res) => {
+  const { password } = req.body;
+
+  if (password === process.env.ADMIN_PASSWORD) {
+    return res.json({
+      success: true,
+      token: "satvapusti-admin-login",
+    });
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: "Invalid admin password",
+  });
+});
 
 app.use("/api/orders", orderRoutes);
 
