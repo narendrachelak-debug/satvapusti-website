@@ -550,25 +550,19 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
 
   return (
     <div style={pageStyle}>
-      <h1>SatvaPusti Admin Panel</h1>
-      <button
-  onClick={() => {
-    localStorage.removeItem("satvapustiAdminToken");
-    localStorage.removeItem("satvapustiLoginTime");
-    window.location.href = "/?page=admin";
-  }}
-  style={{
-    padding: "8px 14px",
-    marginBottom: "15px",
-    background: "#b00020",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-  }}
->
-  Logout
-</button>
+      <div className="adminTopBar">
+        <h1>SatvaPusti Admin Panel</h1>
+        <button
+          className="adminLogoutBtn"
+          onClick={() => {
+            localStorage.removeItem("satvapustiAdminToken");
+            localStorage.removeItem("satvapustiLoginTime");
+            window.location.href = "/?page=admin";
+          }}
+        >
+          Logout
+        </button>
+      </div>
 
       <div className="admin-summary-grid" style={{ marginBottom: "18px" }}>
         <div style={boxStyle}>
@@ -643,14 +637,10 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           <b>Rs. {Math.round(averageOrderValue).toLocaleString()}</b>
         </div>
 
-
-        <div style={boxStyle}>
-          ✅ Paid Orders
-          <br />
-          <b>{totalPaidOrders}</b>
-        </div>
       </div>
 
+      <div className="adminControls">
+        <div className="adminSearchRow">
       <input
         placeholder="Search Order ID, Mobile, Name..."
         value={search}
@@ -664,6 +654,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
       >
         {showAdvancedFilters ? "Hide Advanced Filters" : "Advanced Filters"}
       </button>
+        </div>
 
       <div className="adminButtonRow">
         <button
@@ -690,6 +681,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         >
           🔐 Change Password
         </button>
+      </div>
       </div>
 
       {showAdvancedFilters && (
@@ -1189,8 +1181,8 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
 }
 
 const pageStyle = {
-  padding: "20px",
-  background: "#f7f7f7",
+  padding: "18px 24px 28px",
+  background: "#f4f6f8",
   minHeight: "100vh",
 };
 
@@ -1203,16 +1195,17 @@ const summaryGridStyle = {
 
 const boxStyle = {
   background: "#fff",
-  border: "1px solid #ddd",
-  borderRadius: "10px",
-  padding: "12px",
-  minHeight: "100px",
+  border: "1px solid #e0e4e8",
+  borderRadius: "8px",
+  padding: "14px 16px",
+  minHeight: "78px",
+  boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
 };
 
 const searchStyle = {
   width: "100%",
   padding: "12px",
-  marginBottom: "20px",
+  marginBottom: 0,
   border: "1px solid #ccc",
   borderRadius: "8px",
   fontSize: "16px",
