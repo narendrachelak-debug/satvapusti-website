@@ -456,7 +456,10 @@ order.whatsappMessage = message;
   return (
     <div>
       <header className="header">
-        <div className="logo">🌿 SatvaPusti Nutrition</div>
+        <div className="logo">
+          <span className="logoMark">SP</span>
+          <span>SatvaPusti Nutrition</span>
+        </div>
 
         <nav>
           <a href="#products">Products</a>
@@ -475,22 +478,41 @@ order.whatsappMessage = message;
       </header>
 
       <button className="cartFloatBtn" onClick={() => setShowCart(true)}>
-        🛒 Cart ({cartCount})
+        Cart ({cartCount})
       </button>
 
       <section className="hero">
-        <div className="slider">
-          {banners.map((banner) => (
-            <img key={banner} src={banner} alt="SatvaPusti Banner" />
-          ))}
+        <div className="heroFrame">
+          <div className="slider">
+            {banners.map((banner) => (
+              <img key={banner} src={banner} alt="SatvaPusti Banner" />
+            ))}
+          </div>
+          <div className="heroDots" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
         </div>
       </section>
 
       <section className="trust">
-        <div>🌿 Real Ingredients</div>
-        <div>🚫 No Artificial Colours</div>
-        <div>✅ No Added Preservatives</div>
-        <div>📦 Fresh Batch Production</div>
+        <div className="trustItem">
+          <b>Real Ingredients</b>
+          <span>Made with familiar kitchen nutrition</span>
+        </div>
+        <div className="trustItem">
+          <b>No Artificial Colours</b>
+          <span>Clean daily nutrition for families</span>
+        </div>
+        <div className="trustItem">
+          <b>No Added Preservatives</b>
+          <span>Fresh batch production process</span>
+        </div>
+        <div className="trustItem">
+          <b>COD + UPI</b>
+          <span>Easy ordering with quick support</span>
+        </div>
       </section>
 
       <section id="products" className="section">
@@ -511,6 +533,10 @@ order.whatsappMessage = message;
 
             return (
               <div className="productCard" key={product.id}>
+                <div className="productBadgeRow">
+                  <span>Best Seller</span>
+                  <span>Fresh Stock</span>
+                </div>
                 <h3>{product.name}</h3>
                 <h4>{product.subtitle}</h4>
                 <p>{product.desc}</p>

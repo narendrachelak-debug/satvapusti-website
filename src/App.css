@@ -5,38 +5,64 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #fffaf0;
+  background: #f7fbf3;
   color: #14351f;
 }
 
 .header {
   min-height: 82px;
-  padding: 14px 6%;
+  padding: 12px 6%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
   position: sticky;
   top: 0;
-  z-index: 20;
-  box-shadow: 0 2px 14px #0002;
+  z-index: 50;
+  box-shadow: 0 10px 30px rgba(8, 70, 34, 0.1);
 }
 
 .logo {
-  font-size: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 30px;
   font-weight: 900;
   color: #007a3d;
 }
 
+.logoMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #008037, #8fcb3f);
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 10px 22px rgba(0, 128, 55, 0.25);
+}
+
 nav {
   display: flex;
-  gap: 24px;
+  align-items: center;
+  gap: 8px;
 }
 
 nav a {
   color: #14351f;
   text-decoration: none;
   font-weight: 800;
+  padding: 10px 12px;
+  border-radius: 999px;
+}
+
+nav a:hover,
+.profileNavBtn:hover {
+  background: #eef8e7;
+  color: #007a3d;
 }
 
 .btn,
@@ -53,6 +79,7 @@ nav a {
   display: inline-block;
   cursor: pointer;
   font-size: 15px;
+  box-shadow: 0 10px 22px rgba(0, 128, 55, 0.18);
 }
 
 .upiBtn {
@@ -64,6 +91,15 @@ nav a {
   height: calc(100vh - 110px);
   min-height: 420px;
   max-height: 820px;
+  padding: 16px 0 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #f7fbf3 0%, #ffffff 100%);
+}
+
+.heroFrame {
+  position: relative;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   background: #fff;
 }
@@ -85,6 +121,32 @@ nav a {
   display: block;
 }
 
+.heroDots {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  display: flex;
+  gap: 8px;
+  transform: translateX(-50%);
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 8px 20px rgba(20, 53, 31, 0.15);
+}
+
+.heroDots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9bc77c;
+}
+
+.heroDots span:first-child {
+  width: 20px;
+  border-radius: 999px;
+  background: #008037;
+}
+
 @keyframes slide {
   0%, 28% { transform: translateX(0); }
   33%, 61% { transform: translateX(-100%); }
@@ -93,18 +155,40 @@ nav a {
 }
 
 .trust {
-  background: #004f28;
+  background: #063d22;
   color: white;
-  padding: 26px 6%;
+  padding: 18px 6%;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  text-align: center;
-  font-weight: 900;
+  gap: 12px;
+}
+
+.trustItem {
+  min-height: 82px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.trustItem b,
+.trustItem span {
+  display: block;
+}
+
+.trustItem b {
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+
+.trustItem span {
+  color: #d8f5df;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .section {
-  padding: 60px 6%;
+  padding: 68px 6%;
   text-align: center;
 }
 
@@ -116,27 +200,52 @@ nav a {
 
 .sectionText {
   font-size: 18px;
-  margin-bottom: 36px;
+  max-width: 640px;
+  margin: 0 auto 36px;
+  color: #5f6f60;
 }
 
 .productSlider {
   display: flex;
-  gap: 30px;
+  gap: 24px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  padding: 20px 0 40px;
+  padding: 20px 2px 42px;
+  scrollbar-color: #008037 #dff0d6;
 }
 
 .productCard {
   min-width: 430px;
   max-width: 430px;
   scroll-snap-align: center;
-  background: #fff;
-  border: 2px solid #e7c76f;
-  border-radius: 22px;
-  padding: 30px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfff6 100%);
+  border: 1px solid #d8e9c9;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 18px 42px rgba(20, 53, 31, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.productCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 54px rgba(20, 53, 31, 0.16);
+}
+
+.productBadgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.productBadgeRow span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #eef8e7;
+  color: #007a3d;
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .productCard h3 {
@@ -147,14 +256,22 @@ nav a {
 
 .productCard h4 {
   color: #b46b00;
-  margin: 10px 0;
+  margin: 8px 0;
+}
+
+.productCard p {
+  color: #5f6f60;
+  line-height: 1.45;
 }
 
 .mainProductImg {
   width: 100%;
-  height: 280px;
+  height: 260px;
   object-fit: contain;
-  margin: 20px 0;
+  margin: 14px 0 18px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f8fbf1;
 }
 
 .weightButtons {
@@ -180,13 +297,22 @@ nav a {
 }
 
 .priceBox {
-  background: #fff5d9;
-  border: 1px solid #e7c76f;
-  border-radius: 16px;
-  padding: 12px;
+  background: #fff8df;
+  border: 1px solid #ead083;
+  border-radius: 14px;
+  padding: 12px 14px;
   margin: 15px 0;
   font-weight: 900;
-  font-size: 18px;
+  font-size: 16px;
+  text-align: left;
+}
+
+.priceBox p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 8px 0;
 }
 
 .qtyBox {
@@ -463,14 +589,14 @@ nav a {
   padding: 14px 22px;
   font-size: 16px;
   font-weight: 800;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 14px 32px rgba(0, 128, 55, 0.34);
   cursor: pointer;
 }
 
 .modalBg {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(6, 35, 18, 0.62);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -483,11 +609,12 @@ nav a {
   max-width: 560px;
   max-height: 90vh;
   overflow-y: auto;
-  background: #fffaf0;
-  border-radius: 22px;
+  background: #fffdf6;
+  border: 1px solid #e8dcb8;
+  border-radius: 18px;
   padding: 24px;
   position: relative;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 28px 70px rgba(10, 40, 20, 0.32);
 }
 
 .closeBtn {
@@ -515,9 +642,16 @@ nav a {
   width: 100%;
   padding: 14px;
   margin-bottom: 12px;
-  border: 1px solid #d6c28b;
+  border: 1px solid #d8c88e;
   border-radius: 12px;
   font-size: 16px;
+  background: #fff;
+}
+
+.checkoutBox input:focus,
+.checkoutBox textarea:focus {
+  outline: 2px solid rgba(0, 128, 55, 0.16);
+  border-color: #008037;
 }
 
 .checkoutBox textarea {
@@ -538,8 +672,9 @@ nav a {
   align-items: center;
   background: white;
   padding: 12px;
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid #ead9a8;
+  box-shadow: 0 8px 22px rgba(20, 53, 31, 0.06);
 }
 
 .cartItem img {
@@ -1338,6 +1473,13 @@ nav a {
   font-size: 16px;
   font-weight: 900;
   cursor: pointer;
+  box-shadow: 0 12px 24px rgba(0, 128, 55, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.placeBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(0, 128, 55, 0.26);
 }
 
 .placeBtn:disabled {
