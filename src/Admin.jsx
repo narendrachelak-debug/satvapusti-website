@@ -1,14 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 
 const API_URL = "https://satvapusti-website.onrender.com";
+const ADMIN_SESSION_MS = 30 * 60 * 1000;
 
 export default function Admin() {
   useEffect(() => {
     const token = localStorage.getItem("satvapustiAdminToken");
+    const loginTime = Number(localStorage.getItem("satvapustiLoginTime") || 0);
 
-    if (token !== "admin_logged_in") {
+    if (token !== "admin_logged_in" || !loginTime || Date.now() - loginTime > ADMIN_SESSION_MS) {
+      localStorage.removeItem("satvapustiAdminToken");
+      localStorage.removeItem("satvapustiLoginTime");
       window.location.href = "/admin-login";
     }
+
+    const timeoutCheck = setInterval(() => {
+      const activeLoginTime = Number(localStorage.getItem("satvapustiLoginTime") || 0);
+      if (!activeLoginTime || Date.now() - activeLoginTime > ADMIN_SESSION_MS) {
+        localStorage.removeItem("satvapustiAdminToken");
+        localStorage.removeItem("satvapustiLoginTime");
+        window.location.href = "/admin-login";
+      }
+    }, 60000);
+
+    return () => clearInterval(timeoutCheck);
   }, []);
 
   const [orders, setOrders] = useState([]);
@@ -18,10 +33,24 @@ export default function Admin() {
   const [dateTo, setDateTo] = useState("");
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [inventory, setInventory] = useState([]);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [editingInventory, setEditingInventory] = useState(null);
+  const [filters, setFilters] = useState({
+    orderDateFrom: "",
+    orderDateTo: "",
+    paymentDateFrom: "",
+    paymentDateTo: "",
+    deliveryDateFrom: "",
+    deliveryDateTo: "",
+    orderStatus: "",
+    paymentStatus: "",
+    customerName: "",
+    customerMobile: "",
+    customerEmail: "",
+  });
 
   const loadOrders = async () => {
     try {
@@ -82,7 +111,6 @@ export default function Admin() {
 
   const saveOrder = async (order) => {
     try {
-        alert("Save button clicked");
       setSavingId(order._id);
 
       const res = await fetch(
@@ -98,6 +126,7 @@ export default function Admin() {
             courierName: order.courierName || "",
             trackingNumber: order.trackingNumber || "",
             trackingUrl: order.trackingUrl || "",
+            customerTrackingMessage: order.customerTrackingMessage || "",
           }),
         }
       );
@@ -141,6 +170,68 @@ alert("Order updated successfully");
       });
     }
 
+    if (filters.customerName) {
+      filtered = filtered.filter((order) =>
+        String(order.customerName || "")
+          .toLowerCase()
+          .includes(filters.customerName.toLowerCase().trim())
+      );
+    }
+
+    if (filters.customerMobile) {
+      filtered = filtered.filter((order) =>
+        String(order.mobile || "").includes(filters.customerMobile.trim())
+      );
+    }
+
+    if (filters.customerEmail) {
+      filtered = filtered.filter((order) =>
+        String(order.email || "")
+          .toLowerCase()
+          .includes(filters.customerEmail.toLowerCase().trim())
+      );
+    }
+
+    if (filters.orderStatus) {
+      filtered = filtered.filter((order) => order.orderStatus === filters.orderStatus);
+    }
+
+    if (filters.paymentStatus) {
+      filtered = filtered.filter((order) => order.paymentStatus === filters.paymentStatus);
+    }
+
+    const applyDateRange = (data, field, fromValue, toValue) => {
+      if (!fromValue && !toValue) return data;
+
+      return data.filter((order) => {
+        if (!order[field]) return false;
+        const fieldDate = new Date(order[field]);
+        const from = fromValue ? new Date(fromValue) : new Date(0);
+        const to = toValue ? new Date(toValue) : new Date();
+        to.setHours(23, 59, 59, 999);
+        return fieldDate >= from && fieldDate <= to;
+      });
+    };
+
+    filtered = applyDateRange(
+      filtered,
+      "createdAt",
+      filters.orderDateFrom || dateFrom,
+      filters.orderDateTo || dateTo
+    );
+    filtered = applyDateRange(
+      filtered,
+      "paymentDate",
+      filters.paymentDateFrom,
+      filters.paymentDateTo
+    );
+    filtered = applyDateRange(
+      filtered,
+      "deliveryDate",
+      filters.deliveryDateFrom,
+      filters.deliveryDateTo
+    );
+
     if (dateFrom || dateTo) {
       filtered = filtered.filter((order) => {
         const orderDate = new Date(order.createdAt);
@@ -152,7 +243,7 @@ alert("Order updated successfully");
     }
 
     return filtered;
-  }, [orders, search, dateFrom, dateTo]);
+  }, [orders, search, dateFrom, dateTo, filters]);
 
   const totalOrders = orders.length;
 
@@ -201,6 +292,37 @@ alert("Order updated successfully");
 
   const totalPaidOrders = orders.filter(o => o.paymentStatus === "Paid").length;
 
+  const averageOrderValue = totalPaidOrders > 0 ? totalRevenue / totalPaidOrders : 0;
+
+  const buildSalesReport = (type) => {
+    const paid = orders.filter((order) => order.paymentStatus === "Paid");
+    const grouped = paid.reduce((acc, order) => {
+      const sourceDate = order.paymentDate || order.createdAt;
+      if (!sourceDate) return acc;
+
+      const date = new Date(sourceDate);
+      const key =
+        type === "monthly"
+          ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+          : date.toISOString().slice(0, 10);
+
+      if (!acc[key]) {
+        acc[key] = { period: key, orders: 0, revenue: 0 };
+      }
+
+      acc[key].orders += 1;
+      acc[key].revenue += Number(order.totalAmount || 0);
+      return acc;
+    }, {});
+
+    return Object.values(grouped)
+      .sort((a, b) => b.period.localeCompare(a.period))
+      .slice(0, 8);
+  };
+
+  const dailySalesReport = buildSalesReport("daily");
+  const monthlySalesReport = buildSalesReport("monthly");
+
   const copyAddress = (order) => {
     const text = `${order.customerName || ""}
 ${order.address || ""}
@@ -212,7 +334,7 @@ ${order.mobile || ""}`;
     alert("Address copied");
   };
 
-  const openCustomerWhatsApp = (order) => {
+  const openCustomerWhatsApp = (order, template = "update") => {
     const cleanMobile = String(order.mobile || "").replace(/\D/g, "");
 
     if (!cleanMobile) {
@@ -224,7 +346,7 @@ ${order.mobile || ""}`;
       ? cleanMobile
       : `91${cleanMobile}`;
 
-    const message = `Hello ${order.customerName || ""},
+    const baseUpdate = `Hello ${order.customerName || ""},
 Your SatvaPusti order update:
 
 Order ID: ${order.orderId}
@@ -234,6 +356,17 @@ Amount: ₹${order.totalAmount}
 ${order.courierName ? `Courier: ${order.courierName}` : ""}
 ${order.trackingNumber ? `Tracking: ${order.trackingNumber}` : ""}
 ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
+
+    const templates = {
+      received: `Hello ${order.customerName || ""}, your SatvaPusti order ${order.orderId} has been received. Amount: Rs. ${order.totalAmount}.`,
+      payment: `Hello ${order.customerName || ""}, payment for your SatvaPusti order ${order.orderId} is confirmed. We will process it shortly.`,
+      processing: `Hello ${order.customerName || ""}, your SatvaPusti order ${order.orderId} is now being processed.`,
+      shipped: baseUpdate,
+      delivered: `Hello ${order.customerName || ""}, your SatvaPusti order ${order.orderId} has been delivered. Thank you for shopping with us.`,
+      update: order.customerTrackingMessage || baseUpdate,
+    };
+
+    const message = templates[template] || baseUpdate;
 
     window.open(
       `https://wa.me/${finalMobile}?text=${encodeURIComponent(message)}`,
@@ -270,6 +403,36 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
       }
     } catch (error) {
       setPasswordMessage("❌ Error verifying password");
+      console.error(error);
+    }
+  };
+
+  const changePassword = async () => {
+    if (!currentPassword || !newPassword) {
+      setPasswordMessage("Please enter current and new password");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/admin/change-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setPasswordMessage("Password changed. Update ADMIN_PASSWORD in hosting env before redeploy.");
+        setCurrentPassword("");
+        setNewPassword("");
+      } else {
+        setPasswordMessage(data.message || "Password change failed");
+      }
+    } catch (error) {
+      setPasswordMessage("Error changing password");
       console.error(error);
     }
   };
@@ -474,6 +637,13 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         </div>
 
         <div style={boxStyle}>
+          Average Order Value
+          <br />
+          <b>Rs. {Math.round(averageOrderValue).toLocaleString()}</b>
+        </div>
+
+
+        <div style={boxStyle}>
           ✅ Paid Orders
           <br />
           <b>{totalPaidOrders}</b>
@@ -486,6 +656,93 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         onChange={(e) => setSearch(e.target.value)}
         style={searchStyle}
       />
+
+      <div style={filterGridStyle}>
+        <input
+          placeholder="Customer name"
+          value={filters.customerName}
+          onChange={(e) => setFilters({ ...filters, customerName: e.target.value })}
+          style={filterInputStyle}
+        />
+        <input
+          placeholder="Customer mobile"
+          value={filters.customerMobile}
+          onChange={(e) => setFilters({ ...filters, customerMobile: e.target.value })}
+          style={filterInputStyle}
+        />
+        <input
+          placeholder="Customer email"
+          value={filters.customerEmail}
+          onChange={(e) => setFilters({ ...filters, customerEmail: e.target.value })}
+          style={filterInputStyle}
+        />
+        <select
+          value={filters.orderStatus}
+          onChange={(e) => setFilters({ ...filters, orderStatus: e.target.value })}
+          style={filterInputStyle}
+        >
+          <option value="">All Order Status</option>
+          <option>Received</option>
+          <option>Processing</option>
+          <option>Packed</option>
+          <option>Shipped</option>
+          <option>Delivered</option>
+          <option>Cancelled</option>
+        </select>
+        <select
+          value={filters.paymentStatus}
+          onChange={(e) => setFilters({ ...filters, paymentStatus: e.target.value })}
+          style={filterInputStyle}
+        >
+          <option value="">All Payment Status</option>
+          <option>Pending</option>
+          <option>Awaiting Verification</option>
+          <option>Paid</option>
+          <option>Failed</option>
+        </select>
+        <input
+          type="date"
+          value={filters.orderDateFrom}
+          onChange={(e) => setFilters({ ...filters, orderDateFrom: e.target.value })}
+          style={filterInputStyle}
+          title="Order date from"
+        />
+        <input
+          type="date"
+          value={filters.orderDateTo}
+          onChange={(e) => setFilters({ ...filters, orderDateTo: e.target.value })}
+          style={filterInputStyle}
+          title="Order date to"
+        />
+        <input
+          type="date"
+          value={filters.paymentDateFrom}
+          onChange={(e) => setFilters({ ...filters, paymentDateFrom: e.target.value })}
+          style={filterInputStyle}
+          title="Payment date from"
+        />
+        <input
+          type="date"
+          value={filters.paymentDateTo}
+          onChange={(e) => setFilters({ ...filters, paymentDateTo: e.target.value })}
+          style={filterInputStyle}
+          title="Payment date to"
+        />
+        <input
+          type="date"
+          value={filters.deliveryDateFrom}
+          onChange={(e) => setFilters({ ...filters, deliveryDateFrom: e.target.value })}
+          style={filterInputStyle}
+          title="Delivery date from"
+        />
+        <input
+          type="date"
+          value={filters.deliveryDateTo}
+          onChange={(e) => setFilters({ ...filters, deliveryDateTo: e.target.value })}
+          style={filterInputStyle}
+          title="Delivery date to"
+        />
+      </div>
 
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
         <input
@@ -507,6 +764,19 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
             setSearch("");
             setDateFrom("");
             setDateTo("");
+            setFilters({
+              orderDateFrom: "",
+              orderDateTo: "",
+              paymentDateFrom: "",
+              paymentDateTo: "",
+              deliveryDateFrom: "",
+              deliveryDateTo: "",
+              orderStatus: "",
+              paymentStatus: "",
+              customerName: "",
+              customerMobile: "",
+              customerEmail: "",
+            });
           }}
           style={{
             padding: "12px 14px",
@@ -583,6 +853,34 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         </button>
       </div>
 
+      <div style={reportsGridStyle}>
+        <div style={reportBoxStyle}>
+          <h3>Daily Sales Report</h3>
+          {dailySalesReport.length === 0 ? (
+            <p>No paid sales yet.</p>
+          ) : (
+            dailySalesReport.map((item) => (
+              <p key={item.period}>
+                <b>{item.period}</b> | Orders: {item.orders} | Revenue: â‚¹{item.revenue.toLocaleString()}
+              </p>
+            ))
+          )}
+        </div>
+
+        <div style={reportBoxStyle}>
+          <h3>Monthly Sales Report</h3>
+          {monthlySalesReport.length === 0 ? (
+            <p>No paid sales yet.</p>
+          ) : (
+            monthlySalesReport.map((item) => (
+              <p key={item.period}>
+                <b>{item.period}</b> | Orders: {item.orders} | Revenue: â‚¹{item.revenue.toLocaleString()}
+              </p>
+            ))
+          )}
+        </div>
+      </div>
+
       {showPasswordModal && (
         <div style={{ ...modalBgStyle }}>
           <div style={{ ...modalBoxStyle, maxWidth: "400px" }}>
@@ -591,6 +889,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
                 setShowPasswordModal(false);
                 setPasswordMessage("");
                 setCurrentPassword("");
+                setNewPassword("");
               }}
               style={{
                 position: "absolute",
@@ -625,6 +924,21 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               }}
             />
 
+            <input
+              type="password"
+              placeholder="Enter new password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                marginBottom: "10px",
+                border: "1px solid #ccc",
+                borderRadius: "6px",
+                boxSizing: "border-box",
+              }}
+            />
+
             {passwordMessage && (
               <p style={{ marginBottom: "10px", fontSize: "14px", color: passwordMessage.includes("✅") ? "green" : "red" }}>
                 {passwordMessage}
@@ -645,6 +959,23 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               }}
             >
               Verify Password
+            </button>
+
+            <button
+              onClick={changePassword}
+              style={{
+                width: "100%",
+                padding: "10px",
+                marginTop: "10px",
+                background: "#198754",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "14px",
+              }}
+            >
+              Change Password
             </button>
           </div>
         </div>
@@ -828,6 +1159,15 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               style={inputStyle}
             />
 
+            <textarea
+              placeholder="Customer tracking message"
+              value={order.customerTrackingMessage || ""}
+              onChange={(e) =>
+                updateLocalOrder(order._id, "customerTrackingMessage", e.target.value)
+              }
+              style={{ ...inputStyle, minHeight: "78px" }}
+            />
+
             {Array.isArray(order.items) && order.items.length > 0 && (
               <>
                 <hr />
@@ -872,6 +1212,24 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
             >
               Copy Address
             </button>
+
+            <div style={templateButtonWrapStyle}>
+              <button onClick={() => openCustomerWhatsApp(order, "received")} style={smallButtonStyle}>
+                Order Received
+              </button>
+              <button onClick={() => openCustomerWhatsApp(order, "payment")} style={smallButtonStyle}>
+                Payment Confirmed
+              </button>
+              <button onClick={() => openCustomerWhatsApp(order, "processing")} style={smallButtonStyle}>
+                Processing
+              </button>
+              <button onClick={() => openCustomerWhatsApp(order, "shipped")} style={smallButtonStyle}>
+                Shipped
+              </button>
+              <button onClick={() => openCustomerWhatsApp(order, "delivered")} style={smallButtonStyle}>
+                Delivered
+              </button>
+            </div>
           </div>
         ))
       )}
@@ -907,6 +1265,52 @@ const searchStyle = {
   borderRadius: "8px",
   fontSize: "16px",
   boxSizing: "border-box",
+};
+
+const filterGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "10px",
+  marginBottom: "15px",
+};
+
+const filterInputStyle = {
+  width: "100%",
+  padding: "10px",
+  border: "1px solid #ccc",
+  borderRadius: "6px",
+  fontSize: "14px",
+  boxSizing: "border-box",
+};
+
+const reportsGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+  gap: "12px",
+  marginBottom: "20px",
+};
+
+const reportBoxStyle = {
+  background: "#fff",
+  border: "1px solid #ddd",
+  borderRadius: "10px",
+  padding: "15px",
+};
+
+const templateButtonWrapStyle = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "8px",
+  marginTop: "12px",
+};
+
+const smallButtonStyle = {
+  padding: "7px 10px",
+  border: "1px solid #ddd",
+  borderRadius: "6px",
+  background: "#fff",
+  cursor: "pointer",
+  fontSize: "12px",
 };
 
 const orderCardStyle = {

@@ -57,6 +57,15 @@ const orderSchema = new mongoose.Schema(
     courierName: { type: String, default: "" },
     trackingNumber: { type: String, default: "" },
     trackingUrl: { type: String, default: "" },
+    customerTrackingMessage: { type: String, default: "" },
+    inventoryDeducted: { type: Boolean, default: false },
+    statusHistory: [
+      {
+        status: String,
+        note: String,
+        date: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

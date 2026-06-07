@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import Admin from "./Admin.jsx";
 import AdminLogin from "./AdminLogin.jsx";
+import TrackOrder from "./TrackOrder.jsx";
 
 const path = window.location.pathname;
 const params = new URLSearchParams(window.location.search);
@@ -31,6 +32,10 @@ if (path === "/admin-login" || page === "admin-login") {
 
 if (path === "/admin" || page === "admin") {
   Page = validToken ? <Admin /> : <AdminLogin />;
+}
+
+if (path === "/track-order" || page === "track-order") {
+  Page = <TrackOrder />;
 }
 
 createRoot(document.getElementById("root")).render(

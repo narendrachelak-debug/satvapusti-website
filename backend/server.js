@@ -52,6 +52,38 @@ app.post("/api/admin/verify-password", (req, res) => {
   });
 });
 
+app.post("/api/admin/change-password", (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({
+      success: false,
+      message: "Current and new password are required",
+    });
+  }
+
+  if (String(newPassword).length < 8) {
+    return res.status(400).json({
+      success: false,
+      message: "New password must be at least 8 characters",
+    });
+  }
+
+  if (currentPassword !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid current password",
+    });
+  }
+
+  process.env.ADMIN_PASSWORD = newPassword;
+
+  return res.json({
+    success: true,
+    message: "Password changed for this running server. Update ADMIN_PASSWORD in hosting env for persistence after redeploy.",
+  });
+});
+
 // INVENTORY ENDPOINTS
 app.get("/api/inventory", async (req, res) => {
   try {
@@ -108,10 +140,23 @@ app.post("/api/inventory/reduce/:orderId", async (req, res) => {
     }
     
     for (const item of order.items || []) {
+      const inventoryItem = await Inventory.findOne({
+        productId: item.productId,
+        weight: item.weight,
+      });
+
+      if (!inventoryItem || inventoryItem.stock < Number(item.quantity || 0)) {
+        return res.status(400).json({
+          success: false,
+          message: `${item.name || item.productId} ${item.weight} is out of stock`,
+        });
+      }
+    }
+
+    for (const item of order.items || []) {
       await Inventory.findOneAndUpdate(
         { productId: item.productId, weight: item.weight },
-        { $inc: { stock: -item.quantity } },
-        { upsert: true }
+        { $inc: { stock: -Number(item.quantity || 0) } }
       );
     }
     

@@ -775,3 +775,165 @@ nav a {
   font-size: 14px;
   line-height: 1.5;
 }
+
+.placeBtn {
+  width: 100%;
+  border: none;
+  background: #008037;
+  color: #fff;
+  padding: 14px;
+  border-radius: 28px;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.placeBtn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.stockOk,
+.stockLow,
+.stockOut {
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.stockOk {
+  color: #007a3d;
+}
+
+.stockLow {
+  color: #b46b00;
+}
+
+.stockOut {
+  color: #b00020;
+}
+
+.trackPage {
+  min-height: 100vh;
+  background: #fffaf0;
+}
+
+.trackWrap {
+  width: min(920px, 92vw);
+  margin: 42px auto;
+}
+
+.trackPanel {
+  background: #fff;
+  border: 1px solid #ead9a8;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.trackPanel h1 {
+  margin-top: 0;
+  color: #004f28;
+}
+
+.trackForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+}
+
+.trackForm input,
+.trackForm button {
+  min-height: 46px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.trackForm input {
+  border: 1px solid #d6c28b;
+  padding: 0 12px;
+}
+
+.trackForm button {
+  border: none;
+  background: #008037;
+  color: #fff;
+  padding: 0 20px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.trackMessage {
+  color: #b00020;
+  font-weight: 800;
+}
+
+.trackResult {
+  margin-top: 22px;
+}
+
+.trackSummary {
+  background: #fffaf0;
+  border: 1px solid #ead9a8;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 18px;
+}
+
+.statusTimeline {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.timelineStep {
+  border: 1px solid #d6d6d6;
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+  background: #f5f5f5;
+  color: #555;
+}
+
+.timelineStep span {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #d6d6d6;
+  margin-bottom: 8px;
+  font-weight: 900;
+}
+
+.timelineStep b {
+  display: block;
+  font-size: 14px;
+}
+
+.timelineStep.done {
+  background: #eef9f0;
+  border-color: #008037;
+  color: #004f28;
+}
+
+.timelineStep.done span {
+  background: #008037;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .trackPanel {
+    padding: 20px;
+  }
+
+  .trackForm {
+    grid-template-columns: 1fr;
+  }
+
+  .statusTimeline {
+    grid-template-columns: 1fr;
+  }
+}

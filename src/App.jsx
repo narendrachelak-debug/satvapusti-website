@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 const phone = "919639630828";
@@ -94,6 +94,7 @@ export default function App() {
   const [paymentMode, setPaymentMode] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [lastOrder, setLastOrder] = useState(null);
+  const [inventory, setInventory] = useState([]);
 
   const [profile, setProfile] = useState(
     savedProfile || {
@@ -118,6 +119,28 @@ export default function App() {
 
   const getWeight = (product) => selected[product.id] || "1KG";
   const getQty = (product) => qty[product.id] || 1;
+  const getStock = (productId, weight) => {
+    const item = inventory.find(
+      (stockItem) => stockItem.productId === productId && stockItem.weight === weight
+    );
+    return Number(item?.stock ?? 0);
+  };
+
+  useEffect(() => {
+    const loadInventory = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/inventory`);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setInventory(data);
+        }
+      } catch (error) {
+        console.log("Inventory load error:", error);
+      }
+    };
+
+    loadInventory();
+  }, []);
 
   const changeQty = (product, value) => {
     const nextQty = Math.max(1, getQty(product) + value);
@@ -127,9 +150,21 @@ export default function App() {
   const addToCart = (product) => {
     const weight = getWeight(product);
     const quantity = getQty(product);
+    const stock = getStock(product.id, weight);
     const price = product.prices[weight];
     const cartId = `${product.id}-${weight}`;
     const existing = cart.find((item) => item.cartId === cartId);
+    const existingQty = existing?.quantity || 0;
+
+    if (stock <= 0) {
+      alert("This pack is currently out of stock.");
+      return;
+    }
+
+    if (existingQty + quantity > stock) {
+      alert(`Only ${stock} item(s) available for this pack.`);
+      return;
+    }
 
     if (existing) {
       setCart(
@@ -164,11 +199,19 @@ export default function App() {
 
   const updateCartQty = (cartId, value) => {
     setCart(
-      cart.map((item) =>
-        item.cartId === cartId
-          ? { ...item, quantity: Math.max(1, item.quantity + value) }
-          : item
-      )
+      cart.map((item) => {
+        if (item.cartId !== cartId) return item;
+
+        const stock = getStock(item.productId, item.weight);
+        const nextQuantity = Math.max(1, item.quantity + value);
+
+        if (nextQuantity > stock) {
+          alert(`Only ${stock} item(s) available for this pack.`);
+          return item;
+        }
+
+        return { ...item, quantity: nextQuantity };
+      })
     );
   };
 
@@ -299,7 +342,7 @@ export default function App() {
     const shipping =
       paymentMode === "UPI" ? "Free Shipping" : "Shipping charges as applicable";
 
-    const orderId = `SP${Date.now()}`;
+    let orderId = `SP${Date.now()}`;
 
     const order = {
       id: orderId,
@@ -318,7 +361,7 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
     };
 
     try {
-      await fetch(`${API_URL}/api/orders/create`, {
+      const res = await fetch(`${API_URL}/api/orders/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -340,8 +383,22 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
           paymentStatus: order.paymentStatus,
         }),
       });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        alert(data.message || "Order could not be placed.");
+        return;
+      }
+
+      if (data.order?.orderId) {
+        order.id = data.order.orderId;
+        orderId = data.order.orderId;
+      }
     } catch (error) {
       console.log("Backend order save error:", error);
+      alert("Order could not be saved right now. Please try again.");
+      return;
     }
 
     const updatedOrders = [order, ...myOrders];
@@ -404,6 +461,7 @@ order.whatsappMessage = message;
         <nav>
           <a href="#products">Products</a>
           <a href="#ingredients">Ingredients</a>
+          <a href="/?page=track-order">Track Order</a>
           <button className="profileNavBtn" onClick={() => setShowProfile(true)}>
             Profile
           </button>
@@ -447,6 +505,9 @@ order.whatsappMessage = message;
             const offer = product.prices[weight].offer;
             const save = (mrp - offer) * quantity;
             const total = offer * quantity;
+            const stock = getStock(product.id, weight);
+            const isOutOfStock = stock <= 0;
+            const isLowStock = stock > 0 && stock < 10;
 
             return (
               <div className="productCard" key={product.id}>
@@ -473,6 +534,9 @@ order.whatsappMessage = message;
                   <p>Offer Price: <span className="offerPrice">₹{offer}</span></p>
                   <p className="saveText">You Save ₹{save}</p>
                   <p>Total: <span className="offerPrice">₹{total}</span></p>
+                  <p className={isOutOfStock ? "stockOut" : isLowStock ? "stockLow" : "stockOk"}>
+                    {isOutOfStock ? "Out of stock" : isLowStock ? `Low stock: ${stock} left` : `In stock: ${stock}`}
+                  </p>
                 </div>
 
                 <div className="qtyBox">
@@ -481,8 +545,12 @@ order.whatsappMessage = message;
                   <button onClick={() => changeQty(product, 1)}>+</button>
                 </div>
 
-                <button className="placeBtn" onClick={() => addToCart(product)}>
-                  Add to Cart
+                <button
+                  className="placeBtn"
+                  onClick={() => addToCart(product)}
+                  disabled={isOutOfStock}
+                >
+                  {isOutOfStock ? "Out of Stock" : "Add to Cart"}
                 </button>
               </div>
             );
