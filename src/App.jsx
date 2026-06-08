@@ -19,7 +19,7 @@ const products = [
     desc: "Complete nutrition for every member of your family.",
     bestFor: ["Family Nutrition", "Daily Energy", "Balanced Routine"],
     benefits: ["Real dry fruits and seeds", "Daily nutrition support", "No artificial colours"],
-    usage: "2 spoon milk ya warm water ke saath daily routine me use karein.",
+    usage: "Daily 2 spoon ko 200 ml milk ya warm water me mix karke piyein.",
     images: {
       "1KG": "/products/family-1kg.png",
       "500G": "/products/family-500g.png",
@@ -38,7 +38,7 @@ const products = [
     desc: "Growth, brain, immunity and daily energy support.",
     bestFor: ["Kids Growth", "Brain Support", "Daily Immunity"],
     benefits: ["Kids-focused nutrition", "Real banana and nuts", "Tasty daily drink"],
-    usage: "1-2 spoon milk ke saath daily, age aur appetite ke hisaab se use karein.",
+    usage: "Daily 1-2 spoon ko milk me mix karke dein. Age/appetite ke hisaab se quantity adjust karein.",
     images: {
       "1KG": "/products/active-kids-1kg.png",
       "500G": "/products/active-kids-500g.png",
@@ -57,7 +57,7 @@ const products = [
     desc: "Fuel your strength, boost recovery and achieve your best.",
     bestFor: ["Protein Support", "Recovery", "Active Lifestyle"],
     benefits: ["Strength routine support", "Natural protein formula", "Energy and recovery"],
-    usage: "Workout ke baad ya daily nutrition drink ke roop me milk/water ke saath use karein.",
+    usage: "Daily 2 spoon ko 200 ml milk ya water me mix karein. Workout ke baad ya morning routine me le sakte hain.",
     images: {
       "1KG": "/products/active-1kg.png",
       "500G": "/products/active-500g.png",
@@ -569,6 +569,21 @@ order.whatsappMessage = message;
 
                 <img className="mainProductImg" src={product.images[weight]} alt={product.name} />
 
+                <p className="packLabel">Choose Pack Size</p>
+                <div className="weightButtons">
+                  {["1KG", "500G", "250G"].map((w) => (
+                    <button
+                      key={w}
+                      className={weight === w ? "activeWeight" : ""}
+                      onClick={() => setSelected({ ...selected, [product.id]: w })}
+                    >
+                      <b>{w}</b>
+                      <small>₹{product.prices[w].offer}</small>
+                      {w === "1KG" && <em>Best Value</em>}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="productBenefitGrid">
                   {product.benefits.map((benefit) => (
                     <span key={benefit}>{benefit}</span>
@@ -578,20 +593,6 @@ order.whatsappMessage = message;
                 <div className="usageBox">
                   <b>How to Use</b>
                   <span>{product.usage}</span>
-                </div>
-
-                <div className="weightButtons">
-                  {["1KG", "500G", "250G"].map((w) => (
-                    <button
-                      key={w}
-                      className={weight === w ? "activeWeight" : ""}
-                      onClick={() => setSelected({ ...selected, [product.id]: w })}
-                    >
-                      {w}
-                      <small>₹{product.prices[w].offer}</small>
-                      {w === "1KG" && <em>Best Value</em>}
-                    </button>
-                  ))}
                 </div>
 
                 <div className="priceBox">

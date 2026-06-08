@@ -355,30 +355,43 @@ nav a:hover,
   line-height: 1.45;
 }
 
+.packLabel {
+  margin: 2px 0 8px;
+  color: #06451f !important;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: left;
+}
+
 .weightButtons {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin: 18px 0;
+  gap: 8px;
+  margin: 0 0 14px;
 }
 
 .weightButtons button {
   display: grid;
-  gap: 2px;
-  min-width: 96px;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
   border: 2px solid #008037;
   background: white;
   color: #008037;
-  padding: 9px 14px;
-  border-radius: 24px;
+  padding: 10px 8px;
+  border-radius: 14px;
   font-weight: 900;
   cursor: pointer;
+}
+
+.weightButtons button b {
+  font-size: 16px;
 }
 
 .weightButtons small {
   display: block;
   color: #06451f;
-  font-size: 12px;
+  font-size: 15px;
   line-height: 1.1;
 }
 
