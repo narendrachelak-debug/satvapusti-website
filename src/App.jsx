@@ -588,7 +588,8 @@ order.whatsappMessage = message;
                       onClick={() => setSelected({ ...selected, [product.id]: w })}
                     >
                       {w}
-                      {w === "1KG" && <small>Best Value</small>}
+                      <small>₹{product.prices[w].offer}</small>
+                      {w === "1KG" && <em>Best Value</em>}
                     </button>
                   ))}
                 </div>

@@ -376,9 +376,18 @@ nav a:hover,
 }
 
 .weightButtons small {
+  display: block;
+  color: #06451f;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.weightButtons em {
+  display: block;
   color: #b46b00;
   font-size: 10px;
   line-height: 1;
+  font-style: normal;
 }
 
 .weightButtons .activeWeight {
@@ -386,7 +395,8 @@ nav a:hover,
   color: white;
 }
 
-.weightButtons .activeWeight small {
+.weightButtons .activeWeight small,
+.weightButtons .activeWeight em {
   color: #eaffef;
 }
 
