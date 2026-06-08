@@ -593,15 +593,6 @@ order.whatsappMessage = message;
                   ))}
                 </div>
 
-                <div className="packCompare">
-                  {["250G", "500G", "1KG"].map((pack) => (
-                    <div className={pack === weight ? "activePack" : ""} key={pack}>
-                      <span>{pack}</span>
-                      <b>₹{product.prices[pack].offer}</b>
-                    </div>
-                  ))}
-                </div>
-
                 <div className="priceBox">
                   <p>MRP: <span className="cutPrice">₹{mrp}</span></p>
                   <p>Offer Price: <span className="offerPrice">₹{offer}</span></p>

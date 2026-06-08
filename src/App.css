@@ -390,37 +390,6 @@ nav a:hover,
   color: #eaffef;
 }
 
-.packCompare {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 0 0 12px;
-}
-
-.packCompare div {
-  display: grid;
-  gap: 4px;
-  padding: 10px;
-  border: 1px solid #d8e9c9;
-  border-radius: 12px;
-  background: #fff;
-}
-
-.packCompare span {
-  color: #5f6f60;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.packCompare b {
-  color: #06451f;
-}
-
-.packCompare .activePack {
-  border-color: #008037;
-  background: #eef8e7;
-}
-
 .priceBox {
   background: #fff8df;
   border: 1px solid #ead083;
