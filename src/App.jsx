@@ -465,6 +465,7 @@ order.whatsappMessage = message;
           <a href="#products">Products</a>
           <a href="#ingredients">Ingredients</a>
           <a href="/?page=track-order">Track Order</a>
+          <a href="#faq">FAQ</a>
           <button className="profileNavBtn" onClick={() => setShowProfile(true)}>
             Profile
           </button>
@@ -510,8 +511,23 @@ order.whatsappMessage = message;
           <span>Fresh batch production process</span>
         </div>
         <div className="trustItem">
-          <b>COD + UPI</b>
-          <span>Easy ordering with quick support</span>
+          <b>FSSAI Registered</b>
+          <span>FSSAI No. 20526034000204</span>
+        </div>
+      </section>
+
+      <section className="customerAssurance">
+        <div>
+          <b>Fresh Manufacturing</b>
+          <span>Prepared by Satvapusti Nutrition, General Manufacturing FBO.</span>
+        </div>
+        <div>
+          <b>COD + UPI Prepaid</b>
+          <span>Choose cash on delivery or UPI payment with quick support.</span>
+        </div>
+        <div>
+          <b>Order Tracking</b>
+          <span>Track with Order ID and mobile number after placing order.</span>
         </div>
       </section>
 
@@ -796,6 +812,17 @@ order.whatsappMessage = message;
                   </div>
                 )}
 
+                <div className="nextStepsBox">
+                  <h3>Next Steps</h3>
+                  <p>Order ID save kar lijiye. Dispatch updates WhatsApp/order tracking par milenge.</p>
+                  <div className="successActionRow">
+                    <a href="/?page=track-order">Track Order</a>
+                    <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
+                      WhatsApp Support
+                    </a>
+                  </div>
+                </div>
+
                 {paymentMode === "UPI" && (
   <div className="upiBox">
     <a
@@ -873,14 +900,16 @@ order.whatsappMessage = message;
                     className={paymentMode === "COD" ? "selectedPay" : ""}
                     onClick={() => setPaymentMode("COD")}
                   >
-                    COD
+                    <b>COD</b>
+                    <span>Pay when order is delivered</span>
                   </button>
 
                   <button
                     className={paymentMode === "UPI" ? "selectedPay" : ""}
                     onClick={() => setPaymentMode("UPI")}
                   >
-                    UPI Payment
+                    <b>UPI Prepaid</b>
+                    <span>Free shipping after verification</span>
                   </button>
                 </div>
 
@@ -943,6 +972,63 @@ order.whatsappMessage = message;
           <div>🍌 Real Banana Powder</div>
           <div>💪 Daily Nutrition Support</div>
           <div>✅ Direct WhatsApp Ordering</div>
+        </div>
+      </section>
+
+      <section id="faq" className="section faqSection">
+        <h2>Frequently Asked Questions</h2>
+        <p className="sectionText">
+          Ordering, payment and product use ke common answers yahan mil jayenge.
+        </p>
+
+        <div className="faqGrid">
+          <details>
+            <summary>SatvaPusti products kaise use karein?</summary>
+            <p>
+              Product ko milk ya warm water ke saath daily routine me use kar sakte hain.
+              Children, elderly, pregnant women ya medical condition wale customers doctor
+              se advice lekar use karein.
+            </p>
+          </details>
+
+          <details>
+            <summary>COD available hai?</summary>
+            <p>
+              Haan, COD available hai. COD orders me payment delivery ke time collect hota hai.
+            </p>
+          </details>
+
+          <details>
+            <summary>UPI prepaid ka kya benefit hai?</summary>
+            <p>
+              UPI prepaid orders me free shipping benefit milta hai. Payment ke baad WhatsApp
+              confirmation bhej dein, admin verification ke baad order process hota hai.
+            </p>
+          </details>
+
+          <details>
+            <summary>Order track kaise karein?</summary>
+            <p>
+              Header me Track Order par click karke Order ID aur mobile number se latest order
+              status dekh sakte hain.
+            </p>
+          </details>
+
+          <details>
+            <summary>FSSAI registration hai?</summary>
+            <p>
+              Haan. Satvapusti Nutrition ka FSSAI Registration No. 20526034000204 hai.
+            </p>
+          </details>
+
+          <details>
+            <summary>Return ya replacement kab milega?</summary>
+            <p>
+              Food safety ke karan opened product returnable nahi hai. Wrong, damaged,
+              expired ya manufacturing defect product ke case me 48 hours ke andar clear
+              photo/video proof ke saath report karein.
+            </p>
+          </details>
         </div>
       </section>
 

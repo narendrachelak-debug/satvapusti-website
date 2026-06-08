@@ -187,6 +187,39 @@ nav a:hover,
   line-height: 1.45;
 }
 
+.customerAssurance {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding: 20px 6%;
+  background: #fbfff6;
+  border-bottom: 1px solid #d8e9c9;
+}
+
+.customerAssurance div {
+  padding: 16px;
+  border: 1px solid #d8e9c9;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(20, 53, 31, 0.07);
+}
+
+.customerAssurance b,
+.customerAssurance span {
+  display: block;
+}
+
+.customerAssurance b {
+  margin-bottom: 6px;
+  color: #004f28;
+  font-size: 17px;
+}
+
+.customerAssurance span {
+  color: #5f6f60;
+  line-height: 1.45;
+}
+
 .section {
   padding: 68px 6%;
   text-align: center;
@@ -425,6 +458,39 @@ nav a:hover,
   border: 1px solid #e7c76f;
 }
 
+.faqSection {
+  background: #f7fbf3;
+}
+
+.faqGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  max-width: 980px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.faqGrid details {
+  border: 1px solid #d8e9c9;
+  border-radius: 14px;
+  background: #fff;
+  padding: 16px 18px;
+  box-shadow: 0 10px 24px rgba(20, 53, 31, 0.07);
+}
+
+.faqGrid summary {
+  cursor: pointer;
+  color: #004f28;
+  font-weight: 900;
+}
+
+.faqGrid p {
+  color: #5f6f60;
+  line-height: 1.55;
+  margin-bottom: 0;
+}
+
 .contact {
   background: #003d20;
   color: white;
@@ -464,9 +530,11 @@ nav a:hover,
   }
 
   .trust,
+  .customerAssurance,
   .ingredientGrid,
   .whyGrid,
-  .ordersGrid {
+  .ordersGrid,
+  .faqGrid {
     grid-template-columns: 1fr;
   }
 
@@ -746,6 +814,26 @@ nav a:hover,
   cursor: pointer;
 }
 
+.paymentOptions button {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  border: 1px solid #d8c88e;
+}
+
+.paymentOptions button b {
+  font-size: 16px;
+}
+
+.paymentOptions button span {
+  color: #5f6f60;
+  font-size: 13px;
+}
+
+.paymentOptions .selectedPay span {
+  color: #eaffef;
+}
+
 .selectedPay,
 .submitOrderBtn {
   background: #07883f !important;
@@ -769,6 +857,44 @@ nav a:hover,
 .successNote {
   color: #06451f;
   font-weight: 600;
+}
+
+.nextStepsBox {
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid #d8e9c9;
+  border-radius: 14px;
+  background: #f7fbf3;
+  text-align: left;
+}
+
+.nextStepsBox h3 {
+  margin: 0 0 8px;
+  color: #06451f;
+}
+
+.nextStepsBox p {
+  margin: 0 0 12px;
+  color: #5f6f60;
+  line-height: 1.45;
+}
+
+.successActionRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.successActionRow a {
+  flex: 1;
+  min-width: 150px;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 11px 14px;
+  background: #06451f;
+  color: #fff;
+  font-weight: 800;
 }
 
 @media (max-width: 768px) {
