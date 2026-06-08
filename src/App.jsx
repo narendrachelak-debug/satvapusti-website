@@ -17,6 +17,9 @@ const products = [
     name: "SatvaPusti+ Family",
     subtitle: "Premium Nutrition Powder",
     desc: "Complete nutrition for every member of your family.",
+    bestFor: ["Family Nutrition", "Daily Energy", "Balanced Routine"],
+    benefits: ["Real dry fruits and seeds", "Daily nutrition support", "No artificial colours"],
+    usage: "2 spoon milk ya warm water ke saath daily routine me use karein.",
     images: {
       "1KG": "/products/family-1kg.png",
       "500G": "/products/family-500g.png",
@@ -33,6 +36,9 @@ const products = [
     name: "SatvaPusti+ Active Kids",
     subtitle: "Premium Kids Nutrition Powder",
     desc: "Growth, brain, immunity and daily energy support.",
+    bestFor: ["Kids Growth", "Brain Support", "Daily Immunity"],
+    benefits: ["Kids-focused nutrition", "Real banana and nuts", "Tasty daily drink"],
+    usage: "1-2 spoon milk ke saath daily, age aur appetite ke hisaab se use karein.",
     images: {
       "1KG": "/products/active-kids-1kg.png",
       "500G": "/products/active-kids-500g.png",
@@ -49,6 +55,9 @@ const products = [
     name: "SatvaPusti+ Active",
     subtitle: "Premium Natural Protein Formula",
     desc: "Fuel your strength, boost recovery and achieve your best.",
+    bestFor: ["Protein Support", "Recovery", "Active Lifestyle"],
+    benefits: ["Strength routine support", "Natural protein formula", "Energy and recovery"],
+    usage: "Workout ke baad ya daily nutrition drink ke roop me milk/water ke saath use karein.",
     images: {
       "1KG": "/products/active-1kg.png",
       "500G": "/products/active-500g.png",
@@ -550,14 +559,26 @@ order.whatsappMessage = message;
             return (
               <div className="productCard" key={product.id}>
                 <div className="productBadgeRow">
-                  <span>Best Seller</span>
-                  <span>Fresh Stock</span>
+                  {product.bestFor.map((tag) => (
+                    <span key={tag}>{tag}</span>
+                  ))}
                 </div>
                 <h3>{product.name}</h3>
                 <h4>{product.subtitle}</h4>
                 <p>{product.desc}</p>
 
                 <img className="mainProductImg" src={product.images[weight]} alt={product.name} />
+
+                <div className="productBenefitGrid">
+                  {product.benefits.map((benefit) => (
+                    <span key={benefit}>{benefit}</span>
+                  ))}
+                </div>
+
+                <div className="usageBox">
+                  <b>How to Use</b>
+                  <span>{product.usage}</span>
+                </div>
 
                 <div className="weightButtons">
                   {["1KG", "500G", "250G"].map((w) => (
@@ -567,7 +588,17 @@ order.whatsappMessage = message;
                       onClick={() => setSelected({ ...selected, [product.id]: w })}
                     >
                       {w}
+                      {w === "1KG" && <small>Best Value</small>}
                     </button>
+                  ))}
+                </div>
+
+                <div className="packCompare">
+                  {["250G", "500G", "1KG"].map((pack) => (
+                    <div className={pack === weight ? "activePack" : ""} key={pack}>
+                      <span>{pack}</span>
+                      <b>₹{product.prices[pack].offer}</b>
+                    </div>
                   ))}
                 </div>
 
@@ -580,6 +611,10 @@ order.whatsappMessage = message;
                     {isOutOfStock ? "Out of stock" : isLowStock ? `Low stock: ${stock} left` : `In stock: ${stock}`}
                   </p>
                 </div>
+
+                <p className="productTrustLine">
+                  FSSAI registered food product. Not a medicine.
+                </p>
 
                 <div className="qtyBox">
                   <button onClick={() => changeQty(product, -1)}>-</button>
