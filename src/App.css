@@ -2,34 +2,54 @@
   box-sizing: border-box;
 }
 
+:root {
+  --forest: #073f24;
+  --forest-dark: #042817;
+  --leaf: #0f9d58;
+  --leaf-deep: #087f4f;
+  --mint: #eef8e7;
+  --mint-soft: #f6fbef;
+  --ivory: #fffaf0;
+  --cream: #fff1d2;
+  --gold: #c78317;
+  --gold-soft: #ffe9ad;
+  --ink: #14351f;
+  --muted: #5f6f60;
+  --line: #d8e9c9;
+  --shadow: 0 18px 44px rgba(20, 53, 31, 0.11);
+}
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #f7fbf3;
-  color: #14351f;
+  background:
+    radial-gradient(circle at top left, rgba(255, 233, 173, 0.32), transparent 34%),
+    linear-gradient(180deg, #fbfff6 0%, #f7fbf3 45%, #fffaf0 100%);
+  color: var(--ink);
 }
 
 .header {
-  min-height: 82px;
-  padding: 12px 6%;
+  min-height: 78px;
+  padding: 10px 6%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 250, 240, 0.94);
   backdrop-filter: blur(14px);
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 10px 30px rgba(8, 70, 34, 0.1);
+  border-bottom: 1px solid rgba(216, 233, 201, 0.9);
+  box-shadow: 0 12px 34px rgba(8, 70, 34, 0.11);
 }
 
 .logo {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 900;
-  color: #007a3d;
+  color: var(--forest);
 }
 
 .logoMark {
@@ -38,11 +58,11 @@ body {
   justify-content: center;
   width: 46px;
   height: 46px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #008037, #8fcb3f);
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--forest), var(--leaf), #8fcb3f);
   color: #fff;
   font-size: 18px;
-  box-shadow: 0 10px 22px rgba(0, 128, 55, 0.25);
+  box-shadow: 0 10px 22px rgba(0, 128, 55, 0.24);
 }
 
 nav {
@@ -52,7 +72,7 @@ nav {
 }
 
 nav a {
-  color: #14351f;
+  color: var(--ink);
   text-decoration: none;
   font-weight: 800;
   padding: 10px 12px;
@@ -61,8 +81,8 @@ nav a {
 
 nav a:hover,
 .profileNavBtn:hover {
-  background: #eef8e7;
-  color: #007a3d;
+  background: var(--mint);
+  color: var(--leaf-deep);
 }
 
 .btn,
@@ -70,7 +90,7 @@ nav a:hover,
 .contact a,
 .upiBtn {
   border: none;
-  background: #008037;
+  background: linear-gradient(135deg, var(--leaf), var(--leaf-deep));
   color: white;
   padding: 13px 24px;
   border-radius: 30px;
@@ -79,11 +99,11 @@ nav a:hover,
   display: inline-block;
   cursor: pointer;
   font-size: 15px;
-  box-shadow: 0 10px 22px rgba(0, 128, 55, 0.18);
+  box-shadow: 0 12px 24px rgba(0, 128, 55, 0.2);
 }
 
 .upiBtn {
-  background: #b46b00;
+  background: linear-gradient(135deg, var(--gold), #9a5a00);
 }
 
 .hero {
@@ -93,7 +113,7 @@ nav a:hover,
   max-height: 820px;
   padding: 16px 0 0;
   overflow: hidden;
-  background: linear-gradient(180deg, #f7fbf3 0%, #ffffff 100%);
+  background: linear-gradient(180deg, var(--mint-soft) 0%, #ffffff 100%);
 }
 
 .heroFrame {
@@ -101,7 +121,7 @@ nav a:hover,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #fff;
+  background: #fffdf7;
 }
 
 .slider {
@@ -131,7 +151,7 @@ nav a:hover,
   padding: 7px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 8px 20px rgba(20, 53, 31, 0.15);
+  box-shadow: 0 8px 20px rgba(20, 53, 31, 0.14);
 }
 
 .heroDots span {
@@ -144,7 +164,7 @@ nav a:hover,
 .heroDots span:first-child {
   width: 20px;
   border-radius: 999px;
-  background: #008037;
+  background: var(--leaf);
 }
 
 @keyframes slide {
@@ -155,7 +175,8 @@ nav a:hover,
 }
 
 .trust {
-  background: #063d22;
+  background:
+    linear-gradient(135deg, var(--forest-dark), var(--forest) 58%, #0b5b35);
   color: white;
   padding: 18px 6%;
   display: grid;
@@ -168,7 +189,8 @@ nav a:hover,
   padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .trustItem b,
@@ -192,13 +214,13 @@ nav a:hover,
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   padding: 20px 6%;
-  background: #fbfff6;
-  border-bottom: 1px solid #d8e9c9;
+  background: linear-gradient(180deg, #fbfff6, var(--ivory));
+  border-bottom: 1px solid var(--line);
 }
 
 .customerAssurance div {
   padding: 16px;
-  border: 1px solid #d8e9c9;
+  border: 1px solid var(--line);
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 10px 24px rgba(20, 53, 31, 0.07);
@@ -211,31 +233,32 @@ nav a:hover,
 
 .customerAssurance b {
   margin-bottom: 6px;
-  color: #004f28;
+  color: var(--forest);
   font-size: 17px;
 }
 
 .customerAssurance span {
-  color: #5f6f60;
+  color: var(--muted);
   line-height: 1.45;
 }
 
 .section {
-  padding: 68px 6%;
+  padding: 70px 6%;
   text-align: center;
 }
 
 .section h2 {
-  font-size: 42px;
-  color: #004f28;
+  font-size: 40px;
+  color: var(--forest);
   margin-bottom: 12px;
+  letter-spacing: 0;
 }
 
 .sectionText {
   font-size: 18px;
   max-width: 640px;
   margin: 0 auto 36px;
-  color: #5f6f60;
+  color: var(--muted);
 }
 
 .productSlider {
@@ -245,18 +268,18 @@ nav a:hover,
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   padding: 20px 2px 42px;
-  scrollbar-color: #008037 #dff0d6;
+  scrollbar-color: var(--leaf) #dff0d6;
 }
 
 .productCard {
   min-width: 430px;
   max-width: 430px;
   scroll-snap-align: center;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfff6 72%, #f4fbec 100%);
-  border: 1px solid #d8e9c9;
-  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfff6 68%, #fffaf0 100%);
+  border: 1px solid var(--line);
+  border-radius: 16px;
   padding: 22px;
-  box-shadow: 0 18px 42px rgba(20, 53, 31, 0.1);
+  box-shadow: var(--shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -275,8 +298,8 @@ nav a:hover,
 .productBadgeRow span {
   padding: 7px 10px;
   border-radius: 999px;
-  background: #eef8e7;
-  color: #007a3d;
+  background: var(--mint);
+  color: var(--leaf-deep);
   font-size: 12px;
   font-weight: 900;
 }
@@ -292,18 +315,18 @@ nav a:hover,
 }
 
 .productCard h3 {
-  color: #006b35;
+  color: var(--forest);
   font-size: 28px;
   margin: 0;
 }
 
 .productCard h4 {
-  color: #b46b00;
+  color: var(--gold);
   margin: 8px 0;
 }
 
 .productCard p {
-  color: #5f6f60;
+  color: var(--muted);
   line-height: 1.45;
 }
 
@@ -314,7 +337,10 @@ nav a:hover,
   margin: 14px 0 18px;
   padding: 14px;
   border-radius: 16px;
-  background: #f8fbf1;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 233, 173, 0.38), transparent 32%),
+    linear-gradient(180deg, #f8fbf1, #ffffff);
+  border: 1px solid rgba(216, 233, 201, 0.75);
 }
 
 .productBenefitGrid {
@@ -327,10 +353,10 @@ nav a:hover,
 
 .productBenefitGrid span {
   padding: 9px 11px;
-  border: 1px solid #d8e9c9;
+  border: 1px solid var(--line);
   border-radius: 12px;
   background: #ffffff;
-  color: #14351f;
+  color: var(--ink);
   font-size: 14px;
   font-weight: 800;
 }
@@ -347,17 +373,17 @@ nav a:hover,
 }
 
 .usageBox b {
-  color: #06451f;
+  color: var(--forest);
 }
 
 .usageBox span {
-  color: #5f6f60;
+  color: var(--muted);
   line-height: 1.45;
 }
 
 .packLabel {
   margin: 2px 0 8px;
-  color: #06451f !important;
+  color: var(--forest) !important;
   font-size: 14px;
   font-weight: 900;
   text-align: left;
@@ -375,9 +401,9 @@ nav a:hover,
   gap: 4px;
   flex: 1;
   min-width: 0;
-  border: 2px solid #008037;
+  border: 2px solid var(--leaf);
   background: white;
-  color: #008037;
+  color: var(--leaf-deep);
   padding: 10px 8px;
   border-radius: 14px;
   font-weight: 900;
@@ -390,21 +416,21 @@ nav a:hover,
 
 .weightButtons small {
   display: block;
-  color: #06451f;
+  color: var(--forest);
   font-size: 15px;
   line-height: 1.1;
 }
 
 .weightButtons em {
   display: block;
-  color: #b46b00;
+  color: var(--gold);
   font-size: 10px;
   line-height: 1;
   font-style: normal;
 }
 
 .weightButtons .activeWeight {
-  background: #008037;
+  background: linear-gradient(135deg, var(--leaf), var(--leaf-deep));
   color: white;
 }
 
@@ -414,7 +440,7 @@ nav a:hover,
 }
 
 .priceBox {
-  background: #fff8df;
+  background: linear-gradient(180deg, #fff9e8, #fffdf6);
   border: 1px solid #ead083;
   border-radius: 14px;
   padding: 12px 14px;
@@ -436,8 +462,8 @@ nav a:hover,
   margin: 12px 0 0;
   padding: 10px 12px;
   border-radius: 999px;
-  background: #eef8e7;
-  color: #06451f !important;
+  background: var(--mint);
+  color: var(--forest) !important;
   font-size: 13px;
   font-weight: 900;
   text-align: center;
@@ -456,7 +482,7 @@ nav a:hover,
   height: 38px;
   border-radius: 50%;
   border: none;
-  background: #008037;
+  background: var(--leaf);
   color: white;
   font-size: 22px;
   font-weight: 900;
@@ -477,7 +503,7 @@ nav a:hover,
 }
 
 .ordersSection {
-  background: #f7ffe9;
+  background: var(--mint-soft);
 }
 
 .ordersGrid {
@@ -491,15 +517,15 @@ nav a:hover,
   padding: 24px;
   border-radius: 18px;
   border: 1px solid #e7c76f;
-  box-shadow: 0 5px 18px rgba(0,0,0,0.08);
+  box-shadow: 0 12px 26px rgba(20, 53, 31, 0.08);
 }
 
 .orderCard h3 {
-  color: #008037;
+  color: var(--leaf-deep);
 }
 
 .cream {
-  background: #fff1d2;
+  background: linear-gradient(180deg, var(--cream), #fff8e8);
 }
 
 .ingredientGrid {
@@ -512,7 +538,7 @@ nav a:hover,
   background: white;
   border-radius: 18px;
   padding: 15px;
-  box-shadow: 0 5px 18px rgba(0,0,0,0.08);
+  box-shadow: 0 14px 32px rgba(20, 53, 31, 0.09);
   overflow: hidden;
 }
 
@@ -535,7 +561,7 @@ nav a:hover,
   margin: 0 auto 35px;
   font-size: 18px;
   line-height: 1.8;
-  color: #333;
+  color: var(--ink);
 }
 
 .whyGrid {
@@ -551,10 +577,11 @@ nav a:hover,
   padding: 24px;
   border-radius: 18px;
   border: 1px solid #e7c76f;
+  box-shadow: 0 12px 26px rgba(20, 53, 31, 0.08);
 }
 
 .faqSection {
-  background: #f7fbf3;
+  background: linear-gradient(180deg, #f7fbf3, var(--ivory));
 }
 
 .faqGrid {
@@ -567,27 +594,27 @@ nav a:hover,
 }
 
 .faqGrid details {
-  border: 1px solid #d8e9c9;
+  border: 1px solid var(--line);
   border-radius: 14px;
   background: #fff;
   padding: 16px 18px;
-  box-shadow: 0 10px 24px rgba(20, 53, 31, 0.07);
+  box-shadow: 0 12px 28px rgba(20, 53, 31, 0.08);
 }
 
 .faqGrid summary {
   cursor: pointer;
-  color: #004f28;
+  color: var(--forest);
   font-weight: 900;
 }
 
 .faqGrid p {
-  color: #5f6f60;
+  color: var(--muted);
   line-height: 1.55;
   margin-bottom: 0;
 }
 
 .contact {
-  background: #003d20;
+  background: linear-gradient(135deg, var(--forest-dark), var(--forest) 62%, #0a5a35);
   color: white;
   text-align: center;
   padding: 60px 6%;
@@ -659,19 +686,19 @@ nav a:hover,
 }
 
 .offerPrice {
-  color: #008037;
+  color: var(--leaf-deep);
   font-size: 22px;
   font-weight: 900;
 }
 
 .saveText {
-  color: #b46b00;
+  color: var(--gold);
   font-weight: 900;
 }
 
 .codBtn {
   border: none;
-  background: #14351f;
+  background: var(--forest);
   color: white;
   padding: 13px 24px;
   border-radius: 30px;
@@ -682,7 +709,7 @@ nav a:hover,
 
 .upiBtn {
   border: none;
-  background: #b46b00;
+  background: linear-gradient(135deg, var(--gold), #9a5a00);
   color: white;
   padding: 13px 24px;
   border-radius: 30px;
@@ -692,7 +719,7 @@ nav a:hover,
 }
 
 .freeShipping {
-  color: #008037;
+  color: var(--leaf-deep);
   font-weight: 900;
   margin-top: 10px;
 }
@@ -745,7 +772,7 @@ nav a:hover,
   right: 18px;
   bottom: 18px;
   z-index: 999;
-  background: #07883f;
+  background: linear-gradient(135deg, var(--leaf), var(--leaf-deep));
   color: white;
   border: none;
   border-radius: 40px;
@@ -788,7 +815,7 @@ nav a:hover,
   height: 34px;
   border: none;
   border-radius: 50%;
-  background: #0b6b35;
+  background: var(--forest);
   color: #fff;
   font-size: 22px;
   cursor: pointer;
@@ -796,7 +823,7 @@ nav a:hover,
 
 .checkoutBox h2 {
   text-align: center;
-  color: #06451f;
+  color: var(--forest);
   margin-bottom: 18px;
 }
 
@@ -814,7 +841,7 @@ nav a:hover,
 .checkoutBox input:focus,
 .checkoutBox textarea:focus {
   outline: 2px solid rgba(0, 128, 55, 0.16);
-  border-color: #008037;
+  border-color: var(--leaf);
 }
 
 .checkoutBox textarea {
@@ -848,7 +875,7 @@ nav a:hover,
 
 .cartItem h4 {
   margin: 0 0 6px;
-  color: #06451f;
+  color: var(--forest);
 }
 
 .cartItem p {
@@ -867,7 +894,7 @@ nav a:hover,
   height: 30px;
   border: none;
   border-radius: 50%;
-  background: #0b6b35;
+  background: var(--forest);
   color: white;
   font-weight: 800;
 }
@@ -903,8 +930,8 @@ nav a:hover,
   padding: 14px;
   border: none;
   border-radius: 30px;
-  background: #e8d39a;
-  color: #06451f;
+  background: #f5e4b5;
+  color: var(--forest);
   font-weight: 700;
   cursor: pointer;
 }
@@ -921,7 +948,7 @@ nav a:hover,
 }
 
 .paymentOptions button span {
-  color: #5f6f60;
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -931,13 +958,13 @@ nav a:hover,
 
 .selectedPay,
 .submitOrderBtn {
-  background: #07883f !important;
+  background: linear-gradient(135deg, var(--leaf), var(--leaf-deep)) !important;
   color: white !important;
 }
 
 .freeShipping {
   text-align: center;
-  color: #07883f;
+  color: var(--leaf-deep);
   font-weight: 700;
 }
 
@@ -950,7 +977,7 @@ nav a:hover,
 }
 
 .successNote {
-  color: #06451f;
+  color: var(--forest);
   font-weight: 600;
 }
 
@@ -959,18 +986,18 @@ nav a:hover,
   padding: 14px;
   border: 1px solid #d8e9c9;
   border-radius: 14px;
-  background: #f7fbf3;
+  background: var(--mint-soft);
   text-align: left;
 }
 
 .nextStepsBox h3 {
   margin: 0 0 8px;
-  color: #06451f;
+  color: var(--forest);
 }
 
 .nextStepsBox p {
   margin: 0 0 12px;
-  color: #5f6f60;
+  color: var(--muted);
   line-height: 1.45;
 }
 
@@ -987,7 +1014,7 @@ nav a:hover,
   text-decoration: none;
   border-radius: 999px;
   padding: 11px 14px;
-  background: #06451f;
+  background: var(--forest);
   color: #fff;
   font-weight: 800;
 }
@@ -1034,7 +1061,7 @@ nav a:hover,
   margin: 12px 0;
   padding: 14px;
   border-radius: 30px;
-  background: #0b6b35;
+  background: linear-gradient(135deg, var(--leaf), var(--leaf-deep));
   color: white;
   font-weight: 800;
   text-decoration: none;
