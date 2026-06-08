@@ -2,6 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 
 const API_URL = "https://satvapusti-website.onrender.com";
 const ADMIN_SESSION_MS = 30 * 60 * 1000;
+const SELLER_DETAILS = {
+  brand: "SatvaPusti Nutrition",
+  fboName: "Satvapusti Nutrition",
+  businessType: "General Manufacturing",
+  address:
+    "H No 59, Pendri, Pandri, Berla, Bemetara, Chhattisgarh - 491335",
+  phone: "+91 96396 30828",
+  email: "info@satvapusti.com",
+  website: "www.satvapusti.com",
+  fssai: "20526034000204",
+  upi: "9993265857@ybl",
+  gstStatus: "GST Unregistered",
+};
 
 export default function Admin() {
   useEffect(() => {
@@ -40,6 +53,7 @@ export default function Admin() {
   const [editingInventory, setEditingInventory] = useState(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeAdminView, setActiveAdminView] = useState("dashboard");
+  const [expandedOrders, setExpandedOrders] = useState({});
   const [filters, setFilters] = useState({
     orderDateFrom: "",
     orderDateTo: "",
@@ -101,6 +115,28 @@ export default function Admin() {
       dateStyle: "medium",
       timeStyle: "short",
     });
+  };
+
+  const getKolkataDateParts = (dateValue) => {
+    if (!dateValue) return null;
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return null;
+
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const parts = Object.fromEntries(
+      formatter.formatToParts(date).map((part) => [part.type, part.value])
+    );
+
+    return {
+      day: `${parts.year}-${parts.month}-${parts.day}`,
+      month: `${parts.year}-${parts.month}`,
+    };
   };
 
   const updateLocalOrder = (id, field, value) => {
@@ -277,17 +313,22 @@ alert("Order updated successfully");
     .filter(o => o.paymentStatus === "Paid")
     .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayParts = getKolkataDateParts(new Date());
+  const todayKey = todayParts?.day;
+  const thisMonthKey = todayParts?.month;
 
   const revenueToday = orders
-    .filter(o => o.paymentStatus === "Paid" && new Date(o.paymentDate || o.createdAt) >= today)
+    .filter((o) => {
+      const parts = getKolkataDateParts(o.paymentDate || o.createdAt);
+      return o.paymentStatus === "Paid" && parts?.day === todayKey;
+    })
     .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-  const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-
   const revenueThisMonth = orders
-    .filter(o => o.paymentStatus === "Paid" && new Date(o.paymentDate || o.createdAt) >= thisMonthStart)
+    .filter((o) => {
+      const parts = getKolkataDateParts(o.paymentDate || o.createdAt);
+      return o.paymentStatus === "Paid" && parts?.month === thisMonthKey;
+    })
     .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
   const totalCODOrders = orders.filter(o => o.paymentMethod === "COD").length;
@@ -302,11 +343,13 @@ alert("Order updated successfully");
       const sourceDate = order.paymentDate || order.createdAt;
       if (!sourceDate) return acc;
 
-      const date = new Date(sourceDate);
+      const parts = getKolkataDateParts(sourceDate);
+      if (!parts) return acc;
+
       const key =
         type === "monthly"
-          ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
-          : date.toISOString().slice(0, 10);
+          ? parts.month
+          : parts.day;
 
       if (!acc[key]) {
         acc[key] = { period: key, orders: 0, revenue: 0 };
@@ -351,24 +394,55 @@ alert("Order updated successfully");
     return Array.from(customerMap.values()).sort((a, b) => b.orders - a.orders);
   }, [orders]);
 
+  const filteredCustomerSummaries = useMemo(() => {
+    const customerMap = new Map();
+
+    filteredOrders.forEach((order) => {
+      const key = order.mobile || order.email || order.customerName || order._id;
+      const existing = customerMap.get(key) || {
+        name: order.customerName || "Unknown Customer",
+        mobile: order.mobile || "N/A",
+        email: order.email || "N/A",
+        orders: 0,
+        paidOrders: 0,
+        totalSpent: 0,
+      };
+
+      existing.orders += 1;
+      if (order.paymentStatus === "Paid") {
+        existing.paidOrders += 1;
+        existing.totalSpent += Number(order.totalAmount || 0);
+      }
+
+      customerMap.set(key, existing);
+    });
+
+    return Array.from(customerMap.values()).sort((a, b) => b.orders - a.orders);
+  }, [filteredOrders]);
+
   const lowStockItems = inventory.filter((item) => Number(item.stock || 0) < 10);
   const paymentOrders = filteredOrders.filter((order) =>
-    ["Pending", "Awaiting Verification", "Paid", "Failed"].includes(
+    ["Pending", "Awaiting Verification"].includes(
       order.paymentStatus || "Pending"
     )
   );
+  const latestFilteredOrders = [...filteredOrders].sort(
+    (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+  );
   const visibleOrders =
-    activeAdminView === "payments" ? paymentOrders : filteredOrders;
-  const showSummary = activeAdminView === "dashboard" || activeAdminView === "payments";
+    activeAdminView === "payments" ? paymentOrders : latestFilteredOrders;
+  const showSummary = activeAdminView === "dashboard";
   const showControls =
     activeAdminView === "dashboard" ||
     activeAdminView === "orders" ||
-    activeAdminView === "payments";
+    activeAdminView === "payments" ||
+    activeAdminView === "customers";
   const showReports = activeAdminView === "dashboard" || activeAdminView === "reports";
   const showOrders =
     activeAdminView === "dashboard" ||
     activeAdminView === "orders" ||
-    activeAdminView === "payments";
+    activeAdminView === "payments" ||
+    activeAdminView === "customers";
   const viewTitleMap = {
     dashboard: "Dashboard Overview",
     orders: "Order Management",
@@ -387,6 +461,281 @@ ${order.mobile || ""}`;
 
     navigator.clipboard.writeText(text);
     alert("Address copied");
+  };
+
+  const formatCurrency = (value) =>
+    `₹${Number(value || 0).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  const getFinancialYear = (dateValue) => {
+    const date = dateValue ? new Date(dateValue) : new Date();
+    const parts = getKolkataDateParts(date);
+    const year = Number(parts?.month?.slice(0, 4) || date.getFullYear());
+    const month = Number(parts?.month?.slice(5, 7) || date.getMonth() + 1);
+    const startYear = month >= 4 ? year : year - 1;
+    return `${startYear}-${String(startYear + 1).slice(-2)}`;
+  };
+
+  const buildBillNumber = (order) =>
+    `SP/${getFinancialYear(order.createdAt)}/${String(order.orderId || order._id || "").replace(/[^a-zA-Z0-9-]/g, "")}`;
+
+  const getPaymentClassification = (order) => {
+    const method = String(order.paymentMethod || "").toUpperCase();
+    const status = order.paymentStatus || "Pending";
+    const isCOD = method === "COD";
+
+    if (isCOD) {
+      return {
+        type: "Cash on Delivery (COD)",
+        status: status === "Paid" ? "Paid / Collected" : "To be collected on delivery",
+      };
+    }
+
+    return {
+      type: "Prepaid",
+      status:
+        status === "Paid"
+          ? "Paid"
+          : status === "Awaiting Verification"
+            ? "Awaiting Payment Verification"
+            : status,
+    };
+  };
+
+  const numberToIndianWords = (amount) => {
+    const num = Math.round(Number(amount || 0));
+    if (num === 0) return "Zero Rupees Only";
+
+    const ones = [
+      "",
+      "One",
+      "Two",
+      "Three",
+      "Four",
+      "Five",
+      "Six",
+      "Seven",
+      "Eight",
+      "Nine",
+      "Ten",
+      "Eleven",
+      "Twelve",
+      "Thirteen",
+      "Fourteen",
+      "Fifteen",
+      "Sixteen",
+      "Seventeen",
+      "Eighteen",
+      "Nineteen",
+    ];
+    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+    const twoDigits = (value) =>
+      value < 20
+        ? ones[value]
+        : `${tens[Math.floor(value / 10)]}${value % 10 ? ` ${ones[value % 10]}` : ""}`;
+
+    const threeDigits = (value) => {
+      const hundred = Math.floor(value / 100);
+      const rest = value % 100;
+      return `${hundred ? `${ones[hundred]} Hundred` : ""}${hundred && rest ? " " : ""}${rest ? twoDigits(rest) : ""}`;
+    };
+
+    const crore = Math.floor(num / 10000000);
+    const lakh = Math.floor((num % 10000000) / 100000);
+    const thousand = Math.floor((num % 100000) / 1000);
+    const hundred = num % 1000;
+    const words = [];
+
+    if (crore) words.push(`${threeDigits(crore)} Crore`);
+    if (lakh) words.push(`${threeDigits(lakh)} Lakh`);
+    if (thousand) words.push(`${threeDigits(thousand)} Thousand`);
+    if (hundred) words.push(threeDigits(hundred));
+
+    return `${words.join(" ")} Rupees Only`;
+  };
+
+  const buildInvoiceHtml = (order) => {
+    const payment = getPaymentClassification(order);
+    const items = Array.isArray(order.items) && order.items.length > 0
+      ? order.items
+      : [{ name: "SatvaPusti Nutrition Product", weight: "", quantity: 1, offer: order.totalAmount || 0 }];
+    const totalAmount = Number(order.totalAmount || 0);
+    const rows = items
+      .map((item, index) => {
+        const quantity = Number(item.quantity || 1);
+        const unitPrice = Number(item.offer || item.price || 0);
+        const lineTotal = unitPrice * quantity;
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>
+              <strong>${escapeHtml(item.name || "SatvaPusti Nutrition Product")}</strong>
+              ${item.weight ? `<br><span>${escapeHtml(item.weight)}</span>` : ""}
+            </td>
+            <td>${escapeHtml(item.weight || "Unit")}</td>
+            <td class="num">${quantity}</td>
+            <td class="num">${formatCurrency(unitPrice)}</td>
+            <td class="num">${formatCurrency(lineTotal)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bill of Supply - ${escapeHtml(order.orderId || "")}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f3f4f6; color: #111827; font-family: Arial, sans-serif; }
+    .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 18mm; background: #fff; }
+    .top { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #111827; padding-bottom: 14px; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 28px; color: #06451f; }
+    h2 { font-size: 20px; text-align: right; text-transform: uppercase; }
+    .muted { color: #4b5563; font-size: 12px; line-height: 1.55; }
+    .meta { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; }
+    .box h3 { margin-bottom: 8px; font-size: 14px; color: #06451f; text-transform: uppercase; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #d1d5db; padding: 9px; text-align: left; vertical-align: top; font-size: 13px; }
+    th { background: #eef9f0; color: #06451f; }
+    .num { text-align: right; white-space: nowrap; }
+    .totals { margin-top: 14px; display: grid; grid-template-columns: 1fr 260px; gap: 16px; align-items: start; }
+    .totalLine { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+    .grand { font-size: 18px; font-weight: 800; }
+    .note { margin-top: 16px; padding: 10px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; font-size: 12px; line-height: 1.5; }
+    .footer { margin-top: 28px; display: flex; justify-content: space-between; gap: 20px; align-items: end; font-size: 12px; }
+    .sign { min-width: 220px; border-top: 1px solid #111827; padding-top: 8px; text-align: center; }
+    .actions { position: sticky; top: 0; padding: 10px; background: #111827; text-align: center; }
+    .actions button { border: 0; border-radius: 6px; padding: 9px 14px; background: #0f9d58; color: white; font-weight: 700; cursor: pointer; }
+    @media print {
+      body { background: #fff; }
+      .page { width: auto; min-height: auto; margin: 0; padding: 0; }
+      .actions { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="actions"><button onclick="window.print()">Print / Save PDF</button></div>
+  <main class="page">
+    <section class="top">
+      <div>
+        <h1>${escapeHtml(SELLER_DETAILS.brand)}</h1>
+        <p class="muted">
+          FBO Name: ${escapeHtml(SELLER_DETAILS.fboName)}<br>
+          Business Type: ${escapeHtml(SELLER_DETAILS.businessType)}<br>
+          ${escapeHtml(SELLER_DETAILS.address)}<br>
+          Phone: ${escapeHtml(SELLER_DETAILS.phone)} | Email: ${escapeHtml(SELLER_DETAILS.email)}<br>
+          Website: ${escapeHtml(SELLER_DETAILS.website)} | UPI: ${escapeHtml(SELLER_DETAILS.upi)}<br>
+          FSSAI Registration No: ${escapeHtml(SELLER_DETAILS.fssai)} | ${escapeHtml(SELLER_DETAILS.gstStatus)}
+        </p>
+      </div>
+      <div>
+        <h2>Bill of Supply</h2>
+        <p class="muted">
+          Bill No: <strong>${escapeHtml(buildBillNumber(order))}</strong><br>
+          Order ID: ${escapeHtml(order.orderId || "N/A")}<br>
+          Bill Date: ${escapeHtml(formatDate(order.paymentDate || order.createdAt))}<br>
+          Payment Type: <strong>${escapeHtml(payment.type)}</strong><br>
+          Collection Status: <strong>${escapeHtml(payment.status)}</strong>
+        </p>
+      </div>
+    </section>
+
+    <section class="meta">
+      <div class="box">
+        <h3>Bill To</h3>
+        <p>
+          <strong>${escapeHtml(order.customerName || "Customer")}</strong><br>
+          ${escapeHtml(order.address || "N/A")}<br>
+          ${escapeHtml(order.city || "N/A")} - ${escapeHtml(order.pincode || "N/A")}<br>
+          Mobile: ${escapeHtml(order.mobile || "N/A")}<br>
+          Email: ${escapeHtml(order.email || "N/A")}
+        </p>
+      </div>
+      <div class="box">
+        <h3>Shipped To</h3>
+        <p>
+          <strong>${escapeHtml(order.customerName || "Customer")}</strong><br>
+          ${escapeHtml(order.address || "N/A")}<br>
+          ${escapeHtml(order.city || "N/A")} - ${escapeHtml(order.pincode || "N/A")}<br>
+          Mobile: ${escapeHtml(order.mobile || "N/A")}
+        </p>
+      </div>
+      <div class="box">
+        <h3>Payment Classification</h3>
+        <p>
+          <strong>${escapeHtml(payment.type)}</strong><br>
+          Status: ${escapeHtml(payment.status)}<br>
+          Mode Recorded: ${escapeHtml(order.paymentMethod || "N/A")}
+        </p>
+      </div>
+    </section>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 42px;">#</th>
+          <th>Description</th>
+          <th style="width: 95px;">Unit</th>
+          <th style="width: 70px;">Qty</th>
+          <th style="width: 110px;">Rate</th>
+          <th style="width: 120px;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <section class="totals">
+      <div class="box">
+        <h3>Amount in Words</h3>
+        <p>${escapeHtml(numberToIndianWords(totalAmount))}</p>
+      </div>
+      <div class="box">
+        <div class="totalLine"><span>Subtotal</span><strong>${formatCurrency(totalAmount)}</strong></div>
+        <div class="totalLine"><span>GST</span><strong>Not Applicable</strong></div>
+        <div class="totalLine grand"><span>Total</span><strong>${formatCurrency(totalAmount)}</strong></div>
+      </div>
+    </section>
+
+    <p class="note">
+      Seller is GST unregistered. GST has not been charged or collected on this Bill of Supply.
+      This document is generated from SatvaPusti admin order records.
+    </p>
+
+    <section class="footer">
+      <p class="muted">This is a computer generated bill.</p>
+      <div class="sign">Authorized Signatory<br>${escapeHtml(SELLER_DETAILS.brand)}</div>
+    </section>
+  </main>
+</body>
+</html>`;
+  };
+
+  const openInvoice = (order) => {
+    const invoiceWindow = window.open("", "_blank");
+    if (!invoiceWindow) {
+      alert("Please allow popups to generate invoice");
+      return;
+    }
+
+    invoiceWindow.document.open();
+    invoiceWindow.document.write(buildInvoiceHtml(order));
+    invoiceWindow.document.close();
+    invoiceWindow.focus();
   };
 
   const openCustomerWhatsApp = (order, template = "update") => {
@@ -413,7 +762,7 @@ ${order.trackingNumber ? `Tracking: ${order.trackingNumber}` : ""}
 ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
 
     const templates = {
-      received: `Hello ${order.customerName || ""}, your SatvaPusti order ${order.orderId} has been received. Amount: Rs. ${order.totalAmount}.`,
+      received: `Hello ${order.customerName || ""}, your SatvaPusti order ${order.orderId} has been received. Amount: ₹${order.totalAmount}.`,
       payment: `Hello ${order.customerName || ""}, payment for your SatvaPusti order ${order.orderId} is confirmed. We will process it shortly.`,
       processing: `Hello ${order.customerName || ""}, your SatvaPusti order ${order.orderId} is now being processed.`,
       shipped: baseUpdate,
@@ -670,27 +1019,14 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         </button>
       </div>
 
-      {(activeAdminView === "inventory" || activeAdminView === "customers") && (
+      {activeAdminView === "inventory" && (
         <div className="adminViewActions">
-          {activeAdminView === "inventory" && (
-            <button
-              onClick={() => setShowInventoryModal(true)}
-              className="admin-action-button admin-inventory-button"
-            >
-              Manage Inventory
-            </button>
-          )}
-          {activeAdminView === "customers" && (
-            <button
-              className="adminSecondaryBtn"
-              onClick={() => {
-                setActiveAdminView("orders");
-                setShowAdvancedFilters(true);
-              }}
-            >
-              Search Customer Orders
-            </button>
-          )}
+          <button
+            onClick={() => setShowInventoryModal(true)}
+            className="admin-action-button admin-inventory-button"
+          >
+            Manage Inventory
+          </button>
         </div>
       )}
 
@@ -713,26 +1049,6 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               </button>
             </div>
           ))}
-        </div>
-      )}
-
-      {activeAdminView === "customers" && (
-        <div className="adminInfoGrid">
-          {customerSummaries.length === 0 ? (
-            <div className="adminInfoPanel">
-              <h3>No customers found.</h3>
-            </div>
-          ) : (
-            customerSummaries.map((customer) => (
-              <div className="adminInfoPanel" key={`${customer.mobile}-${customer.email}`}>
-                <h3>{customer.name}</h3>
-                <p>Mobile: <b>{customer.mobile}</b></p>
-                <p>Email: <b>{customer.email}</b></p>
-                <p>Orders: <b>{customer.orders}</b> | Paid: <b>{customer.paidOrders}</b></p>
-                <p>Total spent: <b>₹{customer.totalSpent.toLocaleString()}</b></p>
-              </div>
-            ))
-          )}
         </div>
       )}
 
@@ -781,25 +1097,25 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         </div>
 
         <div style={boxStyle}>
-          💰 Total Revenue
+          Total Revenue
           <br />
           <b>₹{totalRevenue.toLocaleString()}</b>
         </div>
 
         <div style={boxStyle}>
-          📊 Revenue Today
+          Revenue Today
           <br />
           <b>₹{revenueToday.toLocaleString()}</b>
         </div>
 
         <div style={boxStyle}>
-          📈 Revenue This Month
+          Revenue This Month
           <br />
           <b>₹{revenueThisMonth.toLocaleString()}</b>
         </div>
 
         <div style={boxStyle}>
-          📦 COD Orders
+          COD Orders
           <br />
           <b>{totalCODOrders}</b>
         </div>
@@ -807,7 +1123,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         <div style={boxStyle}>
           Average Order Value
           <br />
-          <b>Rs. {Math.round(averageOrderValue).toLocaleString()}</b>
+          <b>₹{Math.round(averageOrderValue).toLocaleString()}</b>
         </div>
 
       </div>
@@ -831,32 +1147,34 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
       </button>
         </div>
 
+      {activeAdminView !== "customers" && (
       <div className="adminButtonRow">
         <button
           onClick={() => exportToCSV(filteredOrders)}
           className="admin-action-button admin-csv-button"
         >
-          📥 Export CSV
+          Export CSV
         </button>
         <button
           onClick={() => exportToJSON(filteredOrders)}
           className="admin-action-button admin-json-button"
         >
-          📄 Export JSON
+          Export JSON
         </button>
         <button
           onClick={() => setShowInventoryModal(true)}
           className="admin-action-button admin-inventory-button"
         >
-          📦 Manage Inventory
+          Manage Inventory
         </button>
         <button
           onClick={() => setShowPasswordModal(true)}
           className="admin-action-button admin-password-button"
         >
-          🔐 Change Password
+          Change Password
         </button>
       </div>
+      )}
       </div>
       )}
 
@@ -967,8 +1285,28 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               }}
               className="adminSecondaryBtn"
             >
-              🔄 Clear Filters
+              Clear Filters
             </button>
+        </div>
+      )}
+
+      {activeAdminView === "customers" && (
+        <div className="adminInfoGrid adminCustomersGrid">
+          {filteredCustomerSummaries.length === 0 ? (
+            <div className="adminInfoPanel">
+              <h3>No customers found.</h3>
+            </div>
+          ) : (
+            filteredCustomerSummaries.map((customer) => (
+              <div className="adminInfoPanel" key={`${customer.mobile}-${customer.email}`}>
+                <h3>{customer.name}</h3>
+                <p>Mobile: <b>{customer.mobile}</b></p>
+                <p>Email: <b>{customer.email}</b></p>
+                <p>Orders: <b>{customer.orders}</b> | Paid: <b>{customer.paidOrders}</b></p>
+                <p>Total spent: <b>₹{customer.totalSpent.toLocaleString()}</b></p>
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -1025,7 +1363,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               ×
             </button>
 
-            <h2>🔐 Change Password</h2>
+            <h2>Change Password</h2>
             <p style={{ color: "#666", fontSize: "14px" }}>
               Enter your current password to verify. To set a new password, update ADMIN_PASSWORD in your .env file.
             </p>
@@ -1120,7 +1458,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               ×
             </button>
 
-            <h2>📦 Manage Inventory</h2>
+            <h2>Manage Inventory</h2>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px", maxHeight: "400px", overflowY: "auto" }}>
               {inventory.map((item) => (
@@ -1170,7 +1508,13 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
       {showOrders && (
         <>
           <div className="adminSectionHeader">
-            <h2>{activeAdminView === "payments" ? "Payment Orders" : "Orders"}</h2>
+            <h2>
+              {activeAdminView === "payments"
+                ? "Payment Orders"
+                : activeAdminView === "customers"
+                  ? "Customer Order Results"
+                  : "Recent Orders"}
+            </h2>
             <span>{visibleOrders.length} visible</span>
           </div>
           {visibleOrders.length === 0 ? (
@@ -1216,13 +1560,22 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
                       <p>{formatDate(order.deliveryDate)}</p>
                     </div>
                     <div className="adminInlineActions">
-                      <button onClick={() => saveOrder(order)} disabled={savingId === order._id}>
-                        {savingId === order._id ? "Saving..." : "Save"}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedOrders((prev) => ({
+                            ...prev,
+                            [order._id]: !prev[order._id],
+                          }))
+                        }
+                      >
+                        {expandedOrders[order._id] ? "Hide Details" : "View Details"}
                       </button>
-                      <button onClick={() => openCustomerWhatsApp(order)}>WhatsApp</button>
                     </div>
                   </div>
 
+                  {expandedOrders[order._id] && (
+                    <>
                   <div className="adminOrderDetails">
                     <div className="adminDetailPanel">
                       <h4>Customer</h4>
@@ -1330,8 +1683,14 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
                   )}
 
                   <div className="adminOrderFooter">
+                    <button onClick={() => saveOrder(order)} disabled={savingId === order._id} style={buttonStyle}>
+                      {savingId === order._id ? "Saving..." : "Save"}
+                    </button>
                     <button onClick={() => copyAddress(order)} style={buttonStyle}>
                       Copy Address
+                    </button>
+                    <button onClick={() => openInvoice(order)} style={buttonStyle}>
+                      Invoice
                     </button>
                     <button onClick={() => openCustomerWhatsApp(order, "received")} style={smallButtonStyle}>
                       Order Received
@@ -1349,6 +1708,8 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
                       Delivered
                     </button>
                   </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -1376,19 +1737,19 @@ const summaryGridStyle = {
 const boxStyle = {
   background: "#0f2419",
   border: "1px solid #1f4a34",
-  borderRadius: "10px",
-  padding: "14px 16px",
-  minHeight: "78px",
-  boxShadow: "0 12px 24px rgba(0, 0, 0, 0.14)",
+  borderRadius: "8px",
+  padding: "10px 12px",
+  minHeight: "56px",
+  boxShadow: "0 8px 18px rgba(0, 0, 0, 0.12)",
 };
 
 const searchStyle = {
   width: "100%",
-  padding: "12px",
+  padding: "9px 12px",
   marginBottom: 0,
   border: "1px solid #1f4a34",
   borderRadius: "8px",
-  fontSize: "16px",
+  fontSize: "14px",
   boxSizing: "border-box",
   background: "#0b1b13",
   color: "#f7f8ff",
@@ -1415,15 +1776,15 @@ const filterInputStyle = {
 const reportsGridStyle = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-  gap: "12px",
-  marginBottom: "20px",
+  gap: "10px",
+  marginBottom: "14px",
 };
 
 const reportBoxStyle = {
   background: "#0f2419",
   border: "1px solid #1f4a34",
-  borderRadius: "10px",
-  padding: "15px",
+  borderRadius: "8px",
+  padding: "12px",
   color: "#f7f8ff",
 };
 

@@ -924,7 +924,7 @@ nav a:hover,
 
 .adminDashboardShell {
   display: grid;
-  grid-template-columns: 236px minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr);
   min-height: 100vh;
   background: #07150f;
   color: #f7f8ff;
@@ -934,7 +934,7 @@ nav a:hover,
   position: sticky;
   top: 0;
   height: 100vh;
-  padding: 22px 18px;
+  padding: 18px 16px;
   background: #0b1b13;
   border-right: 1px solid #1f4a34;
 }
@@ -943,10 +943,10 @@ nav a:hover,
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin-bottom: 24px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 20px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #0f9d58, #14b8a6);
   color: #fff;
   font-weight: 900;
@@ -954,7 +954,7 @@ nav a:hover,
 
 .adminSidebarNav {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .adminSidebarNav button {
@@ -963,7 +963,7 @@ nav a:hover,
   justify-content: space-between;
   gap: 10px;
   width: 100%;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -991,16 +991,16 @@ nav a:hover,
 
 .adminMainPanel {
   min-width: 0;
-  padding: 18px 24px 28px;
+  padding: 14px 18px 24px;
 }
 
 .adminTopBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin: 0 0 18px;
-  padding: 14px 16px;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
   border: 1px solid #1f4a34;
   border-radius: 12px;
   background: #0b1b13;
@@ -1009,19 +1009,19 @@ nav a:hover,
 .adminTopBar h1 {
   margin: 0;
   color: #f7f8ff;
-  font-size: 26px;
+  font-size: 24px;
   line-height: 1.15;
 }
 
 .adminViewSubtitle {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: #9da4bf;
   font-size: 14px;
   font-weight: 700;
 }
 
 .adminLogoutBtn {
-  padding: 10px 16px;
+  padding: 8px 14px;
   border: none;
   border-radius: 8px;
   background: #b4233a;
@@ -1032,31 +1032,113 @@ nav a:hover,
 
 .admin-summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 10px;
-  margin-bottom: 18px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .admin-summary-grid > div {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
-  color: #9da4bf;
-  font-size: 15px;
+  gap: 3px;
+  position: relative;
+  overflow: hidden;
+  color: #d7def7;
+  font-size: 14px;
 }
 
 .admin-summary-grid b {
   color: #f7f8ff;
-  font-size: 20px;
+  font-size: 17px;
+}
+
+.admin-summary-grid > div::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--stat-accent, #16a34a);
+}
+
+.admin-summary-grid > div:nth-child(1) {
+  --stat-accent: #38bdf8;
+  background: linear-gradient(135deg, rgba(14, 116, 144, 0.34), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(56, 189, 248, 0.48) !important;
+}
+
+.admin-summary-grid > div:nth-child(2) {
+  --stat-accent: #f59e0b;
+  background: linear-gradient(135deg, rgba(146, 64, 14, 0.34), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+.admin-summary-grid > div:nth-child(3) {
+  --stat-accent: #22c55e;
+  background: linear-gradient(135deg, rgba(21, 128, 61, 0.34), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(34, 197, 94, 0.48) !important;
+}
+
+.admin-summary-grid > div:nth-child(4) {
+  --stat-accent: #fb7185;
+  background: linear-gradient(135deg, rgba(159, 18, 57, 0.34), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(251, 113, 133, 0.48) !important;
+}
+
+.admin-summary-grid > div:nth-child(5) {
+  --stat-accent: #a78bfa;
+  background: linear-gradient(135deg, rgba(91, 33, 182, 0.32), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(167, 139, 250, 0.46) !important;
+}
+
+.admin-summary-grid > div:nth-child(6) {
+  --stat-accent: #2dd4bf;
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.34), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(45, 212, 191, 0.48) !important;
+}
+
+.admin-summary-grid > div:nth-child(7) {
+  --stat-accent: #84cc16;
+  background: linear-gradient(135deg, rgba(77, 124, 15, 0.32), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(132, 204, 22, 0.46) !important;
+}
+
+.admin-summary-grid > div:nth-child(8) {
+  --stat-accent: #facc15;
+  background: linear-gradient(135deg, rgba(161, 98, 7, 0.34), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(250, 204, 21, 0.5) !important;
+}
+
+.admin-summary-grid > div:nth-child(9) {
+  --stat-accent: #60a5fa;
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.32), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(96, 165, 250, 0.48) !important;
+}
+
+.admin-summary-grid > div:nth-child(10) {
+  --stat-accent: #c084fc;
+  background: linear-gradient(135deg, rgba(126, 34, 206, 0.32), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(192, 132, 252, 0.46) !important;
+}
+
+.admin-summary-grid > div:nth-child(11) {
+  --stat-accent: #fb923c;
+  background: linear-gradient(135deg, rgba(194, 65, 12, 0.32), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(251, 146, 60, 0.48) !important;
+}
+
+.admin-summary-grid > div:nth-child(12) {
+  --stat-accent: #f472b6;
+  background: linear-gradient(135deg, rgba(190, 24, 93, 0.3), rgba(15, 36, 25, 0.96)) !important;
+  border-color: rgba(244, 114, 182, 0.46) !important;
 }
 
 .adminControls {
   background: #0b1b13;
   border: 1px solid #1f4a34;
-  border-radius: 12px;
-  padding: 14px;
-  margin: 0 0 16px;
+  border-radius: 8px;
+  padding: 8px;
+  margin: 0 0 12px;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
 }
 
@@ -1095,13 +1177,13 @@ nav a:hover,
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 18px 0 12px;
+  margin: 14px 0 10px;
 }
 
 .adminSectionHeader h2 {
   margin: 0;
   color: #f7f8ff;
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .adminSectionHeader span {
@@ -1112,16 +1194,16 @@ nav a:hover,
 .adminSearchRow {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
 }
 
 .adminAdvancedFilters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
-  margin: 0 0 16px;
-  padding: 14px;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px;
   border: 1px solid #1f4a34;
   border-radius: 12px;
   background: #0b1b13;
@@ -1130,13 +1212,13 @@ nav a:hover,
 .adminButtonRow {
   display: grid;
   grid-template-columns: repeat(4, minmax(150px, 1fr));
-  gap: 10px;
-  margin: 12px 0 0;
+  gap: 7px;
+  margin: 7px 0 0;
 }
 
 .adminSecondaryBtn {
-  min-height: 44px;
-  padding: 10px 14px;
+  min-height: 34px;
+  padding: 7px 11px;
   border-radius: 8px;
   border: 1px solid #2d6a4f;
   background: #113822;
@@ -1156,15 +1238,15 @@ nav a:hover,
 
 .admin-action-button {
   min-width: 0;
-  min-height: 52px;
-  padding: 12px 14px;
+  min-height: 34px;
+  padding: 7px 12px;
   border: none;
   border-radius: 8px;
   color: white;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  white-space: normal;
+  white-space: nowrap;
   overflow-wrap: anywhere;
 }
 
@@ -1186,7 +1268,7 @@ nav a:hover,
 }
 
 .admin-json-button {
-  background: #087f5b;
+  background: #4f46e5;
 }
 
 .admin-inventory-button {
@@ -1194,11 +1276,16 @@ nav a:hover,
 }
 
 .admin-password-button {
-  background: #1c7c54;
+  background: #9f1239;
 }
 
 .adminDashboardShell h3 {
   color: #f7f8ff;
+  margin-bottom: 8px;
+}
+
+.adminDashboardShell [style*="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr))"] p {
+  margin: 8px 0;
 }
 
 .adminDashboardShell p,
@@ -1213,7 +1300,7 @@ nav a:hover,
 
 .adminOrderList {
   display: grid;
-  gap: 12px;
+  gap: 9px;
 }
 
 .adminOrderHeader,
@@ -1233,9 +1320,9 @@ nav a:hover,
 }
 
 .adminOrderCard {
-  padding: 16px;
+  padding: 12px;
   border: 1px solid #1f4a34;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #0f2419;
 }
 
@@ -1246,21 +1333,21 @@ nav a:hover,
 }
 
 .adminOrderSummary h3 {
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .adminOrderSummary p {
-  margin-top: 5px;
+  margin-top: 4px;
   color: #9da4bf;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
 .adminStatusPill {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 5px 9px;
+  min-height: 24px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: #163927;
   color: #b9f6ca;
@@ -1300,12 +1387,14 @@ nav a:hover,
 }
 
 .adminInlineActions {
-  display: grid;
+  display: flex;
+  justify-content: flex-end;
   gap: 8px;
 }
 
 .adminInlineActions button {
-  min-height: 34px;
+  min-height: 32px;
+  padding: 6px 10px;
   border: 1px solid #2d6a4f;
   border-radius: 8px;
   background: #113822;
@@ -1323,13 +1412,13 @@ nav a:hover,
   display: grid;
   grid-template-columns: 1.3fr 1fr 1fr;
   gap: 12px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .adminDetailPanel {
-  padding: 12px;
+  padding: 10px;
   border: 1px solid #1f4a34;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #0b1b13;
 }
 
@@ -1355,9 +1444,9 @@ nav a:hover,
   display: grid;
   gap: 4px;
   min-width: 170px;
-  padding: 9px 10px;
+  padding: 8px 10px;
   border: 1px solid #1f4a34;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #0b1b13;
 }
 
