@@ -725,6 +725,120 @@ ${order.mobile || ""}`;
 </html>`;
   };
 
+  const buildPackingSlipHtml = (order) => {
+    const items = Array.isArray(order.items) && order.items.length > 0
+      ? order.items
+      : [{ name: "SatvaPusti Nutrition Product", weight: "", quantity: 1 }];
+    const rows = items
+      .map(
+        (item, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>
+              <strong>${escapeHtml(item.name || "SatvaPusti Nutrition Product")}</strong>
+              ${item.weight ? `<br><span>${escapeHtml(item.weight)}</span>` : ""}
+            </td>
+            <td>${escapeHtml(item.weight || "Unit")}</td>
+            <td class="num">${Number(item.quantity || 1)}</td>
+            <td class="check"></td>
+          </tr>
+        `
+      )
+      .join("");
+
+    return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Packing Slip - ${escapeHtml(order.orderId || "")}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f3f4f6; color: #111827; font-family: Arial, sans-serif; }
+    .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 18mm; background: #fff; }
+    .actions { position: sticky; top: 0; padding: 10px; background: #111827; text-align: center; }
+    .actions button { border: 0; border-radius: 6px; padding: 9px 14px; background: #0b7285; color: white; font-weight: 700; cursor: pointer; }
+    .top { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #111827; padding-bottom: 14px; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 28px; color: #06451f; }
+    h2 { font-size: 20px; text-align: right; text-transform: uppercase; }
+    .muted { color: #4b5563; font-size: 12px; line-height: 1.55; }
+    .box { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; margin-top: 14px; }
+    .box h3 { margin-bottom: 8px; font-size: 14px; color: #06451f; text-transform: uppercase; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #d1d5db; padding: 10px; text-align: left; vertical-align: top; font-size: 14px; }
+    th { background: #eef9f0; color: #06451f; }
+    .num { text-align: right; white-space: nowrap; }
+    .check { width: 64px; height: 38px; }
+    .checks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px; }
+    .checkline { min-height: 42px; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-weight: 700; }
+    .footer { margin-top: 28px; display: flex; justify-content: space-between; gap: 20px; font-size: 12px; }
+    @media print {
+      body { background: #fff; }
+      .page { width: auto; min-height: auto; margin: 0; padding: 0; }
+      .actions { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="actions"><button onclick="window.print()">Print Packing Slip</button></div>
+  <main class="page">
+    <section class="top">
+      <div>
+        <h1>${escapeHtml(SELLER_DETAILS.brand)}</h1>
+        <p class="muted">
+          Phone: ${escapeHtml(SELLER_DETAILS.phone)} | ${escapeHtml(SELLER_DETAILS.website)}<br>
+          FSSAI Registration No: ${escapeHtml(SELLER_DETAILS.fssai)}
+        </p>
+      </div>
+      <div>
+        <h2>Packing Slip</h2>
+        <p class="muted">
+          Order ID: <strong>${escapeHtml(order.orderId || "N/A")}</strong><br>
+          Order Date: ${escapeHtml(formatDate(order.createdAt))}<br>
+          Order Status: ${escapeHtml(order.orderStatus || "Received")}
+        </p>
+      </div>
+    </section>
+
+    <div class="box">
+      <h3>Ship To</h3>
+      <p>
+        <strong>${escapeHtml(order.customerName || "Customer")}</strong><br>
+        ${escapeHtml(order.address || "N/A")}<br>
+        ${escapeHtml(order.city || "N/A")} - ${escapeHtml(order.pincode || "N/A")}<br>
+        Mobile: ${escapeHtml(order.mobile || "N/A")}
+      </p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 42px;">#</th>
+          <th>Product</th>
+          <th style="width: 110px;">Unit</th>
+          <th style="width: 80px;">Qty</th>
+          <th style="width: 80px;">Packed</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <section class="checks">
+      <div class="checkline">Address checked: ____</div>
+      <div class="checkline">Products checked: ____</div>
+      <div class="checkline">Packed by: ____</div>
+      <div class="checkline">Dispatch ready: ____</div>
+    </section>
+
+    <section class="footer">
+      <p class="muted">Internal packing document. No price or tax information included.</p>
+      <p>Generated: ${escapeHtml(formatDate(new Date()))}</p>
+    </section>
+  </main>
+</body>
+</html>`;
+  };
+
   const openInvoice = (order) => {
     const invoiceWindow = window.open("", "_blank");
     if (!invoiceWindow) {
@@ -736,6 +850,19 @@ ${order.mobile || ""}`;
     invoiceWindow.document.write(buildInvoiceHtml(order));
     invoiceWindow.document.close();
     invoiceWindow.focus();
+  };
+
+  const openPackingSlip = (order) => {
+    const slipWindow = window.open("", "_blank");
+    if (!slipWindow) {
+      alert("Please allow popups to generate packing slip");
+      return;
+    }
+
+    slipWindow.document.open();
+    slipWindow.document.write(buildPackingSlipHtml(order));
+    slipWindow.document.close();
+    slipWindow.focus();
   };
 
   const openCustomerWhatsApp = (order, template = "update") => {
@@ -1691,6 +1818,9 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
                     </button>
                     <button onClick={() => openInvoice(order)} style={buttonStyle}>
                       Invoice
+                    </button>
+                    <button onClick={() => openPackingSlip(order)} style={buttonStyle}>
+                      Packing Slip
                     </button>
                     <button onClick={() => openCustomerWhatsApp(order, "received")} style={smallButtonStyle}>
                       Order Received
