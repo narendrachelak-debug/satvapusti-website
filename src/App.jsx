@@ -326,15 +326,16 @@ export default function App() {
     setOrderSuccess(false);
   };
 
-  const submitOrder = async () => {
-    console.log("STEP 1 submit clicked");
-
+  const submitOrderOld = async () => {
     if (
       !address.name ||
+      !address.email ||
       !address.mobile ||
-      !address.fullAddress
+      !address.fullAddress ||
+      !address.city ||
+      !address.pincode
     ) {
-      alert("Please name, mobile aur shipping address complete karo.");
+      alert("Please complete full shipping address.");
       return;
     }
 
@@ -363,6 +364,59 @@ orderStatus: "Received",
 paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
       createdAt: new Date().toLocaleString(),
     };
+
+    const itemsMessage = cart
+      .map(
+        (item, index) =>
+          `${index + 1}) ${item.name}%0A` +
+          `Pack: ${item.weight}%0A` +
+          `Qty: ${item.quantity}%0A` +
+          `Price: â‚¹${item.offer}%0A` +
+          `Amount: â‚¹${item.offer * item.quantity}%0A`
+      )
+      .join("%0A");
+
+    const message =
+      `New SatvaPusti Order%0A%0A` +
+      `Order ID: ${orderId}%0A%0A` +
+      `${itemsMessage}%0A` +
+      `----------------------%0A` +
+      `Total Amount: â‚¹${cartTotal}%0A` +
+      `You Save: â‚¹${cartSaving}%0A` +
+      `Payment Method: ${paymentMode}%0A` +
+      `Payment Status: ${order.paymentStatus}%0A` +
+      `Order Status: ${order.orderStatus}%0A` +
+      `UPI Note: ${orderId}|${cartTotal}%0A` +
+      `Shipping: ${shipping}%0A%0A` +
+      `Customer Name: ${address.name}%0A` +
+      `Email: ${address.email}%0A` +
+      `Mobile: ${address.mobile}%0A` +
+      `Address: ${address.fullAddress}%0A` +
+      `City: ${address.city}%0A` +
+      `Pincode: ${address.pincode}%0A%0A` +
+      `Please confirm this order.`;
+
+    order.whatsappMessage = message;
+
+    const initialOrders = [order, ...myOrders];
+    setLastOrder(order);
+    setMyOrders(initialOrders);
+    setOrderSuccess(true);
+    localStorage.setItem("satvapustiOrders", JSON.stringify(initialOrders));
+
+    if (paymentMode === "COD") {
+      const whatsappLink = `https://wa.me/${phone}?text=${message}`;
+      setTimeout(() => {
+        window.location.href = whatsappLink;
+      }, 300);
+    }
+
+    if (paymentMode === "UPI") {
+      const upiLink = makeUpiLink(orderId, cartTotal);
+      setTimeout(() => {
+        window.location.href = upiLink;
+      }, 300);
+    }
 
     try {
       const res = await fetch(`${API_URL}/api/orders/create`, {
@@ -414,7 +468,12 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
       };
 
       // Treat order as successful if res.ok OR data.success OR data.order exists
-      const isSuccess = res.ok || data?.success || data?.order;
+      const isSuccess =
+  res.ok ||
+  data?.success === true ||
+  !!data?.order ||
+  !!data?.savedOrder ||
+  !!data?.data;
       let recoveredOrder = null;
 
       if (!isSuccess) {
@@ -441,11 +500,9 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
       }
     } catch (error) {
       console.log("Backend order save error:", error);
-      alert("Order could not be saved right now. Please try again.");
-      return;
     }
 
-    const itemsMessage = cart
+    const legacyItemsMessage = cart
       .map(
         (item, index) =>
           `${index + 1}) ${item.name}%0A` +
@@ -456,7 +513,7 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
       )
       .join("%0A");
 
-    const message =
+    const legacyMessage =
       `🛒 New SatvaPusti Order%0A%0A` +
       `Order ID: ${orderId}%0A%0A` +
       `${itemsMessage}%0A` +
@@ -486,24 +543,162 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
 
     // Set state to show success modal - DO NOT redirect page
     console.log("STEP 3 before success state", order);
-    setLastOrder(order);
-    setOrderSuccess(true);
-    setShowCheckout(true);
 
-    console.log("STEP 4 after success state");
-    console.log("Order Success");
-    console.log("Order ID:", orderId);
+setLastOrder(order);
+setOrderSuccess(true);
+
+if (false && paymentMode === "COD") {
+  const whatsappLink = `https://wa.me/${phone}?text=${message}`;
+
+  setTimeout(() => {
+    window.open(
+      whatsappLink,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }, 500);
+}
+
+if (paymentMode === "UPI") {
+  console.log("UPI order ready. Customer can pay from success screen.");
+}
+
+console.log("STEP 4 after success state");
+console.log("Order Success");
+console.log("Order ID:", orderId);
+  };
+
+  const submitOrder = () => {
+    if (
+      !address.name ||
+      !address.email ||
+      !address.mobile ||
+      !address.fullAddress ||
+      !address.city ||
+      !address.pincode
+    ) {
+      alert("Please complete full shipping address.");
+      return;
+    }
+
+    if (!paymentMode) {
+      alert("Please COD ya UPI payment select karo.");
+      return;
+    }
+
+    const orderId = `SP${Date.now()}`;
+    const shipping =
+      paymentMode === "UPI" ? "Free Shipping" : "Shipping charges as applicable";
+    const paymentStatus = paymentMode === "UPI" ? "Awaiting Verification" : "Pending";
+    const orderStatus = "Received";
+
+    const itemsText = cart
+      .map(
+        (item, index) =>
+          `${index + 1}) ${item.name}\n` +
+          `Pack: ${item.weight}\n` +
+          `Qty: ${item.quantity}\n` +
+          `Price: Rs. ${item.offer}\n` +
+          `Amount: Rs. ${item.offer * item.quantity}`
+      )
+      .join("\n\n");
+
+    const whatsappText =
+      `New SatvaPusti Order\n\n` +
+      `Order ID: ${orderId}\n\n` +
+      `${itemsText}\n\n` +
+      `----------------------\n` +
+      `Total Amount: Rs. ${cartTotal}\n` +
+      `You Save: Rs. ${cartSaving}\n` +
+      `Payment Method: ${paymentMode}\n` +
+      `Payment Status: ${paymentStatus}\n` +
+      `Order Status: ${orderStatus}\n` +
+      `UPI Note: ${orderId}|${cartTotal}\n` +
+      `Shipping: ${shipping}\n\n` +
+      `Customer Name: ${address.name}\n` +
+      `Email: ${address.email}\n` +
+      `Mobile: ${address.mobile}\n` +
+      `Address: ${address.fullAddress}\n` +
+      `City: ${address.city}\n` +
+      `Pincode: ${address.pincode}\n\n` +
+      `Please confirm this order.`;
+
+    const whatsappMessage = encodeURIComponent(whatsappText);
+
+    const order = {
+      id: orderId,
+      items: cart,
+      total: cartTotal,
+      saving: cartSaving,
+      paymentMode,
+      shipping,
+      customer: { ...address },
+      status: "Order Created Successfully",
+      orderStatus,
+      paymentStatus,
+      whatsappMessage,
+      createdAt: new Date().toLocaleString(),
+    };
+
+    const updatedOrders = [order, ...myOrders];
+    setLastOrder(order);
+    setMyOrders(updatedOrders);
+    setOrderSuccess(true);
+    localStorage.setItem("satvapustiOrders", JSON.stringify(updatedOrders));
+
+    const orderPayload = {
+      orderId,
+      customerName: address.name,
+      email: address.email,
+      mobile: address.mobile,
+      address: address.fullAddress,
+      city: address.city,
+      pincode: address.pincode,
+      items: cart,
+      totalAmount: cartTotal,
+      saving: cartSaving,
+      paymentMethod: paymentMode,
+      shipping,
+      orderStatus,
+      paymentStatus,
+    };
+
+    fetch(`${API_URL}/api/orders/create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(orderPayload),
+    })
+      .then((res) => res.json().catch(() => ({})))
+      .then((data) => {
+        const savedOrder = data?.order || data?.savedOrder || data?.newOrder || data?.data;
+        const savedOrderId = savedOrder?.orderId || savedOrder?.id || data?.orderId || data?.id;
+
+        if (!savedOrderId || savedOrderId === orderId) return;
+
+        const syncedText = whatsappText.replace(orderId, savedOrderId);
+        const syncedOrder = {
+          ...order,
+          id: savedOrderId,
+          whatsappMessage: encodeURIComponent(syncedText),
+        };
+        const syncedOrders = [syncedOrder, ...myOrders];
+        setLastOrder(syncedOrder);
+        setMyOrders(syncedOrders);
+        localStorage.setItem("satvapustiOrders", JSON.stringify(syncedOrders));
+      })
+      .catch((error) => {
+        console.log("Backend order save error:", error);
+      });
 
     if (paymentMode === "COD") {
-      const whatsappLink = `https://wa.me/${phone}?text=${message}`;
-      window.open(whatsappLink, "_blank", "noopener,noreferrer");
+      window.location.href = `https://wa.me/${phone}?text=${whatsappMessage}`;
+      return;
     }
 
-    if (paymentMode === "UPI") {
-      const upiLink = makeUpiLink(orderId, cartTotal);
-      console.log("Generated UPI link:", upiLink);
-      window.open(upiLink, "_blank");
-    }
+    const upiLink = makeUpiLink(orderId, cartTotal);
+    window.location.href = upiLink;
   };
 
   const continueShopping = () => {
@@ -857,9 +1052,13 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
                   <h3>Total: ₹{cartTotal}</h3>
                 </div>
 
-                <button className="submitOrderBtn" onClick={openCheckout}>
-                  Proceed to Checkout
-                </button>
+               <button
+  type="button"
+  className="submitOrderBtn"
+  onClick={openCheckout}
+>
+  Proceed to Checkout
+</button>
               </>
             )}
           </div>
@@ -1016,7 +1215,13 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
   </>
 )}
 
-<button type="button" className="submitOrderBtn" onClick={submitOrder}>
+<button
+  type="button"
+  className="submitOrderBtn"
+  onClick={() => {
+    submitOrder();
+  }}
+>
   Confirm Order
 </button>
                  
