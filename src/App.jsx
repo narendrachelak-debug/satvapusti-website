@@ -331,13 +331,10 @@ export default function App() {
 
     if (
       !address.name ||
-      !address.email ||
       !address.mobile ||
-      !address.fullAddress ||
-      !address.city ||
-      !address.pincode
+      !address.fullAddress
     ) {
-      alert("Please name, email, mobile aur shipping address complete karo.");
+      alert("Please name, mobile aur shipping address complete karo.");
       return;
     }
 
@@ -993,6 +990,7 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
 
                 <div className="paymentOptions">
                   <button
+                    type="button"
                     className={paymentMode === "COD" ? "selectedPay" : ""}
                     onClick={() => setPaymentMode("COD")}
                   >
@@ -1001,6 +999,7 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
                   </button>
 
                   <button
+                    type="button"
                     className={paymentMode === "UPI" ? "selectedPay" : ""}
                     onClick={() => setPaymentMode("UPI")}
                   >
@@ -1017,7 +1016,7 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
   </>
 )}
 
-<button className="submitOrderBtn" onClick={submitOrder}>
+<button type="button" className="submitOrderBtn" onClick={submitOrder}>
   Confirm Order
 </button>
                  
