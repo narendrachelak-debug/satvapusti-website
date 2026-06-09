@@ -7,6 +7,54 @@ const orderRoutes = require("./routes/orderRoutes");
 
 const app = express();
 
+const defaultProducts = [
+  {
+    productId: "family",
+    name: "SatvaPusti+ Family",
+    subtitle: "Premium Nutrition Powder",
+    desc: "Complete nutrition for every member of your family.",
+    bestFor: ["Family Nutrition", "Daily Energy", "Balanced Routine"],
+    benefits: ["Real dry fruits and seeds", "Daily nutrition support", "No artificial colours"],
+    usage: "Mix 2 spoons with 200 ml milk or warm water and consume daily.",
+    weights: {
+      "1KG": { mrp: 1999, offer: 1799, image: "/products/family-1kg.png" },
+      "500G": { mrp: 1099, offer: 999, image: "/products/family-500g.png" },
+      "250G": { mrp: 599, offer: 499, image: "/products/family-250g.png" },
+    },
+    sortOrder: 1,
+  },
+  {
+    productId: "kids",
+    name: "SatvaPusti+ Active Kids",
+    subtitle: "Premium Kids Nutrition Powder",
+    desc: "Growth, brain, immunity and daily energy support.",
+    bestFor: ["Kids Growth", "Brain Support", "Daily Immunity"],
+    benefits: ["Kids-focused nutrition", "Real banana and nuts", "Tasty daily drink"],
+    usage: "Mix 1-2 spoons with milk daily. Adjust quantity based on age and appetite.",
+    weights: {
+      "1KG": { mrp: 2099, offer: 1999, image: "/products/active-kids-1kg.png" },
+      "500G": { mrp: 1199, offer: 1099, image: "/products/active-kids-500g.png" },
+      "250G": { mrp: 649, offer: 549, image: "/products/active-kids-250g.png" },
+    },
+    sortOrder: 2,
+  },
+  {
+    productId: "active",
+    name: "SatvaPusti+ Active",
+    subtitle: "Premium Natural Protein Formula",
+    desc: "Fuel your strength, boost recovery and achieve your best.",
+    bestFor: ["Protein Support", "Recovery", "Active Lifestyle"],
+    benefits: ["Strength routine support", "Natural protein formula", "Energy and recovery"],
+    usage: "Mix 2 spoons with 200 ml milk or water daily. Use after workouts or as part of your morning routine.",
+    weights: {
+      "1KG": { mrp: 2299, offer: 2099, image: "/products/active-1kg.png" },
+      "500G": { mrp: 1249, offer: 1199, image: "/products/active-500g.png" },
+      "250G": { mrp: 699, offer: 599, image: "/products/active-250g.png" },
+    },
+    sortOrder: 3,
+  },
+];
+
 app.use(cors());
 app.use(express.json());
 
@@ -166,6 +214,122 @@ app.post("/api/inventory/reduce/:orderId", async (req, res) => {
   }
 });
 
+// PRODUCT ENDPOINTS
+const normalizeList = (value) => {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const normalizeProductPayload = (body) => {
+  const productId = String(body.productId || body.id || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  const weights = body.weights || {};
+  const normalizedWeights = {};
+
+  for (const weight of ["1KG", "500G", "250G"]) {
+    const data = weights[weight] || {};
+    normalizedWeights[weight] = {
+      mrp: Number(data.mrp || 0),
+      offer: Number(data.offer || 0),
+      image: String(data.image || ""),
+    };
+  }
+
+  return {
+    productId,
+    name: String(body.name || "").trim(),
+    subtitle: String(body.subtitle || "").trim(),
+    desc: String(body.desc || "").trim(),
+    bestFor: normalizeList(body.bestFor),
+    benefits: normalizeList(body.benefits),
+    usage: String(body.usage || "").trim(),
+    weights: normalizedWeights,
+    isActive: body.isActive !== false,
+    sortOrder: Number(body.sortOrder || 0),
+  };
+};
+
+const ensureInventoryForProduct = async (productId) => {
+  const Inventory = require("./models/Inventory");
+
+  for (const weight of ["250G", "500G", "1KG"]) {
+    await Inventory.findOneAndUpdate(
+      { productId, weight },
+      { $setOnInsert: { stock: 0, reorderLevel: 10 } },
+      { upsert: true }
+    );
+  }
+};
+
+app.get("/api/products", async (req, res) => {
+  try {
+    const Product = require("./models/Product");
+    const query = req.query.includeInactive === "true" ? {} : { isActive: true };
+    const products = await Product.find(query).sort({ sortOrder: 1, createdAt: 1 });
+    res.json({ success: true, products });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post("/api/products", async (req, res) => {
+  try {
+    const Product = require("./models/Product");
+    const payload = normalizeProductPayload(req.body);
+
+    if (!payload.productId || !payload.name) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID and name are required",
+      });
+    }
+
+    const product = await Product.findOneAndUpdate(
+      { productId: payload.productId },
+      payload,
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    await ensureInventoryForProduct(product.productId);
+    res.json({ success: true, product });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.put("/api/products/:id", async (req, res) => {
+  try {
+    const Product = require("./models/Product");
+    const payload = normalizeProductPayload({
+      ...req.body,
+      productId: req.params.id,
+    });
+
+    const product = await Product.findOneAndUpdate(
+      { productId: req.params.id },
+      payload,
+      { new: true, runValidators: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    await ensureInventoryForProduct(product.productId);
+    res.json({ success: true, product });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 app.use("/api/orders", orderRoutes);
 
 mongoose
@@ -186,19 +350,22 @@ mongoose
 const initializeInventory = async () => {
   try {
     const Inventory = require("./models/Inventory");
-    const products = [
-      { productId: "family", weight: "250G" },
-      { productId: "family", weight: "500G" },
-      { productId: "family", weight: "1KG" },
-      { productId: "kids", weight: "250G" },
-      { productId: "kids", weight: "500G" },
-      { productId: "kids", weight: "1KG" },
-      { productId: "active", weight: "250G" },
-      { productId: "active", weight: "500G" },
-      { productId: "active", weight: "1KG" },
-    ];
+    const Product = require("./models/Product");
 
-    for (const product of products) {
+    for (const product of defaultProducts) {
+      await Product.findOneAndUpdate(
+        { productId: product.productId },
+        { $setOnInsert: product },
+        { upsert: true }
+      );
+    }
+
+    const productIds = await Product.find({ isActive: true }).distinct("productId");
+    const inventoryProducts = productIds.flatMap((productId) =>
+      ["250G", "500G", "1KG"].map((weight) => ({ productId, weight }))
+    );
+
+    for (const product of inventoryProducts) {
       await Inventory.findOneAndUpdate(
         { productId: product.productId, weight: product.weight },
         { $setOnInsert: { stock: 100 } },

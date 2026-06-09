@@ -11,7 +11,7 @@ const banners = [
   "/banners/banner-active.png",
 ];
 
-const products = [
+const defaultProducts = [
   {
     id: "family",
     name: "SatvaPusti+ Family",
@@ -104,6 +104,7 @@ export default function App() {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [lastOrder, setLastOrder] = useState(null);
   const [inventory, setInventory] = useState([]);
+  const [products, setProducts] = useState(defaultProducts);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const paymentModeRef = useRef("");
 
@@ -143,6 +144,46 @@ export default function App() {
   };
 
   useEffect(() => {
+    const normalizeProduct = (product) => {
+      const weights = product.weights || {};
+      const images = {};
+      const prices = {};
+
+      for (const weight of ["1KG", "500G", "250G"]) {
+        images[weight] = weights[weight]?.image || defaultProducts[0].images[weight];
+        prices[weight] = {
+          mrp: Number(weights[weight]?.mrp || 0),
+          offer: Number(weights[weight]?.offer || 0),
+        };
+      }
+
+      return {
+        id: product.productId || product.id,
+        name: product.name,
+        subtitle: product.subtitle || "",
+        desc: product.desc || "",
+        bestFor: Array.isArray(product.bestFor) ? product.bestFor : [],
+        benefits: Array.isArray(product.benefits) ? product.benefits : [],
+        usage: product.usage || "",
+        images,
+        prices,
+      };
+    };
+
+    const loadProducts = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/products`);
+        const data = await res.json();
+        const apiProducts = Array.isArray(data.products) ? data.products : [];
+
+        if (apiProducts.length > 0) {
+          setProducts(apiProducts.map(normalizeProduct));
+        }
+      } catch (error) {
+        console.log("Products load error:", error);
+      }
+    };
+
     const loadInventory = async () => {
       try {
         const res = await fetch(`${API_URL}/api/inventory`);
@@ -155,6 +196,7 @@ export default function App() {
       }
     };
 
+    loadProducts();
     loadInventory();
   }, []);
 

@@ -16,6 +16,52 @@ const SELLER_DETAILS = {
   gstStatus: "GST Unregistered",
 };
 
+const emptyProductForm = {
+  productId: "",
+  name: "",
+  subtitle: "",
+  desc: "",
+  bestFor: "",
+  benefits: "",
+  usage: "",
+  sortOrder: 0,
+  isActive: true,
+  weights: {
+    "1KG": { mrp: "", offer: "", image: "" },
+    "500G": { mrp: "", offer: "", image: "" },
+    "250G": { mrp: "", offer: "", image: "" },
+  },
+};
+
+const productToForm = (product) => ({
+  productId: product.productId || "",
+  name: product.name || "",
+  subtitle: product.subtitle || "",
+  desc: product.desc || "",
+  bestFor: Array.isArray(product.bestFor) ? product.bestFor.join(", ") : "",
+  benefits: Array.isArray(product.benefits) ? product.benefits.join(", ") : "",
+  usage: product.usage || "",
+  sortOrder: product.sortOrder || 0,
+  isActive: product.isActive !== false,
+  weights: {
+    "1KG": {
+      mrp: product.weights?.["1KG"]?.mrp || "",
+      offer: product.weights?.["1KG"]?.offer || "",
+      image: product.weights?.["1KG"]?.image || "",
+    },
+    "500G": {
+      mrp: product.weights?.["500G"]?.mrp || "",
+      offer: product.weights?.["500G"]?.offer || "",
+      image: product.weights?.["500G"]?.image || "",
+    },
+    "250G": {
+      mrp: product.weights?.["250G"]?.mrp || "",
+      offer: product.weights?.["250G"]?.offer || "",
+      image: product.weights?.["250G"]?.image || "",
+    },
+  },
+});
+
 export default function Admin() {
   useEffect(() => {
     const token = localStorage.getItem("satvapustiAdminToken");
@@ -49,6 +95,10 @@ export default function Admin() {
   const [newPassword, setNewPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [inventory, setInventory] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [productForm, setProductForm] = useState(emptyProductForm);
+  const [editingProductId, setEditingProductId] = useState("");
+  const [savingProduct, setSavingProduct] = useState(false);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [editingInventory, setEditingInventory] = useState(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -95,13 +145,25 @@ export default function Admin() {
     }
   };
 
+  const loadProducts = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/products?includeInactive=true`);
+      const data = await res.json();
+      setProducts(Array.isArray(data.products) ? data.products : []);
+    } catch (error) {
+      console.log("Load products error:", error);
+    }
+  };
+
   useEffect(() => {
     loadOrders();
     loadInventory();
+    loadProducts();
 
     const interval = setInterval(() => {
       loadOrders();
       loadInventory();
+      loadProducts();
     }, 10000);
 
     return () => clearInterval(interval);
@@ -452,6 +514,7 @@ return data.order;
     dashboard: "Dashboard Overview",
     orders: "Order Management",
     payments: "Payment Review",
+    products: "Product Management",
     inventory: "Inventory Control",
     reports: "Sales Reports",
     customers: "Customer Directory",
@@ -1127,6 +1190,81 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
     }
   };
 
+  const updateProductWeight = (weight, field, value) => {
+    setProductForm((prev) => ({
+      ...prev,
+      weights: {
+        ...prev.weights,
+        [weight]: {
+          ...prev.weights[weight],
+          [field]: value,
+        },
+      },
+    }));
+  };
+
+  const resetProductForm = () => {
+    setProductForm(emptyProductForm);
+    setEditingProductId("");
+  };
+
+  const saveProduct = async () => {
+    if (!productForm.productId || !productForm.name) {
+      alert("Product ID and name are required");
+      return;
+    }
+
+    try {
+      setSavingProduct(true);
+      const payload = {
+        ...productForm,
+        bestFor: productForm.bestFor,
+        benefits: productForm.benefits,
+        sortOrder: Number(productForm.sortOrder || 0),
+        weights: Object.fromEntries(
+          ["1KG", "500G", "250G"].map((weight) => [
+            weight,
+            {
+              mrp: Number(productForm.weights[weight].mrp || 0),
+              offer: Number(productForm.weights[weight].offer || 0),
+              image: productForm.weights[weight].image || "",
+            },
+          ])
+        ),
+      };
+      const url = editingProductId
+        ? `${API_URL}/api/products/${editingProductId}`
+        : `${API_URL}/api/products`;
+      const res = await fetch(url, {
+        method: editingProductId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        alert(data.message || "Product save failed");
+        return;
+      }
+
+      alert("Product saved successfully");
+      resetProductForm();
+      loadProducts();
+      loadInventory();
+    } catch (error) {
+      console.error(error);
+      alert("Product save failed");
+    } finally {
+      setSavingProduct(false);
+    }
+  };
+
+  const editProduct = (product) => {
+    setProductForm(productToForm(product));
+    setEditingProductId(product.productId);
+    setActiveAdminView("products");
+  };
+
   return (
     <div className="adminDashboardShell" style={pageStyle}>
       <aside className="adminSidebar">
@@ -1159,6 +1297,13 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           >
             <span>Inventory</span>
             <b>{lowStockItems.length}</b>
+          </button>
+          <button
+            className={activeAdminView === "products" ? "active" : ""}
+            onClick={() => setActiveAdminView("products")}
+          >
+            <span>Products</span>
+            <b>{products.length}</b>
           </button>
           <button
             className={activeAdminView === "reports" ? "active" : ""}
@@ -1225,6 +1370,152 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {activeAdminView === "products" && (
+        <div className="adminProductsManager">
+          <div className="adminInfoPanel">
+            <h3>{editingProductId ? "Edit Product" : "Add Product"}</h3>
+            <div style={gridStyle}>
+              <input
+                placeholder="Product ID"
+                value={productForm.productId}
+                disabled={Boolean(editingProductId)}
+                onChange={(e) =>
+                  setProductForm({ ...productForm, productId: e.target.value })
+                }
+                style={inputStyle}
+              />
+              <input
+                placeholder="Product Name"
+                value={productForm.name}
+                onChange={(e) =>
+                  setProductForm({ ...productForm, name: e.target.value })
+                }
+                style={inputStyle}
+              />
+              <input
+                placeholder="Subtitle"
+                value={productForm.subtitle}
+                onChange={(e) =>
+                  setProductForm({ ...productForm, subtitle: e.target.value })
+                }
+                style={inputStyle}
+              />
+              <input
+                type="number"
+                placeholder="Sort order"
+                value={productForm.sortOrder}
+                onChange={(e) =>
+                  setProductForm({ ...productForm, sortOrder: e.target.value })
+                }
+                style={inputStyle}
+              />
+            </div>
+            <textarea
+              placeholder="Description"
+              value={productForm.desc}
+              onChange={(e) =>
+                setProductForm({ ...productForm, desc: e.target.value })
+              }
+              style={{ ...inputStyle, minHeight: "70px" }}
+            />
+            <textarea
+              placeholder="Best for tags, comma separated"
+              value={productForm.bestFor}
+              onChange={(e) =>
+                setProductForm({ ...productForm, bestFor: e.target.value })
+              }
+              style={{ ...inputStyle, minHeight: "58px" }}
+            />
+            <textarea
+              placeholder="Benefits, comma separated"
+              value={productForm.benefits}
+              onChange={(e) =>
+                setProductForm({ ...productForm, benefits: e.target.value })
+              }
+              style={{ ...inputStyle, minHeight: "58px" }}
+            />
+            <textarea
+              placeholder="Usage"
+              value={productForm.usage}
+              onChange={(e) =>
+                setProductForm({ ...productForm, usage: e.target.value })
+              }
+              style={{ ...inputStyle, minHeight: "70px" }}
+            />
+            <div className="adminInfoGrid" style={{ marginBottom: "12px" }}>
+              {["1KG", "500G", "250G"].map((weight) => (
+                <div className="adminInfoPanel" key={weight}>
+                  <h3>{weight}</h3>
+                  <input
+                    type="number"
+                    placeholder="MRP"
+                    value={productForm.weights[weight].mrp}
+                    onChange={(e) => updateProductWeight(weight, "mrp", e.target.value)}
+                    style={inputStyle}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Offer price"
+                    value={productForm.weights[weight].offer}
+                    onChange={(e) => updateProductWeight(weight, "offer", e.target.value)}
+                    style={inputStyle}
+                  />
+                  <input
+                    placeholder="Image URL"
+                    value={productForm.weights[weight].image}
+                    onChange={(e) => updateProductWeight(weight, "image", e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+              ))}
+            </div>
+            <label style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "12px" }}>
+              <input
+                type="checkbox"
+                checked={productForm.isActive}
+                onChange={(e) =>
+                  setProductForm({ ...productForm, isActive: e.target.checked })
+                }
+              />
+              Active
+            </label>
+            <div className="adminButtonRow">
+              <button
+                onClick={saveProduct}
+                disabled={savingProduct}
+                className="admin-action-button admin-inventory-button"
+              >
+                {savingProduct ? "Saving..." : editingProductId ? "Update Product" : "Add Product"}
+              </button>
+              <button onClick={resetProductForm} className="adminSecondaryBtn">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div className="adminInfoGrid">
+            {products.map((product) => (
+              <div className="adminInfoPanel" key={product.productId}>
+                <h3>{product.name}</h3>
+                <p>ID: <b>{product.productId}</b></p>
+                <p>{product.subtitle}</p>
+                <p>Status: <b>{product.isActive === false ? "Inactive" : "Active"}</b></p>
+                <div style={{ display: "grid", gap: "6px", margin: "10px 0" }}>
+                  {["1KG", "500G", "250G"].map((weight) => (
+                    <span key={weight}>
+                      {weight}: MRP {product.weights?.[weight]?.mrp || 0}, Offer {product.weights?.[weight]?.offer || 0}
+                    </span>
+                  ))}
+                </div>
+                <button onClick={() => editProduct(product)} className="adminSecondaryBtn">
+                  Edit
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

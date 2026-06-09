@@ -4,8 +4,9 @@ const inventorySchema = new mongoose.Schema(
   {
     productId: {
       type: String,
-      enum: ["family", "kids", "active"],
       required: true,
+      trim: true,
+      lowercase: true,
     },
     weight: {
       type: String,
