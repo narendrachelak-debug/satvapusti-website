@@ -691,4 +691,52 @@ router.get("/whatsapp-template/:id/:template", async (req, res) => {
     });
   }
 });
+
+router.post("/admin/test-email", async (req, res) => {
+  try {
+    const { password, to } = req.body;
+
+    if (password !== process.env.ADMIN_PASSWORD) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid admin password",
+      });
+    }
+
+    if (!to) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipient email is required",
+      });
+    }
+
+    const info = await sendEmail({
+      to,
+      subject: `SatvaPusti Live Email Test - ${new Date().toISOString()}`,
+      text: "This is a live backend email test from SatvaPusti.",
+      html: `
+        <h2>SatvaPusti Live Email Test</h2>
+        <p>This email was sent by the live backend to confirm SMTP delivery.</p>
+      `,
+    });
+
+    res.json({
+      success: true,
+      email: {
+        accepted: info.accepted || [],
+        rejected: info.rejected || [],
+        response: info.response,
+        messageId: info.messageId,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      code: error.code,
+      response: error.response,
+    });
+  }
+});
+
 module.exports = router;
