@@ -21,17 +21,36 @@ const hasEmailConfig = () =>
 const money = (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
 
 const sendEmail = async ({ to, subject, html }) => {
-  if (!hasEmailConfig() || !to) return;
+  if (!hasEmailConfig()) {
+    throw new Error("Email config missing: EMAIL_USER or EMAIL_PASS is not set");
+  }
+
+  if (!to) {
+    throw new Error("Email recipient is missing");
+  }
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"SatvaPusti Nutrition" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
     });
+    console.log("Email sent:", {
+      to,
+      subject,
+      messageId: info.messageId,
+    });
   } catch (error) {
-    console.log("Email send error:", error.message);
+    console.log("Email send error:", {
+      to,
+      subject,
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+    });
+    throw error;
   }
 };
 
@@ -237,6 +256,10 @@ router.post("/create", async (req, res) => {
     await reduceInventoryForOrder(order);
     await order.save();
 
+    console.log("Sending order received email:", {
+      orderId: order.orderId,
+      to: order.email,
+    });
     await sendOrderEmail(order, "order");
 
     // CUSTOMER EMAIL
