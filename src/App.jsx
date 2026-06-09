@@ -104,6 +104,7 @@ export default function App() {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [lastOrder, setLastOrder] = useState(null);
   const [inventory, setInventory] = useState([]);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   const [profile, setProfile] = useState(
     savedProfile || {
@@ -569,6 +570,8 @@ console.log("Order ID:", orderId);
   };
 
   const submitOrder = async () => {
+    if (isSubmittingOrder) return;
+
     if (
       !address.name ||
       !address.email ||
@@ -585,6 +588,8 @@ console.log("Order ID:", orderId);
       alert("Please select COD or UPI payment.");
       return;
     }
+
+    setIsSubmittingOrder(true);
 
     const orderId = `SP${Date.now()}`;
     const shipping =
@@ -695,16 +700,19 @@ console.log("Order ID:", orderId);
     } catch (error) {
       console.log("Backend order save error:", error);
       alert("Order could not be saved right now. Please try again.");
+      setIsSubmittingOrder(false);
       return;
     }
 
     if (paymentMode === "COD") {
       window.location.href = `https://wa.me/${phone}?text=${whatsappMessage}`;
+      setIsSubmittingOrder(false);
       return;
     }
 
     const upiLink = makeUpiLink(finalOrderId, cartTotal);
     window.location.href = upiLink;
+    setIsSubmittingOrder(false);
   };
 
   const continueShopping = () => {
@@ -1121,7 +1129,7 @@ console.log("Order ID:", orderId);
           lastOrder?.total
         );
         try {
-          window.open(upiUrl, "_blank");
+          window.location.href = upiUrl;
         } catch (error) {
           console.log("UPI open error:", error);
         }
@@ -1224,11 +1232,12 @@ console.log("Order ID:", orderId);
 <button
   type="button"
   className="submitOrderBtn"
+  disabled={isSubmittingOrder}
   onClick={() => {
     submitOrder();
   }}
 >
-  Confirm Order
+  {isSubmittingOrder ? "Placing Order..." : "Confirm Order"}
 </button>
                  
               </>

@@ -877,12 +877,25 @@ ${order.mobile || ""}`;
       ? cleanMobile
       : `91${cleanMobile}`;
 
+    const statusByTemplate = {
+      received: "Received",
+      payment: order.orderStatus || "Received",
+      processing: "Processing",
+      shipped: "Shipped",
+      delivered: "Delivered",
+      update: order.orderStatus || "Received",
+    };
+    const displayStatus = statusByTemplate[template] || order.orderStatus || "Received";
+    const displayPaymentStatus =
+      template === "payment" ? "Paid" : order.paymentStatus || "Pending";
+
     const baseUpdate = `Hello ${order.customerName || ""},
 Your SatvaPusti order update:
 
 Order ID: ${order.orderId}
-Payment Status: ${order.paymentStatus}
-Order Status: ${order.orderStatus}
+Payment Method: ${order.paymentMethod || "N/A"}
+Payment Status: ${displayPaymentStatus}
+Order Status: ${displayStatus}
 Amount: ₹${order.totalAmount}
 ${order.courierName ? `Courier: ${order.courierName}` : ""}
 ${order.trackingNumber ? `Tracking: ${order.trackingNumber}` : ""}

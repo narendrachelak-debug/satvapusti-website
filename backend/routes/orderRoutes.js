@@ -20,7 +20,7 @@ const hasEmailConfig = () =>
 
 const money = (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
 
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, text }) => {
   if (!hasEmailConfig()) {
     throw new Error("Email config missing: EMAIL_USER or EMAIL_PASS is not set");
   }
@@ -34,6 +34,7 @@ const sendEmail = async ({ to, subject, html }) => {
       from: `"SatvaPusti Nutrition" <${process.env.EMAIL_USER}>`,
       to,
       subject,
+      text,
       html,
     });
     console.log("Email sent:", {
@@ -75,6 +76,15 @@ const sendOrderEmail = async (order, type) => {
   const templates = {
     order: {
       subject: `Order Received - ${order.orderId}`,
+      text:
+        `Order Received Successfully\n\n` +
+        `Dear ${order.customerName || "Customer"},\n` +
+        `Your order has been received.\n\n` +
+        `Order ID: ${order.orderId}\n` +
+        `Total Amount: ${money(order.totalAmount)}\n` +
+        `Payment Method: ${order.paymentMethod || "N/A"}\n` +
+        `Status: Received\n\n` +
+        `Thank you,\nSatvaPusti Nutrition`,
       html: `
         <h2>Order Received Successfully</h2>
         <p>Dear ${order.customerName || "Customer"},</p>
@@ -89,6 +99,13 @@ const sendOrderEmail = async (order, type) => {
     },
     payment: {
       subject: `Payment Confirmed - ${order.orderId}`,
+      text:
+        `Payment Confirmed\n\n` +
+        `Dear ${order.customerName || "Customer"},\n` +
+        `Your payment has been confirmed. We will process your order shortly.\n\n` +
+        `Order ID: ${order.orderId}\n` +
+        `Total Amount: ${money(order.totalAmount)}\n\n` +
+        `Thank you,\nSatvaPusti Nutrition`,
       html: `
         <h2>Payment Confirmed</h2>
         <p>Dear ${order.customerName || "Customer"},</p>
@@ -101,6 +118,16 @@ const sendOrderEmail = async (order, type) => {
     },
     shipping: {
       subject: `Your Order Has Been Shipped - ${order.orderId}`,
+      text:
+        `Your Order Has Been Shipped\n\n` +
+        `Dear ${order.customerName || "Customer"},\n` +
+        `Your SatvaPusti order has been shipped.\n\n` +
+        `Order ID: ${order.orderId}\n` +
+        `Status: Shipped\n` +
+        `${order.courierName ? `Courier: ${order.courierName}\n` : ""}` +
+        `${order.trackingNumber ? `Tracking Number: ${order.trackingNumber}\n` : ""}` +
+        `${order.trackingUrl ? `Track Here: ${order.trackingUrl}\n` : ""}` +
+        `\nThank you,\nSatvaPusti Nutrition`,
       html: `
         <h2>Your Order Has Been Shipped</h2>
         <p>Dear ${order.customerName || "Customer"},</p>
@@ -128,6 +155,12 @@ const sendOrderEmail = async (order, type) => {
     },
     delivery: {
       subject: `Order Delivered - ${order.orderId}`,
+      text:
+        `Order Delivered Successfully\n\n` +
+        `Dear ${order.customerName || "Customer"},\n` +
+        `Your SatvaPusti order has been delivered.\n\n` +
+        `Order ID: ${order.orderId}\n\n` +
+        `Thank you for choosing SatvaPusti Nutrition.`,
       html: `
         <h2>Order Delivered Successfully</h2>
         <p>Dear ${order.customerName || "Customer"},</p>
@@ -145,6 +178,7 @@ const sendOrderEmail = async (order, type) => {
   await sendEmail({
     to: order.email,
     subject: template.subject,
+    text: template.text,
     html: template.html,
   });
 };
