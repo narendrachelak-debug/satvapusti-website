@@ -568,7 +568,7 @@ console.log("Order Success");
 console.log("Order ID:", orderId);
   };
 
-  const submitOrder = () => {
+  const submitOrder = async () => {
     if (
       !address.name ||
       !address.email ||
@@ -623,7 +623,9 @@ console.log("Order ID:", orderId);
       `Pincode: ${address.pincode}\n\n` +
       `Please confirm this order.`;
 
-    const whatsappMessage = encodeURIComponent(whatsappText);
+    let finalOrderId = orderId;
+    let finalWhatsappText = whatsappText;
+    let whatsappMessage = encodeURIComponent(finalWhatsappText);
 
     const order = {
       id: orderId,
@@ -663,41 +665,45 @@ console.log("Order ID:", orderId);
       paymentStatus,
     };
 
-    fetch(`${API_URL}/api/orders/create`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(orderPayload),
-    })
-      .then((res) => res.json().catch(() => ({})))
-      .then((data) => {
+    try {
+      const res = await fetch(`${API_URL}/api/orders/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderPayload),
+      });
+      const data = await res.json().catch(() => ({}));
         const savedOrder = data?.order || data?.savedOrder || data?.newOrder || data?.data;
         const savedOrderId = savedOrder?.orderId || savedOrder?.id || data?.orderId || data?.id;
 
-        if (!savedOrderId || savedOrderId === orderId) return;
+      if (savedOrderId && savedOrderId !== orderId) {
+        finalOrderId = savedOrderId;
+        finalWhatsappText = whatsappText.replace(orderId, savedOrderId);
+        whatsappMessage = encodeURIComponent(finalWhatsappText);
 
-        const syncedText = whatsappText.replace(orderId, savedOrderId);
         const syncedOrder = {
           ...order,
           id: savedOrderId,
-          whatsappMessage: encodeURIComponent(syncedText),
+          whatsappMessage,
         };
         const syncedOrders = [syncedOrder, ...myOrders];
         setLastOrder(syncedOrder);
         setMyOrders(syncedOrders);
         localStorage.setItem("satvapustiOrders", JSON.stringify(syncedOrders));
-      })
-      .catch((error) => {
-        console.log("Backend order save error:", error);
-      });
+      }
+    } catch (error) {
+      console.log("Backend order save error:", error);
+      alert("Order could not be saved right now. Please try again.");
+      return;
+    }
 
     if (paymentMode === "COD") {
       window.location.href = `https://wa.me/${phone}?text=${whatsappMessage}`;
       return;
     }
 
-    const upiLink = makeUpiLink(orderId, cartTotal);
+    const upiLink = makeUpiLink(finalOrderId, cartTotal);
     window.location.href = upiLink;
   };
 
