@@ -1,51 +1,22 @@
 const express = require("express");
 const router = express.Router();
-const nodemailer = require("nodemailer");
-const dns = require("dns");
+const { BrevoClient } = require("@getbrevo/brevo");
 
 const Order = require("../models/Order");
 const Inventory = require("../models/Inventory");
 
-dns.setDefaultResultOrder("ipv4first");
-
-const smtpServerName = process.env.SMTP_HOST || "smtp.hostinger.com";
-const smtpHost =
-  process.env.SMTP_HOST_IP ||
-  (smtpServerName === "smtp.hostinger.com" ? "172.65.255.143" : smtpServerName);
-const smtpPort = Number(process.env.SMTP_PORT || 465);
-const smtpSecure =
-  String(process.env.SMTP_SECURE || "").toLowerCase() === "true" ||
-  smtpPort === 465;
-
-const transporter = nodemailer.createTransport({
-  host: smtpHost,
-  port: smtpPort,
-  secure: smtpSecure,
-  requireTLS: !smtpSecure,
-  family: 4,
-  lookup: (hostname, options, callback) => {
-    dns.lookup(hostname, { family: 4 }, callback);
-  },
-  tls: {
-    servername: smtpServerName,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+const brevoClient = new BrevoClient({
+  apiKey: process.env.BREVO_API_KEY || "",
 });
 
 const hasEmailConfig = () =>
-  Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+  Boolean(process.env.BREVO_API_KEY && process.env.EMAIL_FROM);
 
 const money = (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
 
-const sendEmail = async ({ to, subject, html, text }) => {
+const sendEmail = async ({ to, subject, html }) => {
   if (!hasEmailConfig()) {
-    throw new Error("Email config missing: EMAIL_USER or EMAIL_PASS is not set");
+    throw new Error("Email config missing: BREVO_API_KEY or EMAIL_FROM is not set");
   }
 
   if (!to) {
@@ -53,29 +24,37 @@ const sendEmail = async ({ to, subject, html, text }) => {
   }
 
   try {
-    const info = await transporter.sendMail({
-      from: `"SatvaPusti Nutrition" <${process.env.EMAIL_USER}>`,
-      to,
+    const info = await brevoClient.transactionalEmails.sendTransacEmail({
+      sender: {
+        name: "SatvaPusti Nutrition",
+        email: process.env.EMAIL_FROM,
+      },
+      to: [{ email: to }],
       subject,
-      text,
-      html,
+      htmlContent: html,
     });
+    const messageId = info?.body?.messageId || info?.messageId || info?.id;
+
     console.log("Email sent:", {
       to,
       subject,
-      messageId: info.messageId,
-      accepted: info.accepted,
-      rejected: info.rejected,
+      messageId,
     });
-    return info;
+
+    return {
+      messageId,
+      accepted: [to],
+      rejected: [],
+      response: "Brevo API accepted message",
+      raw: info?.body || info,
+    };
   } catch (error) {
     console.log("Email send error:", {
       to,
       subject,
       message: error.message,
-      code: error.code,
-      command: error.command,
-      response: error.response,
+      statusCode: error.statusCode || error.status,
+      response: error.response || error.body,
     });
     throw error;
   }
@@ -204,7 +183,6 @@ const sendOrderEmail = async (order, type) => {
   await sendEmail({
     to: order.email,
     subject: template.subject,
-    text: template.text,
     html: template.html,
   });
 };
@@ -378,32 +356,6 @@ router.post("/create", async (req, res) => {
       console.log("EMAIL SENT");
     } else {
       console.log(`Error: ${customerEmailSent.error || "Email was not sent"}`);
-    }
-
-    // CUSTOMER EMAIL
-    if (false && order.email) {
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: order.email,
-        subject: `Order Confirmation - ${orderId}`,
-        html: `
-          <h2>Thank You For Ordering With SatvaPusti Nutrition</h2>
-
-          <p><b>Order ID:</b> ${orderId}</p>
-          <p><b>Product:</b> ${order.product}</p>
-          <p><b>Quantity:</b> ${order.quantity}</p>
-          <p><b>Amount:</b> ₹${order.totalAmount}</p>
-
-          <p><b>Status:</b> Received</p>
-
-          <hr>
-
-          <p>
-          We have successfully received your order and
-          our team will contact you shortly.
-          </p>
-        `,
-      });
     }
 
     // ADMIN EMAIL
@@ -728,10 +680,9 @@ router.post("/admin/test-email", async (req, res) => {
     const info = await sendEmail({
       to,
       subject: `SatvaPusti Live Email Test - ${new Date().toISOString()}`,
-      text: "This is a live backend email test from SatvaPusti.",
       html: `
         <h2>SatvaPusti Live Email Test</h2>
-        <p>This email was sent by the live backend to confirm SMTP delivery.</p>
+        <p>This email was sent by the live backend to confirm Brevo delivery.</p>
       `,
     });
 
