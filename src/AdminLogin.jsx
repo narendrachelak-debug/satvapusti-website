@@ -7,7 +7,7 @@ export default function AdminLogin() {
 
   const login = async () => {
     if (!password) {
-      alert("Password enter karo");
+      alert("Please enter the password");
       return;
     }
 

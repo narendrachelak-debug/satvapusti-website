@@ -19,7 +19,7 @@ const products = [
     desc: "Complete nutrition for every member of your family.",
     bestFor: ["Family Nutrition", "Daily Energy", "Balanced Routine"],
     benefits: ["Real dry fruits and seeds", "Daily nutrition support", "No artificial colours"],
-    usage: "Daily 2 spoon ko 200 ml milk ya warm water me mix karke piyein.",
+    usage: "Mix 2 spoons with 200 ml milk or warm water and consume daily.",
     images: {
       "1KG": "/products/family-1kg.png",
       "500G": "/products/family-500g.png",
@@ -38,7 +38,7 @@ const products = [
     desc: "Growth, brain, immunity and daily energy support.",
     bestFor: ["Kids Growth", "Brain Support", "Daily Immunity"],
     benefits: ["Kids-focused nutrition", "Real banana and nuts", "Tasty daily drink"],
-    usage: "Daily 1-2 spoon ko milk me mix karke dein. Age/appetite ke hisaab se quantity adjust karein.",
+    usage: "Mix 1-2 spoons with milk daily. Adjust quantity based on age and appetite.",
     images: {
       "1KG": "/products/active-kids-1kg.png",
       "500G": "/products/active-kids-500g.png",
@@ -57,7 +57,7 @@ const products = [
     desc: "Fuel your strength, boost recovery and achieve your best.",
     bestFor: ["Protein Support", "Recovery", "Active Lifestyle"],
     benefits: ["Strength routine support", "Natural protein formula", "Energy and recovery"],
-    usage: "Daily 2 spoon ko 200 ml milk ya water me mix karein. Workout ke baad ya morning routine me le sakte hain.",
+    usage: "Mix 2 spoons with 200 ml milk or water daily. Use after workouts or as part of your morning routine.",
     images: {
       "1KG": "/products/active-1kg.png",
       "500G": "/products/active-500g.png",
@@ -243,12 +243,12 @@ export default function App() {
 
   const saveProfile = () => {
     if (!profile.name || !profile.email || !profile.mobile) {
-      alert("Name, email aur mobile fill karo.");
+      alert("Please enter your name, email, and mobile number.");
       return;
     }
 
     if (!profile.acceptedTerms) {
-      alert("Terms, Disclaimer, Privacy Policy aur Return Policy accept karna zaroori hai.");
+      alert("Please accept the Terms, Disclaimer, Privacy Policy, and Return Policy.");
       return;
     }
 
@@ -301,7 +301,7 @@ export default function App() {
 
   const openCheckout = () => {
     if (cart.length === 0) {
-      alert("Cart empty hai. Pehle product add karo.");
+      alert("Your cart is empty. Please add a product first.");
       return;
     }
 
@@ -340,7 +340,7 @@ export default function App() {
     }
 
     if (!paymentMode) {
-      alert("Please COD ya UPI payment select karo.");
+      alert("Please select COD or UPI payment.");
       return;
     }
 
@@ -582,7 +582,7 @@ console.log("Order ID:", orderId);
     }
 
     if (!paymentMode) {
-      alert("Please COD ya UPI payment select karo.");
+      alert("Please select COD or UPI payment.");
       return;
     }
 
@@ -788,7 +788,7 @@ console.log("Order ID:", orderId);
 
       <section id="products" className="section">
         <h2>Order SatvaPusti Products</h2>
-        <p className="sectionText">Product select karo, cart me add karo, ek saath order karo.</p>
+        <p className="sectionText">Select products, add them to cart, and place one combined order.</p>
 
         <div className="productSlider">
           {products.map((product) => {
@@ -1020,7 +1020,7 @@ console.log("Order ID:", orderId);
             <h2>🛒 Your Cart</h2>
 
             {cart.length === 0 ? (
-              <p className="sectionText">Cart empty hai.</p>
+              <p className="sectionText">Your cart is empty.</p>
             ) : (
               <>
                 <div className="cartItems">
@@ -1092,7 +1092,7 @@ console.log("Order ID:", orderId);
 
                 <div className="nextStepsBox">
                   <h3>Next Steps</h3>
-                  <p>Order ID save kar lijiye. Dispatch updates WhatsApp/order tracking par milenge.</p>
+                  <p>Save your Order ID. Dispatch updates will be available on WhatsApp and order tracking.</p>
                   <div className="successActionRow">
                     <a href="/?page=track-order">Track Order</a>
                     <a
@@ -1275,55 +1275,55 @@ console.log("Order ID:", orderId);
       <section id="faq" className="section faqSection">
         <h2>Frequently Asked Questions</h2>
         <p className="sectionText">
-          Ordering, payment and product use ke common answers yahan mil jayenge.
+          Find common answers about ordering, payment, and product usage here.
         </p>
 
         <div className="faqGrid">
           <details>
-            <summary>SatvaPusti products kaise use karein?</summary>
+            <summary>How should I use SatvaPusti products?</summary>
             <p>
-              Product ko milk ya warm water ke saath daily routine me use kar sakte hain.
-              Children, elderly, pregnant women ya medical condition wale customers doctor
-              se advice lekar use karein.
+              Use the product with milk or warm water as part of your daily routine.
+              Children, elderly customers, pregnant women, or customers with medical
+              conditions should consult a doctor before use.
             </p>
           </details>
 
           <details>
-            <summary>COD available hai?</summary>
+            <summary>Is COD available?</summary>
             <p>
-              Haan, COD available hai. COD orders me payment delivery ke time collect hota hai.
+              Yes, COD is available. Payment for COD orders is collected at the time of delivery.
             </p>
           </details>
 
           <details>
-            <summary>UPI prepaid ka kya benefit hai?</summary>
+            <summary>What is the benefit of UPI prepaid?</summary>
             <p>
-              UPI prepaid orders me free shipping benefit milta hai. Payment ke baad WhatsApp
-              confirmation bhej dein, admin verification ke baad order process hota hai.
+              UPI prepaid orders get free shipping. After payment, send WhatsApp
+              confirmation. The order will be processed after admin verification.
             </p>
           </details>
 
           <details>
-            <summary>Order track kaise karein?</summary>
+            <summary>How can I track my order?</summary>
             <p>
-              Header me Track Order par click karke Order ID aur mobile number se latest order
-              status dekh sakte hain.
+              Click Track Order in the header and enter your Order ID and mobile number
+              to view the latest order status.
             </p>
           </details>
 
           <details>
-            <summary>FSSAI registration hai?</summary>
+            <summary>Do you have FSSAI registration?</summary>
             <p>
-              Haan. Satvapusti Nutrition ka FSSAI Registration No. 20526034000204 hai.
+              Yes. SatvaPusti Nutrition's FSSAI Registration No. is 20526034000204.
             </p>
           </details>
 
           <details>
-            <summary>Return ya replacement kab milega?</summary>
+            <summary>When can I get a return or replacement?</summary>
             <p>
-              Food safety ke karan opened product returnable nahi hai. Wrong, damaged,
-              expired ya manufacturing defect product ke case me 48 hours ke andar clear
-              photo/video proof ke saath report karein.
+              Due to food safety reasons, opened products are not returnable. For wrong,
+              damaged, expired, or manufacturing defect products, report within 48 hours
+              with clear photo/video proof.
             </p>
           </details>
         </div>
