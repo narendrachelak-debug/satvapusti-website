@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 const phone = "919639630828";
@@ -105,6 +105,7 @@ export default function App() {
   const [lastOrder, setLastOrder] = useState(null);
   const [inventory, setInventory] = useState([]);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const paymentModeRef = useRef("");
 
   const [profile, setProfile] = useState(
     savedProfile || {
@@ -129,6 +130,11 @@ export default function App() {
 
   const getWeight = (product) => selected[product.id] || "1KG";
   const getQty = (product) => qty[product.id] || 1;
+  const selectPaymentMode = (mode) => {
+    paymentModeRef.current = mode;
+    setPaymentMode(mode);
+  };
+
   const getStock = (productId, weight) => {
     const item = inventory.find(
       (stockItem) => stockItem.productId === productId && stockItem.weight === weight
@@ -309,7 +315,7 @@ export default function App() {
     setShowCart(false);
     setShowCheckout(true);
     setOrderSuccess(false);
-    setPaymentMode("");
+    selectPaymentMode("");
 
     setAddress({
       name: profile?.name || "",
@@ -323,7 +329,7 @@ export default function App() {
 
   const closeCheckout = () => {
     setShowCheckout(false);
-    setPaymentMode("");
+    selectPaymentMode("");
     setOrderSuccess(false);
   };
 
@@ -571,6 +577,7 @@ console.log("Order ID:", orderId);
 
   const submitOrder = async () => {
     if (isSubmittingOrder) return;
+    const selectedPaymentMode = paymentModeRef.current || paymentMode;
 
     if (
       !address.name ||
@@ -584,7 +591,7 @@ console.log("Order ID:", orderId);
       return;
     }
 
-    if (!paymentMode) {
+    if (!selectedPaymentMode) {
       alert("Please select COD or UPI payment.");
       return;
     }
@@ -593,8 +600,9 @@ console.log("Order ID:", orderId);
 
     const orderId = `SP${Date.now()}`;
     const shipping =
-      paymentMode === "UPI" ? "Free Shipping" : "Shipping charges as applicable";
-    const paymentStatus = paymentMode === "UPI" ? "Awaiting Verification" : "Pending";
+      selectedPaymentMode === "UPI" ? "Free Shipping" : "Shipping charges as applicable";
+    const paymentStatus =
+      selectedPaymentMode === "UPI" ? "Awaiting Verification" : "Pending";
     const orderStatus = "Received";
 
     const itemsText = cart
@@ -615,7 +623,7 @@ console.log("Order ID:", orderId);
       `----------------------\n` +
       `Total Amount: Rs. ${cartTotal}\n` +
       `You Save: Rs. ${cartSaving}\n` +
-      `Payment Method: ${paymentMode}\n` +
+      `Payment Method: ${selectedPaymentMode}\n` +
       `Payment Status: ${paymentStatus}\n` +
       `Order Status: ${orderStatus}\n` +
       `UPI Note: ${orderId}|${cartTotal}\n` +
@@ -637,7 +645,7 @@ console.log("Order ID:", orderId);
       items: cart,
       total: cartTotal,
       saving: cartSaving,
-      paymentMode,
+      paymentMode: selectedPaymentMode,
       shipping,
       customer: { ...address },
       status: "Order Created Successfully",
@@ -664,7 +672,7 @@ console.log("Order ID:", orderId);
       items: cart,
       totalAmount: cartTotal,
       saving: cartSaving,
-      paymentMethod: paymentMode,
+      paymentMethod: selectedPaymentMode,
       shipping,
       orderStatus,
       paymentStatus,
@@ -704,7 +712,7 @@ console.log("Order ID:", orderId);
       return;
     }
 
-    if (paymentMode === "COD") {
+    if (selectedPaymentMode === "COD") {
       window.location.href = `https://wa.me/${phone}?text=${whatsappMessage}`;
       setIsSubmittingOrder(false);
       return;
@@ -1205,7 +1213,7 @@ console.log("Order ID:", orderId);
                   <button
                     type="button"
                     className={paymentMode === "COD" ? "selectedPay" : ""}
-                    onClick={() => setPaymentMode("COD")}
+                    onClick={() => selectPaymentMode("COD")}
                   >
                     <b>COD</b>
                     <span>Pay when order is delivered</span>
@@ -1214,7 +1222,7 @@ console.log("Order ID:", orderId);
                   <button
                     type="button"
                     className={paymentMode === "UPI" ? "selectedPay" : ""}
-                    onClick={() => setPaymentMode("UPI")}
+                    onClick={() => selectPaymentMode("UPI")}
                   >
                     <b>UPI Prepaid</b>
                     <span>Free shipping after verification</span>
