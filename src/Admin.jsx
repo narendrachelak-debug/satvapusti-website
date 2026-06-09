@@ -147,7 +147,9 @@ export default function Admin() {
     );
   };
 
-  const saveOrder = async (order) => {
+  const saveOrder = async (order, options = {}) => {
+    const { showAlert = true } = options;
+
     try {
       setSavingId(order._id);
 
@@ -172,8 +174,8 @@ export default function Admin() {
       const data = await res.json();
 
      if (!data.success) {
-  alert(data.message || "Order update failed");
-  return;
+  if (showAlert) alert(data.message || "Order update failed");
+  return null;
 }
 
 setOrders((prev) =>
@@ -182,10 +184,12 @@ setOrders((prev) =>
   )
 );
 
-alert("Order updated successfully");
+if (showAlert) alert("Order updated successfully");
+return data.order;
     } catch (error) {
       console.log("Save order error:", error);
-      alert("Order update failed");
+      if (showAlert) alert("Order update failed");
+      return null;
     } finally {
       setSavingId("");
     }
@@ -916,6 +920,34 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
       `https://wa.me/${finalMobile}?text=${encodeURIComponent(message)}`,
       "_blank"
     );
+  };
+
+  const updateStatusAndOpenWhatsApp = async (order, template) => {
+    const statusByTemplate = {
+      shipped: "Shipped",
+      delivered: "Delivered",
+    };
+    const orderStatus = statusByTemplate[template];
+
+    if (!orderStatus) {
+      openCustomerWhatsApp(order, template);
+      return;
+    }
+
+    const updatedOrder = {
+      ...order,
+      orderStatus,
+    };
+
+    updateLocalOrder(order._id, "orderStatus", orderStatus);
+    const savedOrder = await saveOrder(updatedOrder, { showAlert: false });
+
+    if (!savedOrder) {
+      alert("Order update failed. WhatsApp message was not opened.");
+      return;
+    }
+
+    openCustomerWhatsApp(savedOrder, template);
   };
 
   const verifyPassword = async () => {
@@ -1844,10 +1876,10 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
                     <button onClick={() => openCustomerWhatsApp(order, "processing")} style={smallButtonStyle}>
                       Processing
                     </button>
-                    <button onClick={() => openCustomerWhatsApp(order, "shipped")} style={smallButtonStyle}>
+                    <button onClick={() => updateStatusAndOpenWhatsApp(order, "shipped")} style={smallButtonStyle}>
                       Shipped
                     </button>
-                    <button onClick={() => openCustomerWhatsApp(order, "delivered")} style={smallButtonStyle}>
+                    <button onClick={() => updateStatusAndOpenWhatsApp(order, "delivered")} style={smallButtonStyle}>
                       Delivered
                     </button>
                   </div>
