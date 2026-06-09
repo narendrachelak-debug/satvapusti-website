@@ -12,6 +12,7 @@ const transporter = nodemailer.createTransport({
   host: "smtp.hostinger.com",
   port: 465,
   secure: true,
+  family: 4,
   connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 15000,
@@ -349,12 +350,19 @@ router.post("/create", async (req, res) => {
 
     await reduceInventoryForOrder(order);
     await order.save();
+    console.log("ORDER SAVED");
 
     console.log("Sending order received email:", {
       orderId: order.orderId,
       to: order.email,
     });
+    console.log("EMAIL SENDING");
     const customerEmailSent = await safeSendOrderEmail(order, "order");
+    if (customerEmailSent.sent) {
+      console.log("EMAIL SENT");
+    } else {
+      console.log(`Error: ${customerEmailSent.error || "Email was not sent"}`);
+    }
 
     // CUSTOMER EMAIL
     if (false && order.email) {
