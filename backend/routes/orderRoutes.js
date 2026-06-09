@@ -9,6 +9,9 @@ const transporter = nodemailer.createTransport({
   host: "smtp.hostinger.com",
   port: 465,
   secure: true,
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -41,7 +44,10 @@ const sendEmail = async ({ to, subject, html, text }) => {
       to,
       subject,
       messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected,
     });
+    return info;
   } catch (error) {
     console.log("Email send error:", {
       to,
@@ -183,6 +189,57 @@ const sendOrderEmail = async (order, type) => {
   });
 };
 
+const safeSendOrderEmail = async (order, type) => {
+  try {
+    const info = await sendOrderEmail(order, type);
+    return {
+      sent: true,
+      accepted: info?.accepted || [],
+      rejected: info?.rejected || [],
+    };
+  } catch (error) {
+    console.log("Order email skipped/failed:", {
+      orderId: order?.orderId,
+      type,
+      to: order?.email,
+      message: error.message,
+    });
+    return {
+      sent: false,
+      error: error.message,
+    };
+  }
+};
+
+const safeSendAdminEmail = async (mailOptions) => {
+  try {
+    if (!process.env.ADMIN_EMAIL) {
+      console.log("Admin email skipped: ADMIN_EMAIL is not set");
+      return {
+        sent: false,
+        error: "ADMIN_EMAIL is not set",
+      };
+    }
+
+    const info = await sendEmail(mailOptions);
+    return {
+      sent: true,
+      accepted: info?.accepted || [],
+      rejected: info?.rejected || [],
+    };
+  } catch (error) {
+    console.log("Admin email skipped/failed:", {
+      to: mailOptions?.to,
+      subject: mailOptions?.subject,
+      message: error.message,
+    });
+    return {
+      sent: false,
+      error: error.message,
+    };
+  }
+};
+
 const getCustomerTrackingMessage = (order) => {
   const lines = [
     `Hello ${order.customerName || ""},`,
@@ -294,7 +351,7 @@ router.post("/create", async (req, res) => {
       orderId: order.orderId,
       to: order.email,
     });
-    await sendOrderEmail(order, "order");
+    const customerEmailSent = await safeSendOrderEmail(order, "order");
 
     // CUSTOMER EMAIL
     if (false && order.email) {
@@ -323,7 +380,7 @@ router.post("/create", async (req, res) => {
     }
 
     // ADMIN EMAIL
-    await sendEmail({
+    const adminEmailSent = await safeSendAdminEmail({
       to: process.env.ADMIN_EMAIL,
       subject: `New Order Received - ${orderId}`,
       html: `
@@ -341,6 +398,10 @@ router.post("/create", async (req, res) => {
     res.status(200).json({
       success: true,
       order,
+      email: {
+        customer: customerEmailSent,
+        admin: adminEmailSent,
+      },
     });
 
   } catch (error) {
@@ -554,15 +615,15 @@ router.put("/admin/update/:id", async (req, res) => {
     );
 
     if (oldOrder.paymentStatus !== "Paid" && order.paymentStatus === "Paid") {
-      await sendOrderEmail(order, "payment");
+      await safeSendOrderEmail(order, "payment");
     }
 
     if (oldOrder.orderStatus !== "Shipped" && order.orderStatus === "Shipped") {
-      await sendOrderEmail(order, "shipping");
+      await safeSendOrderEmail(order, "shipping");
     }
 
     if (oldOrder.orderStatus !== "Delivered" && order.orderStatus === "Delivered") {
-      await sendOrderEmail(order, "delivery");
+      await safeSendOrderEmail(order, "delivery");
     }
 
     res.json({
