@@ -593,21 +593,32 @@ router.put("/admin/update/:id", async (req, res) => {
       { new: true }
     );
 
+    const email = {};
+
     if (oldOrder.paymentStatus !== "Paid" && order.paymentStatus === "Paid") {
-      await safeSendOrderEmail(order, "payment");
+      email.payment = await safeSendOrderEmail(order, "payment");
     }
 
-    if (oldOrder.orderStatus !== "Shipped" && order.orderStatus === "Shipped") {
-      await safeSendOrderEmail(order, "shipping");
+    const forceStatusEmail = req.body.notifyCustomerEmail === true;
+
+    if (
+      order.orderStatus === "Shipped" &&
+      (forceStatusEmail || oldOrder.orderStatus !== "Shipped")
+    ) {
+      email.shipping = await safeSendOrderEmail(order, "shipping");
     }
 
-    if (oldOrder.orderStatus !== "Delivered" && order.orderStatus === "Delivered") {
-      await safeSendOrderEmail(order, "delivery");
+    if (
+      order.orderStatus === "Delivered" &&
+      (forceStatusEmail || oldOrder.orderStatus !== "Delivered")
+    ) {
+      email.delivery = await safeSendOrderEmail(order, "delivery");
     }
 
     res.json({
       success: true,
       order,
+      email,
     });
   } catch (error) {
     res.status(500).json({

@@ -148,7 +148,7 @@ export default function Admin() {
   };
 
   const saveOrder = async (order, options = {}) => {
-    const { showAlert = true } = options;
+    const { showAlert = true, notifyCustomerEmail = false } = options;
 
     try {
       setSavingId(order._id);
@@ -167,6 +167,7 @@ export default function Admin() {
             trackingNumber: order.trackingNumber || "",
             trackingUrl: order.trackingUrl || "",
             customerTrackingMessage: order.customerTrackingMessage || "",
+            notifyCustomerEmail,
           }),
         }
       );
@@ -940,7 +941,10 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
     };
 
     updateLocalOrder(order._id, "orderStatus", orderStatus);
-    const savedOrder = await saveOrder(updatedOrder, { showAlert: false });
+    const savedOrder = await saveOrder(updatedOrder, {
+      showAlert: false,
+      notifyCustomerEmail: true,
+    });
 
     if (!savedOrder) {
       alert("Order update failed. WhatsApp message was not opened.");
