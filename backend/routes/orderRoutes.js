@@ -1,9 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const nodemailer = require("nodemailer");
+const dns = require("dns");
 
 const Order = require("../models/Order");
 const Inventory = require("../models/Inventory");
+
+dns.setDefaultResultOrder("ipv4first");
 
 const transporter = nodemailer.createTransport({
   host: "smtp.hostinger.com",
