@@ -231,17 +231,13 @@ export default function App() {
   );
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
- const makeUpiLink = (currentOrderId = lastOrder?.id) => {
-  const note = currentOrderId
-    ? `${currentOrderId}|${cartTotal}`
-    : `SatvaPusti|${cartTotal}`;
-
+ const makeUpiLink = (orderId, amount) => {
   return (
     `upi://pay?pa=${upiId}` +
-    `&pn=SatvaPusti%20Nutrition` +
-    `&am=${cartTotal}` +
+    `&pn=${encodeURIComponent("SatvaPusti Nutrition")}` +
+    `&am=${amount}` +
     `&cu=INR` +
-    `&tn=${encodeURIComponent(note)}`
+    `&tn=${encodeURIComponent(`${orderId}|${amount}`)}`
   );
 };
 
@@ -497,30 +493,8 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
     setOrderSuccess(true);
     console.log("STEP 4 after success state");
 
-    // Handle payment method flow AFTER success modal is set
-    if (paymentMode === "COD") {
-      const whatsappLink = `https://wa.me/${phone}?text=${message}`;
-
-      try {
-        window.open(whatsappLink, "_blank", "noopener,noreferrer");
-      } catch (error) {
-        console.log("WhatsApp window error:", error);
-        // Still show success modal even if window.open fails
-      }
-    }
-
-    if (paymentMode === "UPI") {
-      const upiLink = makeUpiLink(orderId);
-      console.log("Generated UPI link:", upiLink);
-
-      try {
-        // Open UPI in new window, don't redirect main page
-        window.open(upiLink, "_blank");
-      } catch (error) {
-        console.log("UPI window error:", error);
-        // Still show success modal even if window.open fails
-      }
-    }
+    console.log("Order Success");
+    console.log("Order ID:", orderId);
   };
 
   const continueShopping = () => {
@@ -928,7 +902,10 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
     <button
       className="upiPayBtn"
       onClick={() => {
-        const upiUrl = makeUpiLink(lastOrder?.id);
+        const upiUrl = makeUpiLink(
+          lastOrder?.id,
+          lastOrder?.total
+        );
         try {
           window.open(upiUrl, "_blank");
         } catch (error) {
