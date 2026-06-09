@@ -491,10 +491,22 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
     console.log("STEP 3 before success state", order);
     setLastOrder(order);
     setOrderSuccess(true);
-    console.log("STEP 4 after success state");
+    setShowCheckout(true);
 
+    console.log("STEP 4 after success state");
     console.log("Order Success");
     console.log("Order ID:", orderId);
+
+    if (paymentMode === "COD") {
+      const whatsappLink = `https://wa.me/${phone}?text=${message}`;
+      window.open(whatsappLink, "_blank", "noopener,noreferrer");
+    }
+
+    if (paymentMode === "UPI") {
+      const upiLink = makeUpiLink(orderId, cartTotal);
+      console.log("Generated UPI link:", upiLink);
+      window.open(upiLink, "_blank");
+    }
   };
 
   const continueShopping = () => {
@@ -1005,10 +1017,7 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
   </>
 )}
 
-<button
-  className="submitOrderBtn"
-  onClick={submitOrder}
->
+<button className="submitOrderBtn" onClick={submitOrder}>
   Confirm Order
 </button>
                  
