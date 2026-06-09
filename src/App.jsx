@@ -331,6 +331,8 @@ export default function App() {
   };
 
   const submitOrder = async () => {
+    console.log("STEP 1 submit clicked");
+
     if (
       !address.name ||
       !address.email ||
@@ -393,29 +395,62 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      console.log("Order response:", data);
+      console.log("STEP 2 response received", data);
 
-      if (!data.success) {
-        alert(data.message || "Order could not be placed.");
-        return;
+      const findSavedOrder = async () => {
+        try {
+          const customerRes = await fetch(
+            `${API_URL}/api/orders/customer/${encodeURIComponent(address.mobile)}`
+          );
+          const customerOrders = await customerRes.json();
+
+          if (!Array.isArray(customerOrders)) return null;
+
+          return customerOrders.find(
+            (saved) =>
+              Number(saved.totalAmount) === Number(cartTotal) &&
+              saved.paymentMethod === paymentMode &&
+              saved.mobile === address.mobile
+          );
+        } catch (error) {
+          console.log("Saved order recovery error:", error);
+          return null;
+        }
+      };
+
+      // Treat order as successful if res.ok OR data.success OR data.order exists
+      const isSuccess = res.ok || data?.success || data?.order;
+      let recoveredOrder = null;
+
+      if (!isSuccess) {
+        recoveredOrder = await findSavedOrder();
+
+        if (!recoveredOrder) {
+          alert(data?.message || "Order could not be placed.");
+          return;
+        }
       }
 
-      if (data.order?.orderId) {
-        order.id = data.order.orderId;
-        orderId = data.order.orderId;
+      // Extract actual order ID from response
+      const savedOrder =
+        data?.order || data?.savedOrder || data?.newOrder || data?.data || recoveredOrder;
+      const savedOrderId =
+        savedOrder?.orderId ||
+        savedOrder?.id ||
+        data?.orderId ||
+        data?.id;
+
+      if (savedOrderId) {
+        order.id = savedOrderId;
+        orderId = savedOrderId;
       }
     } catch (error) {
       console.log("Backend order save error:", error);
       alert("Order could not be saved right now. Please try again.");
       return;
     }
-
-    const updatedOrders = [order, ...myOrders];
-    setMyOrders(updatedOrders);
-    localStorage.setItem("satvapustiOrders", JSON.stringify(updatedOrders));
-
-    setLastOrder(order);
-    setOrderSuccess(true);
 
     const itemsMessage = cart
       .map(
@@ -449,9 +484,42 @@ paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
       `City: ${address.city}%0A` +
       `Pincode: ${address.pincode}%0A%0A` +
       `Please confirm this order.`;
-order.whatsappMessage = message;
+
+    order.whatsappMessage = message;
+
+    const updatedOrders = [order, ...myOrders];
+    setMyOrders(updatedOrders);
+    localStorage.setItem("satvapustiOrders", JSON.stringify(updatedOrders));
+
+    // Set state to show success modal - DO NOT redirect page
+    console.log("STEP 3 before success state", order);
+    setLastOrder(order);
+    setOrderSuccess(true);
+    console.log("STEP 4 after success state");
+
+    // Handle payment method flow AFTER success modal is set
     if (paymentMode === "COD") {
-      window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
+      const whatsappLink = `https://wa.me/${phone}?text=${message}`;
+
+      try {
+        window.open(whatsappLink, "_blank", "noopener,noreferrer");
+      } catch (error) {
+        console.log("WhatsApp window error:", error);
+        // Still show success modal even if window.open fails
+      }
+    }
+
+    if (paymentMode === "UPI") {
+      const upiLink = makeUpiLink(orderId);
+      console.log("Generated UPI link:", upiLink);
+
+      try {
+        // Open UPI in new window, don't redirect main page
+        window.open(upiLink, "_blank");
+      } catch (error) {
+        console.log("UPI window error:", error);
+        // Still show success modal even if window.open fails
+      }
     }
   };
 
@@ -826,17 +894,17 @@ order.whatsappMessage = message;
 
                 {lastOrder && (
                   <div className="successDetails">
-                    <p><b>Order ID:</b> {lastOrder.id}</p>
-                    {lastOrder.items.map((item) => (
-                      <p key={item.cartId}>
-                        <b>{item.name}</b> - {item.weight} × {item.quantity} = ₹
-                        {item.offer * item.quantity}
+                    <p><b>Order ID:</b> {lastOrder?.id}</p>
+                    {lastOrder?.items?.map((item) => (
+                      <p key={item?.cartId}>
+                        <b>{item?.name}</b> - {item?.weight} × {item?.quantity} = ₹
+                        {item?.offer * item?.quantity}
                       </p>
                     ))}
                     <hr />
-                    <p><b>Total:</b> ₹{lastOrder.total}</p>
-                    <p><b>Payment:</b> {lastOrder.paymentMode}</p>
-                    <p><b>Status:</b> {lastOrder.orderStatus}</p>
+                    <p><b>Total:</b> ₹{lastOrder?.total}</p>
+                    <p><b>Payment:</b> {lastOrder?.paymentMode}</p>
+                    <p><b>Status:</b> {lastOrder?.orderStatus}</p>
                   </div>
                 )}
 
@@ -845,28 +913,39 @@ order.whatsappMessage = message;
                   <p>Order ID save kar lijiye. Dispatch updates WhatsApp/order tracking par milenge.</p>
                   <div className="successActionRow">
                     <a href="/?page=track-order">Track Order</a>
-                    <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
-                      WhatsApp Support
+                    <a
+                      href={`https://wa.me/${phone}?text=${lastOrder?.whatsappMessage || ""}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Send Order on WhatsApp
                     </a>
                   </div>
                 </div>
 
                 {paymentMode === "UPI" && (
   <div className="upiBox">
-    <a
+    <button
       className="upiPayBtn"
-      href={makeUpiLink(lastOrder?.id)}
+      onClick={() => {
+        const upiUrl = makeUpiLink(lastOrder?.id);
+        try {
+          window.open(upiUrl, "_blank");
+        } catch (error) {
+          console.log("UPI open error:", error);
+        }
+      }}
     >
       Pay Now via UPI App
+    </button>
+    <a
+      className="submitOrderBtn"
+      href={`https://wa.me/${phone}?text=${lastOrder?.whatsappMessage || ""}`}
+      target="_blank"
+      rel="noreferrer"
+    >
+      ✅ I Have Completed Payment
     </a>
-<a
-  className="submitOrderBtn"
-  href={`https://wa.me/${phone}?text=${lastOrder?.whatsappMessage || ""}`}
-  target="_blank"
-  rel="noreferrer"
->
-  ✅ I Have Completed Payment
-</a>
   </div>
 )}
               </div>
