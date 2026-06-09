@@ -9,16 +9,14 @@ const Inventory = require("../models/Inventory");
 dns.setDefaultResultOrder("ipv4first");
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "172.65.255.143",
-  port: 465,
-  secure: true,
+  host: process.env.SMTP_HOST || "smtp.hostinger.com",
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: false,
+  requireTLS: true,
   family: 4,
   connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 15000,
-  tls: {
-    servername: "smtp.hostinger.com",
-  },
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
