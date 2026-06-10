@@ -99,6 +99,7 @@ export default function Admin() {
   const [productForm, setProductForm] = useState(emptyProductForm);
   const [editingProductId, setEditingProductId] = useState("");
   const [savingProduct, setSavingProduct] = useState(false);
+  const [showProductForm, setShowProductForm] = useState(false);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [editingInventory, setEditingInventory] = useState(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -1206,6 +1207,13 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
   const resetProductForm = () => {
     setProductForm(emptyProductForm);
     setEditingProductId("");
+    setShowProductForm(false);
+  };
+
+  const openNewProductForm = () => {
+    setProductForm(emptyProductForm);
+    setEditingProductId("");
+    setShowProductForm((prev) => !prev);
   };
 
   const saveProduct = async () => {
@@ -1262,6 +1270,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
   const editProduct = (product) => {
     setProductForm(productToForm(product));
     setEditingProductId(product.productId);
+    setShowProductForm(true);
     setActiveAdminView("products");
   };
 
@@ -1375,138 +1384,37 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
 
       {activeAdminView === "products" && (
         <div className="adminProductsManager">
-          <div className="adminInfoPanel">
-            <h3>{editingProductId ? "Edit Product" : "Add Product"}</h3>
-            <div style={gridStyle}>
-              <input
-                placeholder="Product ID"
-                value={productForm.productId}
-                disabled={Boolean(editingProductId)}
-                onChange={(e) =>
-                  setProductForm({ ...productForm, productId: e.target.value })
-                }
-                style={inputStyle}
-              />
-              <input
-                placeholder="Product Name"
-                value={productForm.name}
-                onChange={(e) =>
-                  setProductForm({ ...productForm, name: e.target.value })
-                }
-                style={inputStyle}
-              />
-              <input
-                placeholder="Subtitle"
-                value={productForm.subtitle}
-                onChange={(e) =>
-                  setProductForm({ ...productForm, subtitle: e.target.value })
-                }
-                style={inputStyle}
-              />
-              <input
-                type="number"
-                placeholder="Sort order"
-                value={productForm.sortOrder}
-                onChange={(e) =>
-                  setProductForm({ ...productForm, sortOrder: e.target.value })
-                }
-                style={inputStyle}
-              />
+          <div className="adminProductsHeader">
+            <div>
+              <h2>Listed Products</h2>
+              <span>{products.length} products</span>
             </div>
-            <textarea
-              placeholder="Description"
-              value={productForm.desc}
-              onChange={(e) =>
-                setProductForm({ ...productForm, desc: e.target.value })
-              }
-              style={{ ...inputStyle, minHeight: "70px" }}
-            />
-            <textarea
-              placeholder="Best for tags, comma separated"
-              value={productForm.bestFor}
-              onChange={(e) =>
-                setProductForm({ ...productForm, bestFor: e.target.value })
-              }
-              style={{ ...inputStyle, minHeight: "58px" }}
-            />
-            <textarea
-              placeholder="Benefits, comma separated"
-              value={productForm.benefits}
-              onChange={(e) =>
-                setProductForm({ ...productForm, benefits: e.target.value })
-              }
-              style={{ ...inputStyle, minHeight: "58px" }}
-            />
-            <textarea
-              placeholder="Usage"
-              value={productForm.usage}
-              onChange={(e) =>
-                setProductForm({ ...productForm, usage: e.target.value })
-              }
-              style={{ ...inputStyle, minHeight: "70px" }}
-            />
-            <div className="adminInfoGrid" style={{ marginBottom: "12px" }}>
-              {["1KG", "500G", "250G"].map((weight) => (
-                <div className="adminInfoPanel" key={weight}>
-                  <h3>{weight}</h3>
-                  <input
-                    type="number"
-                    placeholder="MRP"
-                    value={productForm.weights[weight].mrp}
-                    onChange={(e) => updateProductWeight(weight, "mrp", e.target.value)}
-                    style={inputStyle}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Offer price"
-                    value={productForm.weights[weight].offer}
-                    onChange={(e) => updateProductWeight(weight, "offer", e.target.value)}
-                    style={inputStyle}
-                  />
-                  <input
-                    placeholder="Image URL"
-                    value={productForm.weights[weight].image}
-                    onChange={(e) => updateProductWeight(weight, "image", e.target.value)}
-                    style={inputStyle}
-                  />
-                </div>
-              ))}
-            </div>
-            <label style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "12px" }}>
-              <input
-                type="checkbox"
-                checked={productForm.isActive}
-                onChange={(e) =>
-                  setProductForm({ ...productForm, isActive: e.target.checked })
-                }
-              />
-              Active
-            </label>
-            <div className="adminButtonRow">
-              <button
-                onClick={saveProduct}
-                disabled={savingProduct}
-                className="admin-action-button admin-inventory-button"
-              >
-                {savingProduct ? "Saving..." : editingProductId ? "Update Product" : "Add Product"}
-              </button>
-              <button onClick={resetProductForm} className="adminSecondaryBtn">
-                Clear
-              </button>
-            </div>
+            <button onClick={openNewProductForm} className="admin-action-button admin-inventory-button">
+              {showProductForm && !editingProductId ? "Close Form" : "Add Product"}
+            </button>
           </div>
 
-          <div className="adminInfoGrid">
+          <div className="adminProductList">
+            {products.length === 0 && (
+              <div className="adminInfoPanel">
+                <h3>No products listed</h3>
+                <p>Add your first product from the button above.</p>
+              </div>
+            )}
             {products.map((product) => (
-              <div className="adminInfoPanel" key={product.productId}>
-                <h3>{product.name}</h3>
-                <p>ID: <b>{product.productId}</b></p>
-                <p>{product.subtitle}</p>
-                <p>Status: <b>{product.isActive === false ? "Inactive" : "Active"}</b></p>
-                <div style={{ display: "grid", gap: "6px", margin: "10px 0" }}>
+              <div className="adminProductRow" key={product.productId}>
+                <div>
+                  <h3>{product.name}</h3>
+                  <p>{product.subtitle || "No subtitle"}</p>
+                </div>
+                <span>ID: <b>{product.productId}</b></span>
+                <span className={product.isActive === false ? "adminStatusPill status-failed" : "adminStatusPill status-paid"}>
+                  {product.isActive === false ? "Inactive" : "Active"}
+                </span>
+                <div className="adminProductPrices">
                   {["1KG", "500G", "250G"].map((weight) => (
                     <span key={weight}>
-                      {weight}: MRP {product.weights?.[weight]?.mrp || 0}, Offer {product.weights?.[weight]?.offer || 0}
+                      <b>{weight}</b> MRP {product.weights?.[weight]?.mrp || 0}, Offer {product.weights?.[weight]?.offer || 0}
                     </span>
                   ))}
                 </div>
@@ -1516,6 +1424,129 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               </div>
             ))}
           </div>
+
+          {showProductForm && (
+            <div className="adminInfoPanel adminProductFormPanel">
+              <h3>{editingProductId ? "Edit Product" : "Add Product"}</h3>
+              <div style={gridStyle}>
+                <input
+                  placeholder="Product ID"
+                  value={productForm.productId}
+                  disabled={Boolean(editingProductId)}
+                  onChange={(e) =>
+                    setProductForm({ ...productForm, productId: e.target.value })
+                  }
+                  style={inputStyle}
+                />
+                <input
+                  placeholder="Product Name"
+                  value={productForm.name}
+                  onChange={(e) =>
+                    setProductForm({ ...productForm, name: e.target.value })
+                  }
+                  style={inputStyle}
+                />
+                <input
+                  placeholder="Subtitle"
+                  value={productForm.subtitle}
+                  onChange={(e) =>
+                    setProductForm({ ...productForm, subtitle: e.target.value })
+                  }
+                  style={inputStyle}
+                />
+                <input
+                  type="number"
+                  placeholder="Sort order"
+                  value={productForm.sortOrder}
+                  onChange={(e) =>
+                    setProductForm({ ...productForm, sortOrder: e.target.value })
+                  }
+                  style={inputStyle}
+                />
+              </div>
+              <textarea
+                placeholder="Description"
+                value={productForm.desc}
+                onChange={(e) =>
+                  setProductForm({ ...productForm, desc: e.target.value })
+                }
+                style={{ ...inputStyle, minHeight: "70px" }}
+              />
+              <textarea
+                placeholder="Best for tags, comma separated"
+                value={productForm.bestFor}
+                onChange={(e) =>
+                  setProductForm({ ...productForm, bestFor: e.target.value })
+                }
+                style={{ ...inputStyle, minHeight: "58px" }}
+              />
+              <textarea
+                placeholder="Benefits, comma separated"
+                value={productForm.benefits}
+                onChange={(e) =>
+                  setProductForm({ ...productForm, benefits: e.target.value })
+                }
+                style={{ ...inputStyle, minHeight: "58px" }}
+              />
+              <textarea
+                placeholder="Usage"
+                value={productForm.usage}
+                onChange={(e) =>
+                  setProductForm({ ...productForm, usage: e.target.value })
+                }
+                style={{ ...inputStyle, minHeight: "70px" }}
+              />
+              <div className="adminInfoGrid" style={{ marginBottom: "12px" }}>
+                {["1KG", "500G", "250G"].map((weight) => (
+                  <div className="adminInfoPanel adminWeightPanel" key={weight}>
+                    <h3>{weight}</h3>
+                    <input
+                      type="number"
+                      placeholder="MRP"
+                      value={productForm.weights[weight].mrp}
+                      onChange={(e) => updateProductWeight(weight, "mrp", e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Offer price"
+                      value={productForm.weights[weight].offer}
+                      onChange={(e) => updateProductWeight(weight, "offer", e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      placeholder="Image URL"
+                      value={productForm.weights[weight].image}
+                      onChange={(e) => updateProductWeight(weight, "image", e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+                ))}
+              </div>
+              <label style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "12px" }}>
+                <input
+                  type="checkbox"
+                  checked={productForm.isActive}
+                  onChange={(e) =>
+                    setProductForm({ ...productForm, isActive: e.target.checked })
+                  }
+                />
+                Active
+              </label>
+              <div className="adminButtonRow">
+                <button
+                  onClick={saveProduct}
+                  disabled={savingProduct}
+                  className="admin-action-button admin-inventory-button"
+                >
+                  {savingProduct ? "Saving..." : editingProductId ? "Update Product" : "Add Product"}
+                </button>
+                <button onClick={resetProductForm} className="adminSecondaryBtn">
+                  {editingProductId ? "Cancel Edit" : "Clear"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

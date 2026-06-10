@@ -6,9 +6,9 @@ const upiId = "9993265857@ybl";
 const API_URL = "https://satvapusti-website.onrender.com";
 
 const banners = [
-  "/banners/banner-family.png",
-  "/banners/banner-active-kids.png",
-  "/banners/banner-active.png",
+  "/banners/wide/banner-family-wide.png",
+  "/banners/wide/banner-active-kids-wide.png",
+  "/banners/wide/banner-active-wide.png",
 ];
 
 const defaultProducts = [
@@ -16,9 +16,30 @@ const defaultProducts = [
     id: "family",
     name: "SatvaPusti+ Family",
     subtitle: "Premium Nutrition Powder",
-    desc: "Complete nutrition for every member of your family.",
+    desc: "A wholesome daily nutrition blend for the whole family, made to support energy, immunity, brain health and balanced routines.",
     bestFor: ["Family Nutrition", "Daily Energy", "Balanced Routine"],
-    benefits: ["Real dry fruits and seeds", "Daily nutrition support", "No artificial colours"],
+    benefits: [
+      "👨‍👩‍👧 Complete Family Nutrition",
+      "🥜 Real Dry Fruits & Seeds",
+      "⚡ Daily Energy & Stamina",
+      "🧠 Supports Brain Health",
+      "🛡️ Daily Immunity Support",
+      "🌿 No Artificial Colours",
+    ],
+    ingredients: [
+      "Roasted Chana",
+      "Roasted Peanut",
+      "Kaju",
+      "Badam",
+      "Akhrot",
+      "Makhana",
+      "Banana Powder",
+      "Traditional Mishri",
+      "Pumpkin Seeds",
+      "Watermelon Seeds",
+      "Saunf",
+      "Elaichi",
+    ],
     usage: "Mix 2 spoons with 200 ml milk or warm water and consume daily.",
     images: {
       "1KG": "/products/family-1kg.png",
@@ -35,9 +56,33 @@ const defaultProducts = [
     id: "kids",
     name: "SatvaPusti+ Active Kids",
     subtitle: "Premium Kids Nutrition Powder",
-    desc: "Growth, brain, immunity and daily energy support.",
+    desc: "A tasty kids-focused nutrition drink designed for growing champions, school energy, brain development and daily immunity.",
     bestFor: ["Kids Growth", "Brain Support", "Daily Immunity"],
-    benefits: ["Kids-focused nutrition", "Real banana and nuts", "Tasty daily drink"],
+    benefits: [
+      "📚 Brain Development Support",
+      "🦴 Growth & Bone Health",
+      "🛡️ Daily Immunity Support",
+      "🍌 Real Banana & Nut Formula",
+      "⚡ School & Playtime Energy",
+      "🌿 No Artificial Colours",
+    ],
+    ingredients: [
+      "Roasted Chana",
+      "Roasted Peanut",
+      "Kaju",
+      "Badam",
+      "Akhrot",
+      "Makhana",
+      "Banana Powder",
+      "Traditional Mishri",
+      "Pumpkin Seeds",
+      "Watermelon Seeds",
+      "Saunf",
+      "Elaichi",
+      "Cocoa Powder",
+      "Ragi",
+      "Dry Dates",
+    ],
     usage: "Mix 1-2 spoons with milk daily. Adjust quantity based on age and appetite.",
     images: {
       "1KG": "/products/active-kids-1kg.png",
@@ -54,9 +99,33 @@ const defaultProducts = [
     id: "active",
     name: "SatvaPusti+ Active",
     subtitle: "Premium Natural Protein Formula",
-    desc: "Fuel your strength, boost recovery and achieve your best.",
+    desc: "A performance nutrition formula for fitness users and active lifestyles, crafted to support strength, recovery and clean daily energy.",
     bestFor: ["Protein Support", "Recovery", "Active Lifestyle"],
-    benefits: ["Strength routine support", "Natural protein formula", "Energy and recovery"],
+    benefits: [
+      "💪 Protein Rich Formula",
+      "⚡ Workout Recovery Support",
+      "🔥 Strength & Performance",
+      "🥜 Premium Dry Fruits & Seeds",
+      "🚫 No Refined Sugar",
+      "🌿 Naturally Sweetened Formula",
+    ],
+    ingredients: [
+      "Roasted Chana",
+      "Roasted Peanut",
+      "Kaju",
+      "Badam",
+      "Akhrot",
+      "Makhana",
+      "Banana Powder",
+      "Pumpkin Seeds",
+      "Watermelon Seeds",
+      "Saunf",
+      "Elaichi",
+      "Cocoa Powder",
+      "Ragi",
+      "Dry Dates Sweetener",
+      "No Added Sugar",
+    ],
     usage: "Mix 2 spoons with 200 ml milk or water daily. Use after workouts or as part of your morning routine.",
     images: {
       "1KG": "/products/active-1kg.png",
@@ -70,6 +139,10 @@ const defaultProducts = [
     },
   },
 ];
+
+const defaultProductById = Object.fromEntries(
+  defaultProducts.map((product) => [product.id, product])
+);
 
 const ingredients = [
   ["roasted-chana.png", "Roasted Chana"],
@@ -106,6 +179,8 @@ export default function App() {
   const [inventory, setInventory] = useState([]);
   const [products, setProducts] = useState(defaultProducts);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [showHomeMenu, setShowHomeMenu] = useState(false);
+  const [activeProductTabs, setActiveProductTabs] = useState({});
   const paymentModeRef = useRef("");
 
   const [profile, setProfile] = useState(
@@ -145,12 +220,14 @@ export default function App() {
 
   useEffect(() => {
     const normalizeProduct = (product) => {
+      const productId = product.productId || product.id;
+      const fallbackProduct = defaultProductById[productId] || defaultProducts[0];
       const weights = product.weights || {};
       const images = {};
       const prices = {};
 
       for (const weight of ["1KG", "500G", "250G"]) {
-        images[weight] = weights[weight]?.image || defaultProducts[0].images[weight];
+        images[weight] = weights[weight]?.image || fallbackProduct.images[weight];
         prices[weight] = {
           mrp: Number(weights[weight]?.mrp || 0),
           offer: Number(weights[weight]?.offer || 0),
@@ -158,13 +235,18 @@ export default function App() {
       }
 
       return {
-        id: product.productId || product.id,
-        name: product.name,
-        subtitle: product.subtitle || "",
-        desc: product.desc || "",
-        bestFor: Array.isArray(product.bestFor) ? product.bestFor : [],
-        benefits: Array.isArray(product.benefits) ? product.benefits : [],
-        usage: product.usage || "",
+        id: productId,
+        name: product.name || fallbackProduct.name,
+        subtitle: product.subtitle || fallbackProduct.subtitle,
+        desc: fallbackProduct.desc || product.desc || "",
+        bestFor: Array.isArray(product.bestFor) && product.bestFor.length > 0
+          ? product.bestFor
+          : fallbackProduct.bestFor,
+        benefits: fallbackProduct.benefits,
+        ingredients: Array.isArray(product.ingredients) && product.ingredients.length > 0
+          ? product.ingredients
+          : fallbackProduct.ingredients,
+        usage: product.usage || fallbackProduct.usage,
         images,
         prices,
       };
@@ -780,21 +862,41 @@ console.log("Order ID:", orderId);
           <span>SatvaPusti Nutrition</span>
         </div>
 
-        <nav>
-          <a href="#products">Products</a>
-          <a href="#ingredients">Ingredients</a>
-          <a href="/?page=track-order">Track Order</a>
-          <a href="#faq">FAQ</a>
-          <button className="profileNavBtn" onClick={() => setShowProfile(true)}>
-            Profile
-          </button>
-          <a href="#about">About</a>
-          <a href="#contact">Contact</a>
-        </nav>
+        <div className="headerActions">
+          <div className="menuDropdown">
+            <button
+              className="menuToggleBtn"
+              onClick={() => setShowHomeMenu((prev) => !prev)}
+              aria-expanded={showHomeMenu}
+              aria-controls="homeMenuPanel"
+            >
+              Menu
+            </button>
+            {showHomeMenu && (
+              <nav className="homeMenuPanel" id="homeMenuPanel">
+                <a href="#products" onClick={() => setShowHomeMenu(false)}>Products</a>
+                <a href="#ingredients" onClick={() => setShowHomeMenu(false)}>Ingredients</a>
+                <a href="/?page=track-order" onClick={() => setShowHomeMenu(false)}>Track Order</a>
+                <a href="#faq" onClick={() => setShowHomeMenu(false)}>FAQ</a>
+                <button
+                  className="profileNavBtn"
+                  onClick={() => {
+                    setShowProfile(true);
+                    setShowHomeMenu(false);
+                  }}
+                >
+                  Profile
+                </button>
+                <a href="#about" onClick={() => setShowHomeMenu(false)}>About</a>
+                <a href="#contact" onClick={() => setShowHomeMenu(false)}>Contact</a>
+              </nav>
+            )}
+          </div>
 
-        <a className="btn" href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
-          WhatsApp
-        </a>
+          <a className="btn" href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
+            WhatsApp
+          </a>
+        </div>
       </header>
 
       <button className="cartFloatBtn" onClick={() => setShowCart(true)}>
@@ -837,20 +939,199 @@ console.log("Order ID:", orderId);
 
       <section className="customerAssurance">
         <div>
-          <b>Fresh Manufacturing</b>
-          <span>Prepared by Satvapusti Nutrition, General Manufacturing FBO.</span>
+          <b>🌿 Premium Natural Nutrition</b>
+          <span>Made with real dry fruits, seeds and wholesome ingredients</span>
         </div>
         <div>
-          <b>COD + UPI Prepaid</b>
-          <span>Choose cash on delivery or UPI payment with quick support.</span>
+          <b>🚚 Fast &amp; Secure Delivery</b>
+          <span>Pan India shipping with trusted delivery partners</span>
         </div>
         <div>
-          <b>Order Tracking</b>
-          <span>Track with Order ID and mobile number after placing order.</span>
+          <b>⭐ Trusted by Families &amp; Fitness Users</b>
+          <span>Daily nutrition support for kids, adults and active lifestyles</span>
         </div>
       </section>
 
-      <section id="products" className="section">
+      <section id="products" className="section premiumProductsSection">
+        <h2>Shop SatvaPusti Nutrition</h2>
+        <p className="sectionText">Premium nutrition powders with real ingredients, family-friendly formulas, and fast checkout.</p>
+
+        <div className="premiumProductStack">
+          {products.map((product) => {
+            const weight = getWeight(product);
+            const quantity = getQty(product);
+            const mrp = product.prices[weight].mrp;
+            const offer = product.prices[weight].offer;
+            const save = (mrp - offer) * quantity;
+            const total = offer * quantity;
+            const savePercent = mrp > 0 ? Math.round(((mrp - offer) / mrp) * 100) : 0;
+            const stock = getStock(product.id, weight);
+            const isOutOfStock = stock <= 0;
+            const isLowStock = stock > 0 && stock < 10;
+            const activeTab = activeProductTabs[product.id] || "description";
+            const whatsappText = encodeURIComponent(
+              `Hi, I want to buy ${product.name} ${weight}. Quantity: ${quantity}.`
+            );
+            const tabs = [
+              ["description", "Description"],
+              ["ingredients", "Ingredients"],
+              ["howToUse", "How To Use"],
+              ["nutrition", "Nutrition Facts"],
+            ];
+            const premiumBenefits = product.benefits?.length
+              ? product.benefits
+              : ["Real Ingredients", "Daily Nutrition Support", "No Artificial Colours"];
+
+            return (
+              <article className="premiumProductDetail" key={product.id}>
+                <div className="premiumGallery">
+                  <span className="imageBadge imageBadgePrimary">Best Seller</span>
+                  <span className="imageBadge imageBadgeSecondary">Real Ingredients</span>
+                  <div className="premiumImageStage">
+                    <img src={product.images[weight]} alt={product.name} />
+                  </div>
+                  <div className="premiumThumbs">
+                    {["1KG", "500G", "250G"].map((w) => (
+                      <button
+                        key={w}
+                        className={weight === w ? "activeThumb" : ""}
+                        onClick={() => setSelected({ ...selected, [product.id]: w })}
+                      >
+                        <img src={product.images[w]} alt={`${product.name} ${w}`} />
+                        <span>{w}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="premiumBenefitGrid">
+                    {premiumBenefits.map((benefit) => (
+                      <span key={benefit}>{benefit}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="premiumBuyPanel">
+                  <div className="premiumBadgeRow">
+                    {product.bestFor.map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
+                  </div>
+
+                  <h3>{product.name}</h3>
+                  <h4>{product.subtitle || "Premium Nutrition Powder"}</h4>
+                  <p className="premiumLead">{product.desc}</p>
+
+                  <div className="premiumPriceBox">
+                    <div>
+                      <span>MRP</span>
+                      <b className="cutPrice">₹{mrp}</b>
+                    </div>
+                    <div>
+                      <span>Offer Price</span>
+                      <b className="offerPrice">₹{offer}</b>
+                    </div>
+                    <div>
+                      <span>You Save</span>
+                      <b className="saveText">₹{save}</b>
+                    </div>
+                    <strong>Save {savePercent}%</strong>
+                  </div>
+
+                  <div className="premiumPackBlock">
+                    <b>Pack Size</b>
+                    <div className="premiumPackButtons">
+                      {["1KG", "500G", "250G"].map((w) => (
+                        <button
+                          key={w}
+                          className={weight === w ? "activeWeight" : ""}
+                          onClick={() => setSelected({ ...selected, [product.id]: w })}
+                        >
+                          <span>{w}</span>
+                          <small>₹{product.prices[w].offer}</small>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="premiumPurchaseRow">
+                    <div className="premiumQty">
+                      <button onClick={() => changeQty(product, -1)}>-</button>
+                      <span>{quantity}</span>
+                      <button onClick={() => changeQty(product, 1)}>+</button>
+                    </div>
+                    <p className={isOutOfStock ? "stockOut" : isLowStock ? "stockLow" : "stockOk"}>
+                      {isOutOfStock ? "Out of stock" : isLowStock ? `Only ${stock} left` : "In Stock"}
+                    </p>
+                  </div>
+
+                  <button
+                    className="premiumCartBtn"
+                    onClick={() => addToCart(product)}
+                    disabled={isOutOfStock}
+                  >
+                    {isOutOfStock ? "Out of Stock" : `Add To Cart - ₹${total}`}
+                  </button>
+
+                  <a
+                    className="premiumWhatsappBtn"
+                    href={`https://wa.me/${phone}?text=${whatsappText}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Buy on WhatsApp
+                  </a>
+                </div>
+
+                <div className="premiumTabs">
+                  <div className="premiumTabButtons">
+                    {tabs.map(([id, label]) => (
+                      <button
+                        key={id}
+                        className={activeTab === id ? "activeProductTab" : ""}
+                        onClick={() => setActiveProductTabs({ ...activeProductTabs, [product.id]: id })}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="premiumTabPanel">
+                    {activeTab === "description" && (
+                      <div>
+                        <h4>Premium daily nutrition</h4>
+                        <p>{product.desc}</p>
+                        <p>{product.usage}</p>
+                      </div>
+                    )}
+                    {activeTab === "ingredients" && (
+                      <div className="premiumIngredientGrid">
+                        {(product.ingredients || []).map((item) => (
+                          <span key={item}>{item}</span>
+                        ))}
+                      </div>
+                    )}
+                    {activeTab === "howToUse" && (
+                      <div className="premiumSteps">
+                        <span>1. Add 2 spoons to warm milk or water.</span>
+                        <span>2. Stir well until smooth.</span>
+                        <span>3. Use daily as part of a balanced routine.</span>
+                      </div>
+                    )}
+                    {activeTab === "nutrition" && (
+                      <div className="premiumNutritionTable">
+                        <div><b>Energy</b><span>Daily activity support</span></div>
+                        <div><b>Protein</b><span>Growth and strength support</span></div>
+                        <div><b>Fiber</b><span>Fullness and digestion support</span></div>
+                        <div><b>Natural Mix</b><span>Dry fruits, seeds and grains</span></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="productsLegacy" className="section legacyProductsSection">
         <h2>Order SatvaPusti Products</h2>
         <p className="sectionText">Select products, add them to cart, and place one combined order.</p>
 
