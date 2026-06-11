@@ -1151,6 +1151,11 @@ console.log("Order ID:", orderId);
                   >
                     Buy on WhatsApp
                   </a>
+                  <div className="mobileTrustStrip" aria-label="Checkout trust badges">
+                    <span>✓ FSSAI</span>
+                    <span>✓ Delivery</span>
+                    <span>✓ Secure</span>
+                  </div>
                 </div>
 
                 <div className="premiumTabs">

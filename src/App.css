@@ -842,6 +842,10 @@ nav a:hover,
   color: var(--leaf-deep);
 }
 
+.mobileTrustStrip {
+  display: none;
+}
+
 .premiumTabs {
   grid-area: tabs;
   align-self: start;
@@ -2159,6 +2163,193 @@ nav a:hover,
   }
 
   .premiumPackButtons {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .premiumProductDetail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "mobileTitle"
+      "mobileSubtitle"
+      "mobileImage"
+      "mobilePrice"
+      "mobilePack"
+      "mobileQty"
+      "mobileCart"
+      "mobileWhatsApp"
+      "mobileTrust"
+      "mobileBenefits"
+      "mobileTabs";
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .premiumGallery,
+  .premiumBuyPanel {
+    display: contents;
+  }
+
+  .premiumBadgeRow,
+  .imageBadge,
+  .premiumThumbs,
+  .premiumLead {
+    display: none;
+  }
+
+  .premiumBuyPanel h3 {
+    grid-area: mobileTitle;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--product-text);
+    box-shadow: none;
+    text-shadow: none;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(30px, 9vw, 40px);
+    line-height: 1.02;
+  }
+
+  .premiumBuyPanel h4 {
+    grid-area: mobileSubtitle;
+    margin-top: -2px;
+    color: var(--product-secondary);
+    font-size: 16px;
+    line-height: 1.25;
+  }
+
+  .premiumImageStage {
+    grid-area: mobileImage;
+    aspect-ratio: 1.12 / 1;
+    padding: 6px;
+  }
+
+  .premiumPriceBox {
+    grid-area: mobilePrice;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .premiumPriceBox strong {
+    justify-self: stretch;
+  }
+
+  .premiumPackBlock {
+    grid-area: mobilePack;
+  }
+
+  .premiumPackBlock > b {
+    font-size: 14px;
+  }
+
+  .premiumPackButtons {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .premiumPurchaseRow {
+    grid-area: mobileQty;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+  }
+
+  .premiumCartBtn {
+    grid-area: mobileCart;
+    position: sticky;
+    bottom: 10px;
+    z-index: 80;
+    min-height: 58px;
+    font-size: 16px;
+    box-shadow: 0 14px 30px color-mix(in srgb, var(--product-primary) 28%, transparent);
+  }
+
+  .premiumWhatsappBtn {
+    grid-area: mobileWhatsApp;
+    min-height: 52px;
+    font-size: 15px;
+  }
+
+  .mobileTrustStrip {
+    grid-area: mobileTrust;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .mobileTrustStrip span {
+    display: grid;
+    place-items: center;
+    min-height: 36px;
+    padding: 7px 6px;
+    border: 1px solid color-mix(in srgb, var(--product-primary) 18%, #ffffff);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--product-primary) 9%, #ffffff);
+    color: var(--product-text);
+    font-size: 11px;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  .premiumBenefitGrid {
+    grid-area: mobileBenefits;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 2px;
+  }
+
+  .premiumTabs {
+    grid-area: mobileTabs;
+    margin-top: 2px;
+  }
+
+  .premiumTabButtons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .premiumTabButtons button {
+    min-height: 42px;
+    font-size: 12px;
+  }
+
+  .premiumTabPanel {
+    padding: 14px;
+    font-size: 14px;
+  }
+
+  .cartFloatBtn {
+    bottom: 76px;
+  }
+}
+
+@media (max-width: 430px) {
+  .premiumProductDetail {
+    gap: 9px;
+  }
+
+  .premiumBuyPanel h3 {
+    font-size: clamp(28px, 10vw, 34px);
+  }
+
+  .premiumImageStage {
+    aspect-ratio: 1 / 1;
+  }
+
+  .premiumPriceBox {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .premiumPackButtons {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .premiumPackButtons button {
+    min-height: 50px;
+  }
+
+  .premiumBenefitGrid {
     grid-template-columns: 1fr;
   }
 }
