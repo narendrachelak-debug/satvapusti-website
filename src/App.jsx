@@ -15,15 +15,27 @@ const defaultProducts = [
   {
     id: "family",
     name: "SatvaPusti+ Family",
-    subtitle: "Premium Nutrition Powder",
-    desc: "A wholesome daily nutrition blend for the whole family, made to support energy, immunity, brain health and balanced routines.",
-    bestFor: ["Family Nutrition", "Daily Energy", "Balanced Routine"],
+    theme: "Family Wellness",
+    subtitle: "Complete Daily Nutrition For The Whole Family",
+    desc: "A family wellness blend made for everyday routines, with real dry fruits and seeds to support energy, focus and immunity for all ages.",
+    bestFor: ["Family Wellness", "Daily Energy", "Immunity Support"],
+    accent: {
+      primary: "#178a52",
+      secondary: "#0f6f45",
+      soft: "#eaf8ef",
+      warm: "#d67a15",
+      text: "#06411f",
+    },
+    badges: [
+      { label: "Family Favourite", color: "#178a52" },
+      { label: "12 Real Ingredients", color: "#0f6f45" },
+    ],
     benefits: [
-      "👨‍👩‍👧 Complete Family Nutrition",
+      "👨‍👩‍👧 Family Wellness Support",
       "🥜 Real Dry Fruits & Seeds",
       "⚡ Daily Energy & Stamina",
-      "🧠 Supports Brain Health",
-      "🛡️ Daily Immunity Support",
+      "🧠 Brain & Focus Support",
+      "🛡️ Immunity Support",
       "🌿 No Artificial Colours",
     ],
     ingredients: [
@@ -55,15 +67,27 @@ const defaultProducts = [
   {
     id: "kids",
     name: "SatvaPusti+ Active Kids",
-    subtitle: "Premium Kids Nutrition Powder",
-    desc: "A tasty kids-focused nutrition drink designed for growing champions, school energy, brain development and daily immunity.",
-    bestFor: ["Kids Growth", "Brain Support", "Daily Immunity"],
+    theme: "Growing Champions",
+    subtitle: "Nutrition For Growing Champions",
+    desc: "A kid-focused nutrition formula with real banana goodness, crafted to support growth, brain development, school energy and daily immunity.",
+    bestFor: ["Growing Champions", "Brain Support", "Growth Support"],
+    accent: {
+      primary: "#e0a713",
+      secondary: "#f28c18",
+      soft: "#fff4dc",
+      warm: "#ffbd2e",
+      text: "#7a3f00",
+    },
+    badges: [
+      { label: "Growing Champions Formula", color: "#f28c18" },
+      { label: "Real Banana & Nut Formula", color: "#e0a713" },
+    ],
     benefits: [
       "📚 Brain Development Support",
-      "🦴 Growth & Bone Health",
-      "🛡️ Daily Immunity Support",
-      "🍌 Real Banana & Nut Formula",
-      "⚡ School & Playtime Energy",
+      "🦴 Growth & Bone Support",
+      "🍌 Real Banana Nutrition",
+      "🛡️ Immunity Support",
+      "⚡ School & Play Energy",
       "🌿 No Artificial Colours",
     ],
     ingredients: [
@@ -98,16 +122,28 @@ const defaultProducts = [
   {
     id: "active",
     name: "SatvaPusti+ Active",
-    subtitle: "Premium Natural Protein Formula",
-    desc: "A performance nutrition formula for fitness users and active lifestyles, crafted to support strength, recovery and clean daily energy.",
-    bestFor: ["Protein Support", "Recovery", "Active Lifestyle"],
+    theme: "Fitness & Recovery",
+    subtitle: "Natural Strength & Recovery Formula",
+    desc: "A fitness and recovery blend for active lifestyles, built around protein-rich natural ingredients to support strength, performance and post-workout recovery.",
+    bestFor: ["Fitness & Recovery", "Strength Support", "Protein Rich"],
+    accent: {
+      primary: "#0f4f3f",
+      secondary: "#c99a2e",
+      soft: "#eef7ef",
+      warm: "#d7a438",
+      text: "#07372d",
+    },
+    badges: [
+      { label: "Performance Formula", color: "#0f4f3f" },
+      { label: "Protein Rich Natural Blend", color: "#c99a2e" },
+    ],
     benefits: [
-      "💪 Protein Rich Formula",
-      "⚡ Workout Recovery Support",
-      "🔥 Strength & Performance",
-      "🥜 Premium Dry Fruits & Seeds",
+      "💪 Protein Rich Blend",
+      "⚡ Workout Recovery",
+      "🔥 Performance Support",
+      "🥜 Premium Nut & Seed Formula",
       "🚫 No Refined Sugar",
-      "🌿 Naturally Sweetened Formula",
+      "🌿 Naturally Sweetened",
     ],
     ingredients: [
       "Roasted Chana",
@@ -237,11 +273,16 @@ export default function App() {
       return {
         id: productId,
         name: product.name || fallbackProduct.name,
+        theme: product.theme || fallbackProduct.theme,
         subtitle: product.subtitle || fallbackProduct.subtitle,
         desc: fallbackProduct.desc || product.desc || "",
         bestFor: Array.isArray(product.bestFor) && product.bestFor.length > 0
           ? product.bestFor
           : fallbackProduct.bestFor,
+        accent: product.accent || fallbackProduct.accent,
+        badges: Array.isArray(product.badges) && product.badges.length > 0
+          ? product.badges
+          : fallbackProduct.badges,
         benefits: fallbackProduct.benefits,
         ingredients: Array.isArray(product.ingredients) && product.ingredients.length > 0
           ? product.ingredients
@@ -981,12 +1022,42 @@ console.log("Order ID:", orderId);
             const premiumBenefits = product.benefits?.length
               ? product.benefits
               : ["Real Ingredients", "Daily Nutrition Support", "No Artificial Colours"];
+            const productBadges = product.badges?.length
+              ? product.badges
+              : [
+                  { label: "Real Ingredients", color: "#e58b1b" },
+                  { label: "Daily Nutrition", color: "#178a52" },
+                ];
+            const productAccent = product.accent || {
+              primary: "#178a52",
+              secondary: "#0f6f45",
+              soft: "#eaf8ef",
+              warm: "#d67a15",
+              text: "#06411f",
+            };
+            const productAccentStyle = {
+              "--product-primary": productAccent.primary,
+              "--product-secondary": productAccent.secondary,
+              "--product-soft": productAccent.soft,
+              "--product-warm": productAccent.warm,
+              "--product-text": productAccent.text,
+            };
 
             return (
-              <article className="premiumProductDetail" key={product.id}>
+              <article className="premiumProductDetail" key={product.id} style={productAccentStyle}>
                 <div className="premiumGallery">
-                  <span className="imageBadge imageBadgePrimary">Best Seller</span>
-                  <span className="imageBadge imageBadgeSecondary">Real Ingredients</span>
+                  <span
+                    className="imageBadge imageBadgePrimary"
+                    style={{ "--badge-color": productBadges[0].color }}
+                  >
+                    {productBadges[0].label}
+                  </span>
+                  <span
+                    className="imageBadge imageBadgeSecondary"
+                    style={{ "--badge-color": productBadges[1].color }}
+                  >
+                    {productBadges[1].label}
+                  </span>
                   <div className="premiumImageStage">
                     <img src={product.images[weight]} alt={product.name} />
                   </div>
@@ -1011,6 +1082,7 @@ console.log("Order ID:", orderId);
 
                 <div className="premiumBuyPanel">
                   <div className="premiumBadgeRow">
+                    {product.theme && <span className="themeBadge">{product.theme}</span>}
                     {product.bestFor.map((tag) => (
                       <span key={tag}>{tag}</span>
                     ))}

@@ -403,6 +403,11 @@ nav a:hover,
 }
 
 .premiumProductDetail {
+  --product-primary: var(--leaf);
+  --product-secondary: var(--leaf-deep);
+  --product-soft: var(--mint);
+  --product-warm: var(--gold);
+  --product-text: var(--forest);
   display: grid;
   grid-template-columns: minmax(520px, 45%) minmax(560px, 55%);
   grid-template-areas:
@@ -410,10 +415,10 @@ nav a:hover,
     "gallery tabs";
   gap: 24px 40px;
   padding: 28px;
-  border: 1px solid rgba(216, 233, 201, 0.95);
+  border: 1px solid color-mix(in srgb, var(--product-primary) 26%, #ffffff);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 24px 54px rgba(20, 53, 31, 0.12);
+  box-shadow: 0 24px 54px color-mix(in srgb, var(--product-primary) 14%, transparent);
 }
 
 .premiumGallery {
@@ -430,9 +435,9 @@ nav a:hover,
   align-content: start;
   min-height: 0;
   padding: 12px;
-  border: 1px solid rgba(216, 233, 201, 0.95);
+  border: 1px solid color-mix(in srgb, var(--product-primary) 22%, #ffffff);
   border-radius: 8px;
-  background: #fffdf7;
+  background: linear-gradient(145deg, #ffffff 0%, var(--product-soft) 100%);
 }
 
 .premiumImageStage {
@@ -443,12 +448,12 @@ nav a:hover,
   min-height: 0;
   height: auto;
   padding: 10px;
-  border: 1px solid rgba(216, 233, 201, 0.85);
+  border: 1px solid color-mix(in srgb, var(--product-primary) 24%, #ffffff);
   border-radius: 8px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 18%, rgba(255, 233, 173, 0.45), transparent 34%),
-    linear-gradient(145deg, #f8ead2 0%, #fffaf0 50%, #f6fbef 100%);
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--product-warm) 26%, transparent), transparent 34%),
+    linear-gradient(145deg, var(--product-soft) 0%, #fffdf7 52%, #ffffff 100%);
 }
 
 .premiumImageStage img {
@@ -473,49 +478,62 @@ nav a:hover,
 
 .premiumThumbs button {
   display: grid;
-  gap: 5px;
-  padding: 7px;
-  border: 1px solid var(--line);
+  gap: 7px;
+  min-height: 124px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--product-primary) 16%, #ffffff);
   border-radius: 8px;
-  background: #fff;
-  color: var(--forest);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--product-text);
   font-weight: 900;
   cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .premiumThumbs img {
   width: 100%;
-  height: 92px;
+  height: 82px;
   object-fit: cover;
   border-radius: 4px;
 }
 
+.premiumThumbs button:hover {
+  border-color: var(--product-primary);
+  transform: translateY(-1px);
+}
+
 .premiumThumbs .activeThumb {
-  border-color: var(--leaf);
-  box-shadow: 0 0 0 3px rgba(15, 157, 88, 0.14);
+  border-color: var(--product-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--product-primary) 18%, transparent);
 }
 
 .imageBadge {
   position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   justify-self: center;
-  width: min(100%, 220px);
-  padding: 10px 14px;
+  width: min(100%, 280px);
+  min-height: 72px;
+  padding: 11px 18px;
   border-radius: 999px;
   color: #fff;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
+  line-height: 1.18;
   text-align: center;
+  text-wrap: balance;
   box-shadow: 0 12px 26px rgba(20, 53, 31, 0.18);
 }
 
 .imageBadgePrimary {
   grid-area: badge1;
-  background: #e58b1b;
+  background: var(--badge-color, #e58b1b);
 }
 
 .imageBadgeSecondary {
   grid-area: badge2;
-  background: var(--leaf-deep);
+  background: var(--badge-color, var(--leaf-deep));
 }
 
 .premiumBuyPanel {
@@ -528,10 +546,11 @@ nav a:hover,
 }
 
 .premiumBadgeRow {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-self: center;
+  width: min(100%, 820px);
+  gap: 10px;
 }
 
 .premiumBadgeRow span,
@@ -541,42 +560,68 @@ nav a:hover,
 }
 
 .premiumBadgeRow span {
-  min-width: 160px;
-  padding: 9px 14px;
-  background: var(--mint);
-  color: var(--leaf-deep);
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--product-primary) 11%, #ffffff);
+  color: var(--product-text);
+  font-size: 12.5px;
+  font-weight: 850;
+  line-height: 1.15;
+  border: 1px solid color-mix(in srgb, var(--product-primary) 18%, #ffffff);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--product-primary) 8%, transparent);
+}
+
+.premiumBadgeRow .themeBadge {
+  background: linear-gradient(135deg, var(--product-primary), var(--product-secondary));
+  color: #fff;
+  border-color: transparent;
+}
+
+.premiumBadgeRow span:nth-child(3) {
+  background: color-mix(in srgb, var(--product-warm) 22%, #ffffff);
+  color: var(--product-text);
+  border-color: color-mix(in srgb, var(--product-warm) 36%, #ffffff);
+}
+
+.premiumBadgeRow span:nth-child(4) {
+  background: color-mix(in srgb, var(--product-secondary) 12%, #ffffff);
+  color: var(--product-secondary);
+  border-color: color-mix(in srgb, var(--product-secondary) 22%, #ffffff);
 }
 
 .premiumBuyPanel h3 {
   display: inline-block;
   justify-self: center;
+  max-width: min(100%, 760px);
   margin: 0;
-  padding: 9px 22px 11px;
-  border: 2px solid #c78317;
+  padding: 8px 20px 10px;
+  border: 2px solid var(--product-warm);
   border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(255, 233, 173, 0.48), rgba(255, 250, 240, 0.96)),
+    linear-gradient(180deg, color-mix(in srgb, var(--product-warm) 22%, #ffffff), rgba(255, 250, 240, 0.96)),
     #fffaf0;
-  color: #06411f;
+  color: var(--product-text);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(40px, 4vw, 58px);
+  font-size: clamp(34px, 3.25vw, 50px);
   font-weight: 900;
-  line-height: 1.02;
+  line-height: 1.04;
   letter-spacing: 0.2px;
   text-shadow:
-    0 1px 0 #f5d26f,
+    0 1px 0 color-mix(in srgb, var(--product-warm) 52%, #ffffff),
     0 2px 0 rgba(92, 54, 8, 0.18);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.78),
-    inset 0 -5px 0 rgba(199, 131, 23, 0.12),
+    inset 0 -5px 0 color-mix(in srgb, var(--product-warm) 18%, transparent),
     0 12px 26px rgba(20, 53, 31, 0.08);
 }
 
 .premiumBuyPanel h4 {
   margin: 0;
-  color: var(--gold);
-  font-size: 21px;
+  color: var(--product-secondary);
+  font-size: clamp(19px, 1.45vw, 22px);
 }
 
 .premiumLead {
@@ -593,10 +638,12 @@ nav a:hover,
   gap: 10px;
   align-items: center;
   padding: 18px;
-  border: 1px solid #ead083;
+  border: 1px solid color-mix(in srgb, var(--product-warm) 46%, #ffffff);
   border-radius: 8px;
-  background: linear-gradient(135deg, #fff9e8, #fffdf6);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--product-warm) 10%, #ffffff), #fffdf6);
   text-align: left;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
 }
 
 .premiumPriceBox div {
@@ -619,9 +666,10 @@ nav a:hover,
   justify-self: end;
   padding: 10px 14px;
   border-radius: 999px;
-  background: #d71920;
+  background: linear-gradient(135deg, var(--product-primary), var(--product-secondary));
   color: #fff;
   white-space: nowrap;
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--product-primary) 18%, transparent);
 }
 
 .premiumPackBlock {
@@ -645,17 +693,22 @@ nav a:hover,
   gap: 4px;
   min-height: 58px;
   padding: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--product-primary) 16%, #ffffff);
   border-radius: 8px;
   background: #fff;
-  color: var(--forest);
+  color: var(--product-text);
   font-weight: 900;
   cursor: pointer;
 }
 
+.premiumPackButtons button:hover {
+  border-color: var(--product-primary);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--product-primary) 10%, transparent);
+}
+
 .premiumPackButtons .activeWeight {
-  border-color: var(--leaf);
-  background: linear-gradient(135deg, var(--leaf), var(--leaf-deep));
+  border-color: var(--product-primary);
+  background: linear-gradient(135deg, var(--product-primary), var(--product-secondary));
   color: #fff;
 }
 
@@ -705,11 +758,11 @@ nav a:hover,
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
   padding: 12px;
-  border: 1px solid rgba(216, 233, 201, 0.82);
+  border: 1px solid color-mix(in srgb, var(--product-primary) 22%, #ffffff);
   border-radius: 8px;
   background:
-    radial-gradient(circle at top left, rgba(255, 233, 173, 0.34), transparent 38%),
-    #fbfff6;
+    radial-gradient(circle at top left, color-mix(in srgb, var(--product-warm) 24%, transparent), transparent 38%),
+    var(--product-soft);
 }
 
 .premiumBenefitGrid span {
@@ -718,7 +771,7 @@ nav a:hover,
   justify-content: center;
   min-height: 42px;
   padding: 10px 12px;
-  border: 1px solid rgba(216, 233, 201, 0.9);
+  border: 1px solid color-mix(in srgb, var(--product-primary) 18%, #ffffff);
   background: #fff;
   color: var(--ink);
   font-size: 13px;
@@ -727,33 +780,33 @@ nav a:hover,
 }
 
 .premiumBenefitGrid span:nth-child(1) {
-  background: #fff4dc;
-  color: #8a4b00;
+  background: color-mix(in srgb, var(--product-primary) 13%, #ffffff);
+  color: var(--product-text);
 }
 
 .premiumBenefitGrid span:nth-child(2) {
-  background: #eaf8ef;
-  color: #087f4f;
+  background: color-mix(in srgb, var(--product-secondary) 12%, #ffffff);
+  color: var(--product-secondary);
 }
 
 .premiumBenefitGrid span:nth-child(3) {
-  background: #edf6ff;
-  color: #075985;
+  background: color-mix(in srgb, var(--product-warm) 18%, #ffffff);
+  color: var(--product-text);
 }
 
 .premiumBenefitGrid span:nth-child(4) {
-  background: #f0fbdf;
-  color: #2f6f1f;
+  background: color-mix(in srgb, var(--product-primary) 10%, #ffffff);
+  color: var(--product-primary);
 }
 
 .premiumBenefitGrid span:nth-child(5) {
-  background: #fff7bf;
-  color: #8a5b00;
+  background: color-mix(in srgb, var(--product-warm) 24%, #ffffff);
+  color: var(--product-text);
 }
 
 .premiumBenefitGrid span:nth-child(6) {
-  background: #f4edff;
-  color: #5b21b6;
+  background: color-mix(in srgb, var(--product-secondary) 10%, #ffffff);
+  color: var(--product-secondary);
 }
 
 .premiumCartBtn,
@@ -1362,12 +1415,21 @@ nav a:hover,
   }
 
   .imageBadge {
-    width: min(100%, 260px);
-    font-size: 17px;
+    width: min(100%, 320px);
+    min-height: 64px;
+    font-size: 15.5px;
   }
 
   .premiumBuyPanel {
     padding: 0;
+  }
+
+  .premiumBadgeRow {
+    width: 100%;
+  }
+
+  .premiumBuyPanel h3 {
+    font-size: clamp(30px, 8vw, 42px);
   }
 
   .premiumPriceBox,
@@ -1454,6 +1516,32 @@ nav a:hover,
 
   .customerAssurance span {
     font-size: 14px;
+  }
+}
+
+@media (max-width: 560px) {
+  .premiumBadgeRow {
+    grid-template-columns: 1fr;
+  }
+
+  .premiumBadgeRow span {
+    min-height: 42px;
+  }
+
+  .premiumThumbs {
+    grid-template-columns: 1fr;
+  }
+
+  .premiumThumbs button {
+    min-height: auto;
+  }
+
+  .premiumThumbs img {
+    height: 120px;
+  }
+
+  .premiumBuyPanel h3 {
+    font-size: clamp(28px, 9vw, 36px);
   }
 }
 .cutPrice {
@@ -1864,6 +1952,214 @@ nav a:hover,
     right: 12px;
     bottom: 12px;
     padding: 12px 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 76px;
+  }
+
+  .premiumProductsSection {
+    padding: 18px 10px 30px;
+  }
+
+  .premiumProductStack {
+    gap: 22px;
+  }
+
+  .premiumProductDetail {
+    gap: 16px;
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .premiumGallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "badge1 badge2"
+      "stage stage"
+      "thumbs thumbs"
+      "benefits benefits";
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .imageBadge {
+    width: 100%;
+    min-height: 56px;
+    padding: 9px 10px;
+    font-size: 12.5px;
+    line-height: 1.16;
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--product-primary) 18%, transparent);
+  }
+
+  .premiumImageStage {
+    aspect-ratio: 4 / 3;
+    padding: 6px;
+  }
+
+  .premiumImageStage:hover img {
+    transform: none;
+  }
+
+  .premiumThumbs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .premiumThumbs button {
+    min-height: 86px;
+    padding: 6px;
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  .premiumThumbs img {
+    height: 58px;
+  }
+
+  .premiumBenefitGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    padding: 9px;
+  }
+
+  .premiumBenefitGrid span {
+    min-height: 40px;
+    padding: 8px;
+    font-size: 11.5px;
+    line-height: 1.18;
+  }
+
+  .premiumBuyPanel {
+    gap: 11px;
+  }
+
+  .premiumBadgeRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .premiumBadgeRow span {
+    min-height: 40px;
+    padding: 8px;
+    font-size: 11.5px;
+    line-height: 1.15;
+  }
+
+  .premiumBuyPanel h3 {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: clamp(27px, 8vw, 36px);
+    line-height: 1.05;
+  }
+
+  .premiumBuyPanel h4 {
+    font-size: 18px;
+  }
+
+  .premiumLead {
+    font-size: 14.5px;
+    line-height: 1.45;
+  }
+
+  .premiumPriceBox {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .premiumPriceBox span {
+    font-size: 10.5px;
+  }
+
+  .premiumPriceBox b {
+    font-size: 18px;
+  }
+
+  .premiumPriceBox strong {
+    justify-self: stretch;
+    text-align: center;
+    padding: 9px 10px;
+    font-size: 14px;
+  }
+
+  .premiumPackBlock {
+    gap: 7px;
+  }
+
+  .premiumPackButtons {
+    gap: 7px;
+  }
+
+  .premiumPackButtons button {
+    min-height: 54px;
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+
+  .premiumPurchaseRow {
+    gap: 9px;
+  }
+
+  .premiumQty {
+    justify-self: start;
+    min-height: 44px;
+    gap: 14px;
+  }
+
+  .premiumTabs {
+    padding: 12px;
+  }
+
+  .cartFloatBtn {
+    right: 10px;
+    bottom: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    box-shadow: 0 10px 24px rgba(0, 128, 55, 0.28);
+  }
+}
+
+@media (max-width: 430px) {
+  .premiumProductDetail {
+    padding: 8px;
+  }
+
+  .premiumGallery {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "badge1"
+      "badge2"
+      "stage"
+      "thumbs"
+      "benefits";
+  }
+
+  .imageBadge {
+    width: min(100%, 300px);
+    min-height: 48px;
+    justify-self: center;
+    font-size: 12px;
+  }
+
+  .premiumThumbs img {
+    height: 52px;
+  }
+
+  .premiumBenefitGrid,
+  .premiumBadgeRow,
+  .premiumPriceBox {
+    grid-template-columns: 1fr;
+  }
+
+  .premiumBuyPanel h3 {
+    font-size: clamp(25px, 10vw, 32px);
+  }
+
+  .premiumPackButtons {
+    grid-template-columns: 1fr;
   }
 }
 .upiPayBtn {
