@@ -28,7 +28,7 @@ const defaultProducts = [
     },
     badges: [
       { label: "Family Favourite", color: "#178a52" },
-      { label: "12 Real Ingredients", color: "#0f6f45" },
+      { label: "Quality Tested", color: "#0f6f45" },
     ],
     benefits: [
       "👨‍👩‍👧 Family Wellness Support",
@@ -53,6 +53,19 @@ const defaultProducts = [
       "Elaichi",
     ],
     usage: "Mix 2 spoons with 200 ml milk or warm water and consume daily.",
+    nutrition: [
+      ["Energy", "513.56 kcal / 100g"],
+      ["Protein", "17.75 g / 100g"],
+      ["Total Carbohydrates", "58.92 g / 100g"],
+      ["Total Fat", "27.68 g / 100g"],
+      ["Dietary Fiber", "8.27 g / 100g"],
+      ["Total Sugars", "12.36 g / 100g"],
+      ["Added Sugars", "10.12 g / 100g"],
+      ["Sodium", "27.42 mg / 100g"],
+      ["Saturated Fat", "4.68 g / 100g"],
+      ["Trans Fat", "Not detected"],
+      ["Cholesterol", "Below quantification limit"],
+    ],
     images: {
       "1KG": "/products/family-1kg.png",
       "500G": "/products/family-500g.png",
@@ -80,7 +93,7 @@ const defaultProducts = [
     },
     badges: [
       { label: "Growing Champions Formula", color: "#f28c18" },
-      { label: "Real Banana & Nut Formula", color: "#e0a713" },
+      { label: "0g Added Sugar", color: "#e0a713" },
     ],
     benefits: [
       "📚 Brain Development Support",
@@ -98,16 +111,28 @@ const defaultProducts = [
       "Akhrot",
       "Makhana",
       "Banana Powder",
-      "Traditional Mishri",
+      "Dates Powder",
       "Pumpkin Seeds",
       "Watermelon Seeds",
       "Saunf",
       "Elaichi",
       "Cocoa Powder",
       "Ragi",
-      "Dry Dates",
+      "No Added Sugar",
     ],
     usage: "Mix 1-2 spoons with milk daily. Adjust quantity based on age and appetite.",
+    nutrition: [
+      ["Energy", "Approx. 513.56 kcal / 100g"],
+      ["Protein", "Approx. 17.75 g / 100g"],
+      ["Total Carbohydrates", "Approx. 58.92 g / 100g"],
+      ["Total Fat", "Approx. 27.68 g / 100g"],
+      ["Dietary Fiber", "Approx. 8.27 g / 100g"],
+      ["Total Sugars", "From ingredients"],
+      ["Added Sugar", "0 g"],
+      ["Sweetener", "Dates powder"],
+      ["Sodium", "Approx. 27.42 mg / 100g"],
+      ["Trans Fat", "Not detected"],
+    ],
     images: {
       "1KG": "/products/active-kids-1kg.png",
       "500G": "/products/active-kids-500g.png",
@@ -135,7 +160,7 @@ const defaultProducts = [
     },
     badges: [
       { label: "Performance Formula", color: "#0f4f3f" },
-      { label: "Protein Rich Natural Blend", color: "#c99a2e" },
+      { label: "0g Added Sugar", color: "#c99a2e" },
     ],
     benefits: [
       "💪 Protein Rich Blend",
@@ -152,6 +177,7 @@ const defaultProducts = [
       "Badam",
       "Akhrot",
       "Makhana",
+      "Soy Protein",
       "Banana Powder",
       "Pumpkin Seeds",
       "Watermelon Seeds",
@@ -159,10 +185,22 @@ const defaultProducts = [
       "Elaichi",
       "Cocoa Powder",
       "Ragi",
-      "Dry Dates Sweetener",
+      "Dates Powder",
       "No Added Sugar",
     ],
     usage: "Mix 2 spoons with 200 ml milk or water daily. Use after workouts or as part of your morning routine.",
+    nutrition: [
+      ["Energy", "Approx. 513.56 kcal / 100g"],
+      ["Protein", "30 g / 100g"],
+      ["Total Carbohydrates", "Approx. 58.92 g / 100g"],
+      ["Total Fat", "Approx. 27.68 g / 100g"],
+      ["Dietary Fiber", "Approx. 8.27 g / 100g"],
+      ["Total Sugars", "From ingredients"],
+      ["Added Sugar", "0 g"],
+      ["Sweetener", "Dates powder"],
+      ["Sodium", "Approx. 27.42 mg / 100g"],
+      ["Trans Fat", "Not detected"],
+    ],
     images: {
       "1KG": "/products/active-1kg.png",
       "500G": "/products/active-500g.png",
@@ -288,6 +326,7 @@ export default function App() {
           ? product.ingredients
           : fallbackProduct.ingredients,
         usage: product.usage || fallbackProduct.usage,
+        nutrition: fallbackProduct.nutrition,
         images,
         prices,
       };
@@ -1194,10 +1233,9 @@ console.log("Order ID:", orderId);
                     )}
                     {activeTab === "nutrition" && (
                       <div className="premiumNutritionTable">
-                        <div><b>Energy</b><span>Daily activity support</span></div>
-                        <div><b>Protein</b><span>Growth and strength support</span></div>
-                        <div><b>Fiber</b><span>Fullness and digestion support</span></div>
-                        <div><b>Natural Mix</b><span>Dry fruits, seeds and grains</span></div>
+                        {(product.nutrition || []).map(([label, value]) => (
+                          <div key={label}><b>{label}</b><span>{value}</span></div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -1654,8 +1692,99 @@ console.log("Order ID:", orderId);
         </div>
       )}
 
-      <section id="ingredients" className="section cream">
+      <section id="about" className="section about trustAboutSection">
+        <p className="sectionEyebrow">Premium Nutrition, Built On Trust</p>
+        <h2>Why Families Trust SatvaPusti</h2>
+        <p className="sectionText">
+          Made with carefully selected dry fruits, seeds and real ingredients for daily family nutrition.
+        </p>
+
+        <div className="trustStats">
+          <div className="trustStatCard trustStatFamily">
+            <span>👨‍👩‍👧</span>
+            <b>Family Focused</b>
+            <small>Made for everyday family wellness</small>
+          </div>
+          <div className="trustStatCard trustStatIngredients">
+            <span>🌿</span>
+            <b>12 Real Ingredients</b>
+            <small>Carefully selected natural ingredients</small>
+          </div>
+          <div className="trustStatCard trustStatFssai">
+            <span>🏅</span>
+            <b>FSSAI Registered</b>
+            <small>Certified food business</small>
+          </div>
+          <div className="trustStatCard trustStatClean">
+            <span>🚫</span>
+            <b>No Artificial Colours</b>
+            <small>Clean and simple nutrition</small>
+          </div>
+        </div>
+
+        <div className="brandStory">
+          <div>
+            <h3>Daily nutrition should come from real ingredients, not artificial formulas.</h3>
+            <p>
+              At SatvaPusti, we believe everyday nutrition should feel familiar, wholesome and trustworthy.
+              Our products are prepared using carefully selected dry fruits, seeds, banana powder and dates
+              powder to support families, children and active lifestyles.
+            </p>
+            <p>
+              Every batch is produced with a focus on quality, purity and traditional nutrition values.
+            </p>
+          </div>
+          <div className="fssaiHighlight">
+            <span>FSSAI</span>
+            <b>Registered Food Business</b>
+            <small>Registration No. 20526034000204</small>
+          </div>
+        </div>
+
+        <div className="aboutFeatureGrid">
+          <article>
+            <span>🌿</span>
+            <h3>Real Ingredients</h3>
+            <p>Only carefully selected dry fruits, seeds and natural ingredients.</p>
+          </article>
+          <article>
+            <span>🍌</span>
+            <h3>Real Banana Powder</h3>
+            <p>Made with real banana powder, not artificial flavours.</p>
+          </article>
+          <article>
+            <span>🥜</span>
+            <h3>Dry Fruits & Seeds</h3>
+            <p>Rich blend of nuts, seeds and wholesome ingredients.</p>
+          </article>
+          <article>
+            <span>🚫</span>
+            <h3>No Artificial Colours</h3>
+            <p>No synthetic colours added.</p>
+          </article>
+          <article>
+            <span>🚫</span>
+            <h3>0g Added Sugar Options</h3>
+            <p>Kids and Active formulas use dates powder as the sweetener.</p>
+          </article>
+          <article>
+            <span>💪</span>
+            <h3>Daily Nutrition Support</h3>
+            <p>Designed for everyday family wellness.</p>
+          </article>
+        </div>
+
+        <div className="trustBanner">
+          Made for Families <span>•</span> Designed for Kids <span>•</span> Trusted by Active Lifestyles
+        </div>
+      </section>
+
+      <section id="ingredients" className="section cream ingredientsSection">
+        <p className="sectionEyebrow">Our Ingredients</p>
         <h2>Real Ingredients We Use</h2>
+        <p className="sectionText">
+          See the dry fruits, seeds and natural ingredients that make SatvaPusti feel honest and wholesome.
+        </p>
 
         <div className="ingredientGrid">
           {ingredients.map(([img, name]) => (
@@ -1664,34 +1793,6 @@ console.log("Order ID:", orderId);
               <b>{name}</b>
             </div>
           ))}
-        </div>
-      </section>
-
-      <section id="about" className="section about">
-        <h2>About SatvaPusti Nutrition</h2>
-        <p>
-  SatvaPusti Nutrition is a registered food business under FSSAI Registration
-  No. <b>20526034000204</b>, approved for General Manufacturing.
-</p>
-
-        <div className="aboutText">
-          <p>
-            SatvaPusti Nutrition provides premium, natural and wholesome nutrition
-            for families, children and fitness users.
-          </p>
-          <p>
-            Our products are made with real ingredients, dry fruits, seeds,
-            banana powder, dates powder and carefully selected natural ingredients.
-          </p>
-        </div>
-
-        <div className="whyGrid">
-          <div>🌿 Made with Real Ingredients</div>
-          <div>🚫 No Artificial Colours</div>
-          <div>🚫 No Added Preservatives</div>
-          <div>🍌 Real Banana Powder</div>
-          <div>💪 Daily Nutrition Support</div>
-          <div>✅ Direct WhatsApp Ordering</div>
         </div>
       </section>
 

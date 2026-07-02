@@ -1251,6 +1251,19 @@ nav a:hover,
   background: linear-gradient(180deg, var(--cream), #fff8e8);
 }
 
+.sectionEyebrow {
+  margin: 0 auto 8px;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ingredientsSection {
+  padding-top: 64px;
+}
+
 .ingredientGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1259,10 +1272,18 @@ nav a:hover,
 
 .ingredientCard {
   background: white;
-  border-radius: 18px;
+  border: 1px solid rgba(216, 233, 201, 0.85);
+  border-radius: 8px;
   padding: 15px;
   box-shadow: 0 14px 32px rgba(20, 53, 31, 0.09);
   overflow: hidden;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.ingredientCard:hover {
+  border-color: rgba(15, 157, 88, 0.28);
+  box-shadow: 0 20px 42px rgba(20, 53, 31, 0.13);
+  transform: translateY(-3px);
 }
 
 .ingredientCard img {
@@ -1279,28 +1300,240 @@ nav a:hover,
   font-size: 18px;
 }
 
-.aboutText {
-  max-width: 950px;
-  margin: 0 auto 35px;
-  font-size: 18px;
-  line-height: 1.8;
-  color: var(--ink);
+.trustAboutSection {
+  scroll-margin-top: 130px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 233, 173, 0.28), transparent 32%),
+    linear-gradient(180deg, #fbfff6 0%, #fffaf0 100%);
 }
 
-.whyGrid {
+.trustStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  max-width: 1160px;
+  margin: 0 auto 28px;
+}
+
+.trustStatCard {
+  --stat-accent: var(--leaf);
+  --stat-icon-bg: #eaf8ef;
+  --stat-bg: linear-gradient(145deg, #ffffff 0%, #fbfff6 100%);
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 142px;
+  padding: 20px 18px;
+  border: 1px solid rgba(216, 233, 201, 0.95);
+  border-top: 5px solid #178a52;
+  border-radius: 8px;
+  background: var(--stat-bg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.trustStatCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.10);
+}
+
+.trustStatFamily,
+.trustStatIngredients,
+.trustStatFssai,
+.trustStatClean {
+  --stat-accent: #178a52;
+  --stat-icon-bg: #eaf8ef;
+  --stat-bg: #ffffff;
+}
+
+.trustStatCard span {
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: var(--stat-icon-bg);
+  font-size: 34px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--stat-accent) 16%, #ffffff);
+}
+
+.trustStatCard b {
+  color: var(--forest);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.trustStatCard small {
+  color: var(--muted);
+  max-width: 190px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.brandStory {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 22px;
+  max-width: 1160px;
+  margin: 0 auto 28px;
+  text-align: left;
+}
+
+.brandStory > div:first-child,
+.fssaiHighlight {
+  border: 1px solid rgba(216, 233, 201, 0.95);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 38px rgba(20, 53, 31, 0.09);
+}
+
+.brandStory > div:first-child {
+  padding: 28px;
+}
+
+.brandStory h3 {
+  margin: 0 0 12px;
+  color: var(--forest);
+  font-size: 28px;
+  line-height: 1.22;
+}
+
+.brandStory p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.brandStory p:last-child {
+  margin-bottom: 0;
+}
+
+.fssaiHighlight {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 28px;
+  text-align: center;
+  background:
+    linear-gradient(145deg, rgba(255, 233, 173, 0.46), rgba(251, 255, 246, 0.98)),
+    #fffaf0;
+}
+
+.fssaiHighlight span {
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--leaf), var(--leaf-deep));
+  color: #fff;
+  font-weight: 900;
+}
+
+.fssaiHighlight b {
+  color: var(--forest);
+  font-size: 22px;
+}
+
+.fssaiHighlight small {
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.aboutFeatureGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 18px;
-  font-weight: 900;
-  font-size: 20px;
+  max-width: 1160px;
+  margin: 0 auto;
+  text-align: left;
 }
 
-.whyGrid div {
-  background: white;
-  padding: 24px;
-  border-radius: 18px;
-  border: 1px solid #e7c76f;
-  box-shadow: 0 12px 26px rgba(20, 53, 31, 0.08);
+.aboutFeatureGrid article {
+  --feature-accent: var(--leaf);
+  --feature-bg: #ffffff;
+  min-height: 190px;
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--feature-accent) 16%, #ffffff);
+  border-top: 4px solid var(--feature-accent);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, var(--feature-bg) 0%, #ffffff 100%);
+  box-shadow: 0 14px 32px rgba(20, 53, 31, 0.08);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.aboutFeatureGrid article:hover {
+  border-color: color-mix(in srgb, var(--feature-accent) 30%, #ffffff);
+  box-shadow: 0 20px 42px rgba(20, 53, 31, 0.13);
+  transform: translateY(-3px);
+}
+
+.aboutFeatureGrid article:nth-child(1),
+.aboutFeatureGrid article:nth-child(6) {
+  --feature-accent: #178a52;
+  --feature-bg: #f7fcf8;
+}
+
+.aboutFeatureGrid article:nth-child(2) {
+  --feature-accent: #d67a15;
+  --feature-bg: #fffaf4;
+}
+
+.aboutFeatureGrid article:nth-child(3) {
+  --feature-accent: #c99a2e;
+  --feature-bg: #fffdf6;
+}
+
+.aboutFeatureGrid article:nth-child(4),
+.aboutFeatureGrid article:nth-child(5) {
+  --feature-accent: #0f9d58;
+  --feature-bg: #f8fdf9;
+}
+
+.aboutFeatureGrid span {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--feature-accent) 13%, #ffffff);
+  font-size: 23px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--feature-accent) 16%, #ffffff);
+}
+
+.aboutFeatureGrid h3 {
+  margin: 0 0 8px;
+  color: var(--forest);
+  font-size: 21px;
+}
+
+.aboutFeatureGrid p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.trustBanner {
+  max-width: 1160px;
+  margin: 24px auto 0;
+  padding: 20px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--forest), var(--leaf-deep));
+  color: #fff;
+  font-size: 22px;
+  font-weight: 900;
+  box-shadow: 0 18px 42px rgba(20, 53, 31, 0.18);
+}
+
+.trustBanner span {
+  color: #f5d26f;
+  padding: 0 10px;
 }
 
 .faqSection {
@@ -1377,9 +1610,14 @@ nav a:hover,
   .trust,
   .customerAssurance,
   .ingredientGrid,
-  .whyGrid,
+  .trustStats,
+  .aboutFeatureGrid,
   .ordersGrid,
   .faqGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .brandStory {
     grid-template-columns: 1fr;
   }
 
@@ -2203,12 +2441,20 @@ nav a:hover,
     grid-area: mobileTitle;
     width: 100%;
     margin: 0;
-    padding: 0;
-    border: none;
-    background: transparent;
+    padding: 8px 12px 9px;
+    border: 2px solid var(--product-warm);
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--product-warm) 22%, #ffffff), rgba(255, 250, 240, 0.96)),
+      #fffaf0;
     color: var(--product-text);
-    box-shadow: none;
-    text-shadow: none;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.78),
+      inset 0 -4px 0 color-mix(in srgb, var(--product-warm) 16%, transparent),
+      0 10px 22px rgba(20, 53, 31, 0.08);
+    text-shadow:
+      0 1px 0 color-mix(in srgb, var(--product-warm) 52%, #ffffff),
+      0 2px 0 rgba(92, 54, 8, 0.14);
     font-family: Georgia, "Times New Roman", serif;
     font-size: clamp(30px, 9vw, 40px);
     line-height: 1.02;
@@ -2322,6 +2568,90 @@ nav a:hover,
   .cartFloatBtn {
     bottom: 76px;
   }
+
+  .trustAboutSection,
+  .ingredientsSection {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .trustStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .trustStatCard {
+    min-height: 136px;
+    padding: 16px 10px;
+  }
+
+  .trustStatCard span {
+  width: 60px;
+  height: 60px;
+  font-size: 30px;
+}
+
+  .trustStatCard b {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+  .trustStatCard small {
+    font-size: 11.5px;
+  }
+
+  .brandStory {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .brandStory > div:first-child,
+  .fssaiHighlight {
+    padding: 18px;
+  }
+
+  .brandStory h3 {
+    font-size: 22px;
+  }
+
+  .brandStory p {
+    font-size: 15px;
+    line-height: 1.58;
+  }
+
+  .aboutFeatureGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .aboutFeatureGrid article {
+    min-height: 0;
+    padding: 17px;
+  }
+
+  .trustBanner {
+    padding: 16px;
+    font-size: 17px;
+    line-height: 1.5;
+  }
+
+  .ingredientGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .ingredientCard {
+    padding: 10px;
+  }
+
+  .ingredientCard img {
+    height: 150px;
+  }
+
+  .ingredientCard b {
+    font-size: 14px;
+  }
 }
 
 @media (max-width: 430px) {
@@ -2351,6 +2681,15 @@ nav a:hover,
 
   .premiumBenefitGrid {
     grid-template-columns: 1fr;
+  }
+
+  .trustStats,
+  .ingredientGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .trustBanner span {
+    display: none;
   }
 }
 .upiPayBtn {
