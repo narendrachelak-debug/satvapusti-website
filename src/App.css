@@ -460,13 +460,14 @@ nav a:hover,
   width: 100%;
   height: 100%;
   max-height: none;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   border-radius: 4px;
   transition: transform 0.35s ease;
 }
 
 .premiumImageStage:hover img {
-  transform: scale(1.07);
+  transform: scale(1.02);
 }
 
 .premiumThumbs {
@@ -493,7 +494,8 @@ nav a:hover,
 .premiumThumbs img {
   width: 100%;
   height: 82px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   border-radius: 4px;
 }
 
