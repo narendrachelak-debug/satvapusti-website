@@ -1233,8 +1233,11 @@ console.log("Order ID:", orderId);
                     )}
                     {activeTab === "nutrition" && (
                       <div className="premiumNutritionTable">
-                        {(product.nutrition || []).map(([label, value]) => (
-                          <div key={label}><b>{label}</b><span>{value}</span></div>
+                        {(product.nutrition || []).map(([label, value], index) => (
+                          <div className={`nutritionFactCard nutritionTone${(index % 8) + 1}`} key={label}>
+                            <b>{label}</b>
+                            <span>{value}</span>
+                          </div>
                         ))}
                       </div>
                     )}
