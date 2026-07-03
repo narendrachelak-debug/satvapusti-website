@@ -39,17 +39,17 @@ body {
 }
 
 .main-header {
-  height: 112px;
+  height: 104px;
   background: transparent;
   display: flex;
   align-items: center;
-  padding: 0 44px;
+  padding: 0 40px;
   gap: 24px;
 }
 
 .brand-ribbon {
-  width: clamp(500px, 31vw, 620px);
-  height: 100px;
+  width: clamp(420px, 27vw, 540px);
+  height: 88px;
   display: flex;
   align-items: center;
   flex-shrink: 0;
@@ -59,8 +59,8 @@ body {
 
 @media (max-width: 768px) {
   .brand-ribbon {
-    width: 246px;
-    height: 58px;
+    width: 258px;
+    height: 62px;
   }
 }
 
@@ -4214,7 +4214,7 @@ nav a:hover,
 
   .main-header {
     width: 100%;
-    height: 82px;
+    height: 78px;
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
@@ -4223,9 +4223,9 @@ nav a:hover,
   }
 
   .main-header > .brand-ribbon {
-    width: clamp(170px, 51vw, 270px);
-    height: 68px;
-    flex: 0 1 clamp(170px, 51vw, 270px);
+    width: clamp(180px, 54vw, 290px);
+    height: 64px;
+    flex: 0 1 clamp(180px, 54vw, 290px);
     min-width: 0;
     object-fit: contain;
     object-position: left center;
@@ -4304,8 +4304,8 @@ nav a:hover,
   }
 
   .main-header > .brand-ribbon {
-    width: clamp(145px, 45vw, 175px);
-    flex-basis: clamp(145px, 45vw, 175px);
+    width: clamp(156px, 48vw, 188px);
+    flex-basis: clamp(156px, 48vw, 188px);
   }
 
   .main-header > .header-icons {
