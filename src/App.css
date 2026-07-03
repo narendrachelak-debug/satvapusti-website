@@ -28,64 +28,229 @@ body {
   color: var(--ink);
 }
 
-.header {
-  min-height: 96px;
-  padding: 10px 6%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(180deg, #05331f 0%, #022719 100%);
-  backdrop-filter: blur(14px);
+.site-header {
+  width: 100%;
   position: sticky;
   top: 0;
-  z-index: 50;
-  border-bottom: 1px solid rgba(245, 210, 111, 0.28);
-  box-shadow: 0 14px 34px rgba(3, 31, 18, 0.28);
+  z-index: 999;
+  background: #062B22;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  border-bottom: 1px solid #D4AF37;
 }
 
-.logo {
+.main-header {
+  height: 92px;
+  background: transparent;
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-width: 0;
-  color: #f5d26f;
-  line-height: 1.08;
+  padding: 0 36px;
+  gap: 18px;
 }
 
-.logoText {
-  min-width: 0;
-  display: grid;
-  gap: 2px;
-  color: #f5d26f;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
+.brand-ribbon {
+  width: 430px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  object-fit: contain;
+  display: block;
 }
 
-.logoText b {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 28px;
+@media (max-width: 768px) {
+  .brand-ribbon {
+    width: 220px;
+    height: 50px;
+  }
+}
+
+.brand-name {
+  font-family: Georgia, 'Cormorant Garamond', 'Cinzel', serif;
+  font-size: 38px; /* SATVAPUSTI 38px */
   font-weight: 700;
-  line-height: 1;
+  letter-spacing: 3px;
+  color: #D4AF17;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(212,175,55,0.18);
 }
 
-.logoText small {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.46em;
-  line-height: 1;
+.brand-sub {
+  font-family: Georgia, 'Cormorant Garamond', 'Cinzel', serif;
+  font-size: 15px;
+  letter-spacing: 8px;
+  color: #D4AF37;
+  margin-top: 6px;
+  position: relative;
+}
+
+.brand-sub::before,
+.brand-sub::after {
+  content: '';
+  display: inline-block;
+  width: 60px;
+  height: 1px;
+  background: #D4AF37;
+  vertical-align: middle;
+  margin: 0 12px;
+}
+
+.nav-links {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.nav-links a {
+  color: #f7f5ec;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nav-links a.active {
+  color: #d4af37;
+}
+
+.header-icons {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  color: #f6d27a;
+}
+
+.header-icons svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.8;
+}
+
+.cart-wrap {
+  position: relative;
+}
+
+.cart-wrap b {
+  position: absolute;
+  top: -12px;
+  right: -13px;
+  background: #f6d27a;
+  color: #063024;
+  font-size: 12px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-icon {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .main-header {
+    height: 72px;
+    padding: 0 14px;
+    gap: 12px;
+  }
+
+  .brand {
+    gap: 10px;
+  }
+
+  .brand-banner {
+    padding-left: 16px;
+  }
+
+  .header-banner-img {
+    height: 72px;
+    transform-origin: left center;
+    transform: scaleX(1.2);
+  }
+
+  .brand-logo {
+    width: 46px;
+    height: 46px;
+    padding: 6px;
+  }
+
+  .brand-logo img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .gold-divider {
+    height: 38px;
+  }
+
+  .brand-name {
+    font-size: 22px;
+    letter-spacing: 2px;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .header-icons {
+    margin-left: auto;
+    gap: 14px;
+  }
+
+  .header-icons svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .menu-icon {
+    display: block;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand-name {
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+
+  .brand-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .header-icons {
+    gap: 11px;
+  }
+}
+
+.logoBadge {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  display: grid;
+  place-items: center;
+  background: #fff7e6;
+  border: 1px solid #d4af37;
+  border-radius: 50%;
+  padding: 6px;
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.22);
 }
 
 .logoMark {
-  width: 76px;
-  height: 76px;
-  flex: 0 0 76px;
+  width: 44px;
+  height: 44px;
   display: block;
-  border-radius: 50%;
+  color: #d4af37;
   object-fit: contain;
-  object-position: center;
-  background: #022719;
-  padding: 2px;
-  box-shadow: 0 0 0 1px rgba(245, 210, 111, 0.38), 0 12px 26px rgba(0, 0, 0, 0.26);
 }
 
 nav {
@@ -125,7 +290,7 @@ nav a:hover,
 }
 
 .desktopHeaderNav a {
-  color: #fff8dd;
+  color: #fff9e7;
   padding: 8px 0;
   border-radius: 0;
   font-size: 15px;
@@ -134,8 +299,12 @@ nav a:hover,
 }
 
 .desktopHeaderNav a:hover {
-  color: #f5d26f;
+  color: #d4af37;
   background: transparent;
+}
+
+.desktopHeaderNav a[aria-current="page"] {
+  color: #d4af37;
 }
 
 .headerIconBtn {
@@ -149,7 +318,7 @@ nav a:hover,
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #fff8dd;
+  color: #fff9e7;
   cursor: pointer;
   text-decoration: none;
 }
@@ -2037,31 +2206,43 @@ nav a:hover,
   .header {
     flex-direction: row;
     align-items: center;
-    min-height: 78px;
-    padding: 8px 10px;
+    min-height: 72px;
+    padding: 8px 16px;
     gap: 10px;
   }
 
   .logo {
     flex: 1 1 auto;
-    gap: 9px;
+    gap: 10px;
     text-align: left;
+    padding-left: 16px;
+  }
+
+  .logoBadge {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    min-height: 46px;
   }
 
   .logoMark {
-    width: 52px;
-    height: 52px;
-    flex-basis: 52px;
+    width: 34px;
+    height: 34px;
   }
 
   .logoText b {
     font-size: 18px;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
   }
 
   .logoText small {
-    font-size: 8px;
-    letter-spacing: 0.34em;
+    font-size: 0;
+    letter-spacing: 0;
+    height: 0;
+    overflow: hidden;
+    display: block;
+    line-height: 0;
+    opacity: 0;
   }
 
   .headerIconBtn {

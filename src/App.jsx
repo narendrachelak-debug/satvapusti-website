@@ -936,28 +936,23 @@ console.log("Order ID:", orderId);
 
   return (
     <div>
-      <header className="header" id="top">
-        <div className="logo">
+      <header className="site-header" id="top">
+        <div className="main-header">
           <img
-            className="logoMark"
-            src="/satvapusti-logo.jpeg"
-            alt="SatvaPusti Nutrition logo"
+            src="/banners/logo-banner.png"
+            alt="Satvapusti Branding"
+            className="brand-ribbon"
           />
-          <span className="logoText">
-            <b>SatvaPusti</b>
-            <small>Nutrition</small>
-          </span>
-        </div>
 
-        <nav className="desktopHeaderNav" aria-label="Primary navigation">
-          <a href="#top">Home</a>
-          <a href="#products">Shop</a>
-          <a href="#about">About Us</a>
-          <a href="#ingredients">Ingredients</a>
-          <a href="#contact">Contact</a>
-        </nav>
+          <nav className="nav-links" aria-label="Primary navigation">
+            <a href="#top" aria-current="page">Home</a>
+            <a href="#products">Shop</a>
+            <a href="#about">About Us</a>
+            <a href="#ingredients">Ingredients</a>
+            <a href="#contact">Contact</a>
+          </nav>
 
-        <div className="headerActions">
+          <div className="header-icons">
           <a className="headerIconBtn" href="#products" aria-label="Search products" title="Search">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M10.8 4a6.8 6.8 0 0 1 5.3 11.1l3.4 3.4-1.4 1.4-3.4-3.4A6.8 6.8 0 1 1 10.8 4Zm0 2a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6Z" />
@@ -1005,6 +1000,7 @@ console.log("Order ID:", orderId);
             )}
           </div>
         </div>
+      </div>
       </header>
 
       <button className="cartFloatBtn" onClick={() => setShowCart(true)}>
