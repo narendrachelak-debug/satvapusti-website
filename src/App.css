@@ -47,21 +47,25 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
   font-size: 28px;
   font-weight: 900;
   color: var(--forest);
+  line-height: 1.08;
+}
+
+.logo span {
+  min-width: 0;
 }
 
 .logoMark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 46px;
   height: 46px;
-  border-radius: 13px;
-  background: linear-gradient(135deg, var(--forest), var(--leaf), #8fcb3f);
-  color: #fff;
-  font-size: 18px;
+  flex: 0 0 46px;
+  display: block;
+  border-radius: 10px;
+  object-fit: cover;
+  object-position: center;
   box-shadow: 0 10px 22px rgba(0, 128, 55, 0.24);
 }
 
@@ -1937,15 +1941,18 @@ nav a:hover,
   }
 
   .logo {
-    font-size: 22px !important;
+    flex: 1 1 auto;
+    gap: 8px;
+    font-size: 20px !important;
     text-align: left;
-    line-height: 1.2;
+    line-height: 1.12;
   }
 
   .logoMark {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+    border-radius: 9px;
   }
 
   .header .btn {
@@ -2740,10 +2747,16 @@ nav a:hover,
 
   .ingredientCard {
     padding: 10px;
+    text-align: center;
   }
 
   .ingredientCard img {
-    height: 150px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+    object-position: center;
+    border-radius: 8px;
   }
 
   .ingredientCard b {

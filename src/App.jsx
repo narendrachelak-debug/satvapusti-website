@@ -938,7 +938,11 @@ console.log("Order ID:", orderId);
     <div>
       <header className="header">
         <div className="logo">
-          <span className="logoMark">SP</span>
+          <img
+            className="logoMark"
+            src="/satvapusti-logo.jpeg"
+            alt="SatvaPusti Nutrition logo"
+          />
           <span>SatvaPusti Nutrition</span>
         </div>
 
