@@ -936,7 +936,7 @@ console.log("Order ID:", orderId);
 
   return (
     <div>
-      <header className="header">
+      <header className="header" id="top">
         <div className="logo">
           <img
             className="logoMark"
@@ -949,7 +949,31 @@ console.log("Order ID:", orderId);
           </span>
         </div>
 
+        <nav className="desktopHeaderNav" aria-label="Primary navigation">
+          <a href="#top">Home</a>
+          <a href="#products">Shop</a>
+          <a href="#about">About Us</a>
+          <a href="#ingredients">Ingredients</a>
+          <a href="#contact">Contact</a>
+        </nav>
+
         <div className="headerActions">
+          <a className="headerIconBtn" href="#products" aria-label="Search products" title="Search">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M10.8 4a6.8 6.8 0 0 1 5.3 11.1l3.4 3.4-1.4 1.4-3.4-3.4A6.8 6.8 0 1 1 10.8 4Zm0 2a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6Z" />
+            </svg>
+          </a>
+          <button className="headerIconBtn" onClick={() => setShowProfile(true)} aria-label="Open profile" title="Profile">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 12.2a4.4 4.4 0 1 1 0-8.8 4.4 4.4 0 0 1 0 8.8Zm0-6.8a2.4 2.4 0 1 0 0 4.8 2.4 2.4 0 0 0 0-4.8Zm8 15.2H4v-1.3c0-3.4 3.5-5.6 8-5.6s8 2.2 8 5.6v1.3Zm-13.8-2h11.6c-.5-1.8-2.8-2.9-5.8-2.9s-5.3 1.1-5.8 2.9Z" />
+            </svg>
+          </button>
+          <button className="headerIconBtn cartHeaderBtn" onClick={() => setShowCart(true)} aria-label={`Open cart with ${cartCount} items`} title="Cart">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M7 19.5A1.8 1.8 0 1 1 3.5 19.5 1.8 1.8 0 0 1 7 19.5Zm11.5 0A1.8 1.8 0 1 1 15 19.5a1.8 1.8 0 0 1 3.5 0ZM6.6 6l.5 2h12.6l-1.8 6.5H8.4L6 4H3V2h4.6l.5 2h13.5l-.5 2H6.6Zm1 4 .6 2.5h8.2l.7-2.5H7.6Z" />
+            </svg>
+            <span>{cartCount}</span>
+          </button>
           <div className="menuDropdown">
             <button
               className="menuToggleBtn"
@@ -957,10 +981,11 @@ console.log("Order ID:", orderId);
               aria-expanded={showHomeMenu}
               aria-controls="homeMenuPanel"
             >
-              Menu
+              <span>Menu</span>
             </button>
             {showHomeMenu && (
               <nav className="homeMenuPanel" id="homeMenuPanel">
+                <a href="#top" onClick={() => setShowHomeMenu(false)}>Home</a>
                 <a href="#products" onClick={() => setShowHomeMenu(false)}>Products</a>
                 <a href="#ingredients" onClick={() => setShowHomeMenu(false)}>Ingredients</a>
                 <a href="/?page=track-order" onClick={() => setShowHomeMenu(false)}>Track Order</a>
@@ -979,19 +1004,6 @@ console.log("Order ID:", orderId);
               </nav>
             )}
           </div>
-
-          <a
-            className="whatsappIconBtn"
-            href={`https://wa.me/${phone}`}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Open WhatsApp chat"
-            title="WhatsApp"
-          >
-            <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-              <path d="M16 3.5A12.4 12.4 0 0 0 5.5 22.6L4 28l5.5-1.4A12.4 12.4 0 1 0 16 3.5Zm0 22.6a10.1 10.1 0 0 1-5.2-1.4l-.4-.2-3.2.8.9-3.1-.2-.4A10.2 10.2 0 1 1 16 26.1Zm5.8-7.6c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1a8.3 8.3 0 0 1-4.1-3.6c-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6l-1-2.3c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.5c.2.3 2.4 3.7 5.8 5.1 2.2.9 3.1 1 4.2.8.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4Z" />
-            </svg>
-          </a>
         </div>
       </header>
 
