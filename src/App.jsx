@@ -999,8 +999,8 @@ console.log("Order ID:", orderId);
               </nav>
             )}
           </div>
+          </div>
         </div>
-      </div>
       </header>
 
       <button className="cartFloatBtn" onClick={() => setShowCart(true)}>
