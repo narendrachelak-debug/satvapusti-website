@@ -986,8 +986,15 @@ console.log("Order ID:", orderId);
       <section className="hero">
         <div className="heroFrame">
           <div className="slider">
-            {banners.map((banner) => (
-              <img key={banner} src={banner} alt="SatvaPusti Banner" />
+            {banners.map((banner, index) => (
+              <img
+                key={banner}
+                src={banner}
+                alt="SatvaPusti Banner"
+                loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={index === 0 ? "high" : "low"}
+              />
             ))}
           </div>
           <div className="heroDots" aria-hidden="true">
@@ -1037,7 +1044,7 @@ console.log("Order ID:", orderId);
         <p className="sectionText">Premium nutrition powders with real ingredients, family-friendly formulas, and fast checkout.</p>
 
         <div className="premiumProductStack">
-          {products.map((product) => {
+          {products.map((product, productIndex) => {
             const weight = getWeight(product);
             const quantity = getQty(product);
             const mrp = product.prices[weight].mrp;
@@ -1098,7 +1105,13 @@ console.log("Order ID:", orderId);
                     {productBadges[1].label}
                   </span>
                   <div className="premiumImageStage">
-                    <img src={product.images[weight]} alt={product.name} />
+                    <img
+                      src={product.images[weight]}
+                      alt={product.name}
+                      loading={productIndex === 0 ? "eager" : "lazy"}
+                      decoding="async"
+                      fetchPriority={productIndex === 0 ? "high" : "auto"}
+                    />
                   </div>
                   <div className="premiumThumbs">
                     {["1KG", "500G", "250G"].map((w) => (
@@ -1107,7 +1120,12 @@ console.log("Order ID:", orderId);
                         className={weight === w ? "activeThumb" : ""}
                         onClick={() => setSelected({ ...selected, [product.id]: w })}
                       >
-                        <img src={product.images[w]} alt={`${product.name} ${w}`} />
+                        <img
+                          src={product.images[w]}
+                          alt={`${product.name} ${w}`}
+                          loading="lazy"
+                          decoding="async"
+                        />
                         <span>{w}</span>
                       </button>
                     ))}
