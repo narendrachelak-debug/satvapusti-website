@@ -11,6 +11,14 @@ const banners = [
   "/banners/wide/banner-active-wide.png",
 ];
 
+const navItems = [
+  { id: "top", label: "Home", href: "#top" },
+  { id: "products", label: "Shop", href: "#products" },
+  { id: "about", label: "About Us", href: "#about" },
+  { id: "ingredients", label: "Ingredients", href: "#ingredients" },
+  { id: "contact", label: "Contact", href: "#contact" },
+];
+
 const defaultProducts = [
   {
     id: "family",
@@ -254,6 +262,7 @@ export default function App() {
   const [products, setProducts] = useState(defaultProducts);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [showHomeMenu, setShowHomeMenu] = useState(false);
+  const [activeSection, setActiveSection] = useState("top");
   const [activeProductTabs, setActiveProductTabs] = useState({});
   const paymentModeRef = useRef("");
 
@@ -360,6 +369,41 @@ export default function App() {
 
     loadProducts();
     loadInventory();
+  }, []);
+
+  useEffect(() => {
+    const sectionIds = navItems.map((item) => item.id);
+
+    const updateActiveSection = () => {
+      const headerHeight = document.querySelector(".site-header")?.offsetHeight || 0;
+      const marker = headerHeight + window.innerHeight * 0.28;
+      let current = "top";
+
+      for (const id of sectionIds) {
+        const element = document.getElementById(id);
+        if (!element) continue;
+
+        const rect = element.getBoundingClientRect();
+        if (rect.top <= marker && rect.bottom > headerHeight + 24) {
+          current = id;
+        }
+      }
+
+      if (window.scrollY < 80) {
+        current = "top";
+      }
+
+      setActiveSection(current);
+    };
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+
+    return () => {
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+    };
   }, []);
 
   const changeQty = (product, value) => {
@@ -945,11 +989,16 @@ console.log("Order ID:", orderId);
           />
 
           <nav className="nav-links" aria-label="Primary navigation">
-            <a href="#top" aria-current="page">Home</a>
-            <a href="#products">Shop</a>
-            <a href="#about">About Us</a>
-            <a href="#ingredients">Ingredients</a>
-            <a href="#contact">Contact</a>
+            {navItems.map((item) => (
+              <a
+                key={item.id}
+                href={item.href}
+                className={activeSection === item.id ? "active" : ""}
+                aria-current={activeSection === item.id ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            ))}
           </nav>
 
           <div className="header-icons">
@@ -980,9 +1029,17 @@ console.log("Order ID:", orderId);
             </button>
             {showHomeMenu && (
               <nav className="homeMenuPanel" id="homeMenuPanel">
-                <a href="#top" onClick={() => setShowHomeMenu(false)}>Home</a>
-                <a href="#products" onClick={() => setShowHomeMenu(false)}>Products</a>
-                <a href="#ingredients" onClick={() => setShowHomeMenu(false)}>Ingredients</a>
+                {navItems.map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    className={activeSection === item.id ? "active" : ""}
+                    aria-current={activeSection === item.id ? "page" : undefined}
+                    onClick={() => setShowHomeMenu(false)}
+                  >
+                    {item.label}
+                  </a>
+                ))}
                 <a href="/?page=track-order" onClick={() => setShowHomeMenu(false)}>Track Order</a>
                 <a href="#faq" onClick={() => setShowHomeMenu(false)}>FAQ</a>
                 <button
@@ -994,8 +1051,6 @@ console.log("Order ID:", orderId);
                 >
                   Profile
                 </button>
-                <a href="#about" onClick={() => setShowHomeMenu(false)}>About</a>
-                <a href="#contact" onClick={() => setShowHomeMenu(false)}>Contact</a>
               </nav>
             )}
           </div>

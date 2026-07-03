@@ -102,15 +102,37 @@ body {
 }
 
 .nav-links a {
+  position: relative;
   color: #f7f5ec;
   font-size: 16px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
 .nav-links a.active {
   color: #d4af37;
+  text-shadow: 0 0 18px rgba(212, 175, 55, 0.35);
+}
+
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -12px;
+  width: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #d4af37, transparent);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.48);
+  transform: translateX(-50%);
+  transition: width 0.22s ease;
+}
+
+.nav-links a.active::after,
+.nav-links a:hover::after {
+  width: 100%;
 }
 
 .header-icons {
@@ -505,6 +527,20 @@ nav a:hover,
   border-radius: 10px;
   color: var(--ink);
   text-align: left;
+}
+
+.homeMenuPanel a.active {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(255, 245, 210, 0.08));
+  color: #d4af37;
+  box-shadow: inset 3px 0 0 #d4af37;
+}
+
+#top,
+#products,
+#about,
+#ingredients,
+#contact {
+  scroll-margin-top: 118px;
 }
 
 .btn,
@@ -4294,6 +4330,12 @@ nav a:hover,
   .main-header .homeMenuPanel a,
   .main-header .homeMenuPanel .profileNavBtn {
     color: #fff5ec;
+  }
+
+  .main-header .homeMenuPanel a.active {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.24), rgba(255, 245, 210, 0.08));
+    color: #d4af37;
+    box-shadow: inset 3px 0 0 #d4af37;
   }
 }
 
