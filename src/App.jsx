@@ -943,7 +943,6 @@ console.log("Order ID:", orderId);
             src="/satvapusti-logo.jpeg"
             alt="SatvaPusti Nutrition logo"
           />
-          <span>SatvaPusti Nutrition</span>
         </div>
 
         <div className="headerActions">
@@ -977,8 +976,17 @@ console.log("Order ID:", orderId);
             )}
           </div>
 
-          <a className="btn" href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
-            WhatsApp
+          <a
+            className="whatsappIconBtn"
+            href={`https://wa.me/${phone}`}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Open WhatsApp chat"
+            title="WhatsApp"
+          >
+            <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+              <path d="M16 3.5A12.4 12.4 0 0 0 5.5 22.6L4 28l5.5-1.4A12.4 12.4 0 1 0 16 3.5Zm0 22.6a10.1 10.1 0 0 1-5.2-1.4l-.4-.2-3.2.8.9-3.1-.2-.4A10.2 10.2 0 1 1 16 26.1Zm5.8-7.6c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1a8.3 8.3 0 0 1-4.1-3.6c-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6l-1-2.3c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.5c.2.3 2.4 3.7 5.8 5.1 2.2.9 3.1 1 4.2.8.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4Z" />
+            </svg>
           </a>
         </div>
       </header>

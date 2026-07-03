@@ -69,6 +69,32 @@ body {
   box-shadow: 0 10px 22px rgba(0, 128, 55, 0.24);
 }
 
+.whatsappIconBtn {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #25d366, #087f4f);
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 12px 24px rgba(0, 128, 55, 0.24);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.whatsappIconBtn:hover {
+  filter: saturate(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(0, 128, 55, 0.3);
+}
+
+.whatsappIconBtn svg {
+  width: 25px;
+  height: 25px;
+  fill: currentColor;
+}
+
 nav {
   display: flex;
   align-items: center;
@@ -1943,9 +1969,7 @@ nav a:hover,
   .logo {
     flex: 1 1 auto;
     gap: 8px;
-    font-size: 20px !important;
     text-align: left;
-    line-height: 1.12;
   }
 
   .logoMark {
@@ -1955,10 +1979,15 @@ nav a:hover,
     border-radius: 9px;
   }
 
-  .header .btn {
-    min-height: 40px;
-    padding: 8px 13px !important;
-    font-size: 13px !important;
+  .whatsappIconBtn {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .whatsappIconBtn svg {
+    width: 22px;
+    height: 22px;
   }
 
   .headerActions {
