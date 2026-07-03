@@ -943,6 +943,10 @@ console.log("Order ID:", orderId);
             src="/satvapusti-logo.jpeg"
             alt="SatvaPusti Nutrition logo"
           />
+          <span className="logoText">
+            <b>SatvaPusti</b>
+            <small>Nutrition</small>
+          </span>
         </div>
 
         <div className="headerActions">

@@ -29,46 +29,63 @@ body {
 }
 
 .header {
-  min-height: 68px;
-  padding: 8px 6%;
+  min-height: 96px;
+  padding: 10px 6%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255, 250, 240, 0.94);
+  background: linear-gradient(180deg, #05331f 0%, #022719 100%);
   backdrop-filter: blur(14px);
   position: sticky;
   top: 0;
   z-index: 50;
-  border-bottom: 1px solid rgba(216, 233, 201, 0.9);
-  box-shadow: 0 12px 34px rgba(8, 70, 34, 0.11);
+  border-bottom: 1px solid rgba(245, 210, 111, 0.28);
+  box-shadow: 0 14px 34px rgba(3, 31, 18, 0.28);
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
-  font-size: 28px;
-  font-weight: 900;
-  color: var(--forest);
+  color: #f5d26f;
   line-height: 1.08;
 }
 
-.logo span {
+.logoText {
   min-width: 0;
+  display: grid;
+  gap: 2px;
+  color: #f5d26f;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.logoText b {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.logoText small {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.46em;
+  line-height: 1;
 }
 
 .logoMark {
-  width: 72px;
-  height: 72px;
-  flex: 0 0 72px;
+  width: 76px;
+  height: 76px;
+  flex: 0 0 76px;
   display: block;
-  border-radius: 12px;
+  border-radius: 50%;
   object-fit: contain;
   object-position: center;
-  background: #042817;
-  padding: 3px;
-  box-shadow: 0 10px 22px rgba(0, 128, 55, 0.24);
+  background: #022719;
+  padding: 2px;
+  box-shadow: 0 0 0 1px rgba(245, 210, 111, 0.38), 0 12px 26px rgba(0, 0, 0, 0.26);
 }
 
 .whatsappIconBtn {
@@ -131,11 +148,11 @@ nav a:hover,
 .menuToggleBtn {
   min-height: 46px;
   padding: 10px 19px;
-  border: 1px solid rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(245, 210, 111, 0.32);
   border-radius: 999px;
   background:
-    radial-gradient(circle at 18% 18%, rgba(255, 233, 173, 0.95), transparent 32%),
-    linear-gradient(135deg, #0f9d58 0%, #087f4f 58%, #c78317 100%);
+    radial-gradient(circle at 18% 18%, rgba(245, 210, 111, 0.45), transparent 32%),
+    linear-gradient(135deg, #064b2e 0%, #087f4f 58%, #9a6a12 100%);
   color: #fff;
   font-size: 15px;
   font-weight: 900;
@@ -1871,8 +1888,10 @@ nav a:hover,
   }
 
   .ingredientCard img {
-    height: 220px;
+    height: auto;
+    aspect-ratio: 16 / 9;
     object-fit: contain;
+    object-position: center;
     padding: 10px;
   }
 
@@ -1967,21 +1986,31 @@ nav a:hover,
   .header {
     flex-direction: row;
     align-items: center;
+    min-height: 78px;
     padding: 8px 10px;
-    gap: 8px;
+    gap: 10px;
   }
 
   .logo {
     flex: 1 1 auto;
-    gap: 8px;
+    gap: 9px;
     text-align: left;
   }
 
   .logoMark {
-    width: 60px;
-    height: 60px;
-    flex-basis: 60px;
-    border-radius: 11px;
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
+  }
+
+  .logoText b {
+    font-size: 18px;
+    letter-spacing: 0.12em;
+  }
+
+  .logoText small {
+    font-size: 8px;
+    letter-spacing: 0.34em;
   }
 
   .whatsappIconBtn {
