@@ -59,13 +59,15 @@ body {
 }
 
 .logoMark {
-  width: 46px;
-  height: 46px;
-  flex: 0 0 46px;
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
   display: block;
-  border-radius: 10px;
-  object-fit: cover;
+  border-radius: 12px;
+  object-fit: contain;
   object-position: center;
+  background: #042817;
+  padding: 3px;
   box-shadow: 0 10px 22px rgba(0, 128, 55, 0.24);
 }
 
@@ -1402,6 +1404,7 @@ nav a:hover,
   border: 1px solid rgba(216, 233, 201, 0.85);
   border-radius: 8px;
   padding: 15px;
+  text-align: center;
   box-shadow: 0 14px 32px rgba(20, 53, 31, 0.09);
   overflow: hidden;
   transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
@@ -1415,10 +1418,12 @@ nav a:hover,
 
 .ingredientCard img {
   width: 100%;
-  height: 280px;
-  object-fit: cover;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  object-position: center;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 .ingredientCard b {
@@ -1973,10 +1978,10 @@ nav a:hover,
   }
 
   .logoMark {
-    width: 38px;
-    height: 38px;
-    flex-basis: 38px;
-    border-radius: 9px;
+    width: 60px;
+    height: 60px;
+    flex-basis: 60px;
+    border-radius: 11px;
   }
 
   .whatsappIconBtn {
