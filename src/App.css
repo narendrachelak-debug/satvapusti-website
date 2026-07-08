@@ -7694,3 +7694,107 @@ h3,
     font-size: 15px !important;
   }
 }
+
+/* Premium trust card redesign: cleaner type fit and tailored card finish */
+.trust,
+.customerAssurance {
+  background:
+    linear-gradient(180deg, #fff8e7 0%, #f5e7bf 100%) !important;
+}
+
+.trust {
+  padding: 28px 6% 22px !important;
+}
+
+.trustItem,
+.customerAssurance div {
+  position: relative !important;
+  overflow: hidden !important;
+  min-height: 128px !important;
+  padding: 26px 28px 24px !important;
+  border: 1px solid rgba(166, 121, 34, 0.26) !important;
+  border-radius: 8px !important;
+  background:
+    linear-gradient(145deg, rgba(255, 253, 247, 0.96) 0%, rgba(248, 237, 207, 0.9) 100%) !important;
+  box-shadow:
+    0 18px 44px rgba(54, 38, 12, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+}
+
+.trustItem::before,
+.customerAssurance div::before {
+  content: "" !important;
+  position: static !important;
+  display: block !important;
+  width: 40px !important;
+  height: 2px !important;
+  margin: 0 0 16px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, #c4952c, rgba(196, 149, 44, 0)) !important;
+  opacity: 1 !important;
+}
+
+.trustItem::after,
+.customerAssurance div::after {
+  content: "" !important;
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(196, 149, 44, 0.55), rgba(196, 149, 44, 0.06));
+  pointer-events: none;
+}
+
+.trustItem b,
+.customerAssurance b {
+  max-width: 100% !important;
+  margin: 0 !important;
+  color: #073823 !important;
+  font-family: var(--type-body) !important;
+  font-size: clamp(20px, 1.28vw, 24px) !important;
+  font-weight: 850 !important;
+  line-height: 1.18 !important;
+  letter-spacing: -0.01em !important;
+  text-wrap: balance;
+}
+
+.trustItem span,
+.customerAssurance span {
+  max-width: 34ch;
+  margin-top: 10px !important;
+  color: #626556 !important;
+  font-family: var(--type-body) !important;
+  font-size: 15px !important;
+  line-height: 1.48 !important;
+}
+
+.customerAssurance {
+  padding: 0 6% 42px !important;
+}
+
+.customerAssurance div {
+  min-height: 132px !important;
+}
+
+@media (min-width: 1181px) {
+  .trustItem b,
+  .customerAssurance b {
+    white-space: normal !important;
+  }
+
+  .trustItem:nth-child(3) b {
+    max-width: 14ch !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .trustItem,
+  .customerAssurance div {
+    min-height: auto !important;
+    padding: 22px 22px 20px !important;
+  }
+
+  .trustItem b,
+  .customerAssurance b {
+    font-size: 20px !important;
+  }
+}
