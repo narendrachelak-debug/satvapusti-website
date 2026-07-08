@@ -7798,3 +7798,28 @@ h3,
     font-size: 20px !important;
   }
 }
+
+/* Fix assurance card text flow: keep heading and copy in one clean column */
+.customerAssurance div {
+  display: block !important;
+  grid-template-columns: none !important;
+}
+
+.customerAssurance div::before {
+  display: block !important;
+}
+
+.customerAssurance b,
+.customerAssurance span {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.customerAssurance b {
+  margin: 0 !important;
+}
+
+.customerAssurance span {
+  margin-top: 12px !important;
+}
