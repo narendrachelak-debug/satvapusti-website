@@ -7465,3 +7465,153 @@ h3,
 .premiumBuyPanel .premiumBadgeRow > span:nth-child(even) {
   background: linear-gradient(135deg, #fff6dd 0%, #ead4a4 100%) !important;
 }
+
+/* Final luxury typography system: elegant, readable, restrained */
+:root {
+  --type-heading: Georgia, "Times New Roman", serif;
+  --type-body: "Segoe UI", Arial, sans-serif;
+}
+
+body,
+button,
+input,
+textarea,
+select,
+.siteShell,
+.premiumLead,
+.sectionText,
+.premiumBadgeRow span,
+.premiumPriceBox,
+.premiumPackBlock,
+.premiumPackButtons button,
+.premiumQty,
+.premiumCartBtn,
+.premiumWhatsappBtn,
+.trustItem span,
+.customerAssurance span,
+#contact.contact,
+#contact.contact a,
+#contact.contact p {
+  font-family: var(--type-body) !important;
+}
+
+h1,
+h2,
+h3,
+.section h2,
+.premiumBuyPanel h3,
+.trustItem b,
+.customerAssurance b,
+.ingredientCard b,
+.trustStatCard b,
+.aboutFeatureGrid h3,
+.faqGrid summary {
+  font-family: var(--type-heading) !important;
+  letter-spacing: 0 !important;
+}
+
+.nav-links a {
+  font-family: var(--type-body) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+}
+
+.section h2 {
+  font-size: clamp(34px, 3.6vw, 56px) !important;
+  line-height: 1.08 !important;
+  font-weight: 800 !important;
+}
+
+.sectionText {
+  font-size: clamp(16px, 1.1vw, 18px) !important;
+  line-height: 1.68 !important;
+}
+
+.premiumBuyPanel h3 {
+  font-size: clamp(36px, 3vw, 54px) !important;
+  line-height: 1.05 !important;
+  font-weight: 800 !important;
+}
+
+.premiumBuyPanel h4 {
+  font-family: var(--type-body) !important;
+  font-size: clamp(18px, 1.28vw, 23px) !important;
+  line-height: 1.25 !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.045em !important;
+}
+
+.premiumLead {
+  font-size: clamp(16px, 1.08vw, 18px) !important;
+  line-height: 1.68 !important;
+}
+
+.premiumBadgeRow span,
+.imageBadge {
+  font-family: var(--type-body) !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.035em !important;
+  line-height: 1.18 !important;
+}
+
+.premiumPriceBox span,
+.premiumPackBlock > b,
+.premiumTabButtons button {
+  font-family: var(--type-body) !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.045em !important;
+}
+
+.premiumPriceBox b,
+.premiumPriceBox strong {
+  font-family: var(--type-body) !important;
+  font-weight: 900 !important;
+}
+
+.premiumCartBtn,
+.premiumWhatsappBtn {
+  font-family: var(--type-body) !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.01em !important;
+}
+
+.trustItem b,
+.customerAssurance b {
+  font-size: clamp(21px, 1.55vw, 28px) !important;
+  line-height: 1.14 !important;
+}
+
+.trustItem span,
+.customerAssurance span {
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+}
+
+@media (max-width: 680px) {
+  .nav-links a {
+    font-size: 12px !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  .section h2 {
+    font-size: clamp(30px, 9vw, 40px) !important;
+  }
+
+  .premiumBuyPanel h3 {
+    font-size: clamp(29px, 9vw, 39px) !important;
+  }
+
+  .premiumBuyPanel h4 {
+    font-size: 17px !important;
+  }
+
+  .premiumBadgeRow span,
+  .imageBadge {
+    font-size: 12.5px !important;
+    letter-spacing: 0.025em !important;
+  }
+}
