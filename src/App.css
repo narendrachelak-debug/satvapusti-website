@@ -7823,3 +7823,75 @@ h3,
 .customerAssurance span {
   margin-top: 12px !important;
 }
+
+/* Hard reset broken assurance inheritance from older experimental layers */
+.customerAssurance {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 24px !important;
+  padding: 22px 6% 52px !important;
+}
+
+.customerAssurance > div {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  min-height: 156px !important;
+  padding: 28px 32px !important;
+  text-align: left !important;
+}
+
+.customerAssurance > div::before {
+  content: "" !important;
+  position: static !important;
+  inset: auto !important;
+  flex: 0 0 auto !important;
+  width: 42px !important;
+  height: 2px !important;
+  margin: 0 0 18px !important;
+  background: linear-gradient(90deg, #c4952c, rgba(196, 149, 44, 0)) !important;
+}
+
+.customerAssurance > div::after {
+  content: "" !important;
+}
+
+.customerAssurance > div > b {
+  display: block !important;
+  width: 100% !important;
+  max-width: 28ch !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 22px !important;
+  line-height: 1.18 !important;
+  text-align: left !important;
+}
+
+.customerAssurance > div > b::after {
+  content: none !important;
+  display: none !important;
+}
+
+.customerAssurance > div > span {
+  display: block !important;
+  width: 100% !important;
+  max-width: 42ch !important;
+  margin: 12px 0 0 !important;
+  padding: 0 !important;
+  font-size: 15.5px !important;
+  line-height: 1.55 !important;
+  text-align: left !important;
+}
+
+@media (max-width: 900px) {
+  .customerAssurance {
+    grid-template-columns: 1fr !important;
+    padding-inline: 18px !important;
+  }
+
+  .customerAssurance > div {
+    min-height: auto !important;
+  }
+}
