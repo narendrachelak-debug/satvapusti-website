@@ -7615,3 +7615,82 @@ h3,
     letter-spacing: 0.025em !important;
   }
 }
+
+/* Trust card polish: compact, premium, less empty space */
+.trust {
+  padding: 30px 6% 24px !important;
+  gap: 16px !important;
+}
+
+.trustItem {
+  min-height: 150px !important;
+  padding: 26px 30px !important;
+  display: grid !important;
+  align-content: start !important;
+}
+
+.trustItem::before,
+.customerAssurance div::before {
+  width: 42px !important;
+  height: 1px !important;
+  margin-bottom: 18px !important;
+  background: linear-gradient(90deg, #d3ad3c, transparent) !important;
+}
+
+.trustItem b,
+.customerAssurance b {
+  font-size: clamp(23px, 1.45vw, 27px) !important;
+  line-height: 1.12 !important;
+  font-weight: 800 !important;
+  text-wrap: balance;
+}
+
+.trustItem span,
+.customerAssurance span {
+  margin-top: 8px !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  color: #606658 !important;
+}
+
+.customerAssurance {
+  padding: 0 6% 44px !important;
+  gap: 22px !important;
+}
+
+.customerAssurance div {
+  min-height: 148px !important;
+  padding: 28px 32px !important;
+  display: grid !important;
+  align-content: start !important;
+}
+
+@media (max-width: 1180px) {
+  .trust {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .trust,
+  .customerAssurance {
+    grid-template-columns: 1fr !important;
+    padding-inline: 18px !important;
+  }
+
+  .trustItem,
+  .customerAssurance div {
+    min-height: auto !important;
+    padding: 22px 24px !important;
+  }
+
+  .trustItem b,
+  .customerAssurance b {
+    font-size: 22px !important;
+  }
+
+  .trustItem span,
+  .customerAssurance span {
+    font-size: 15px !important;
+  }
+}
