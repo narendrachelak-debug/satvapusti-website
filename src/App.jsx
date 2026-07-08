@@ -374,6 +374,15 @@ export default function App() {
   useEffect(() => {
     const sectionIds = navItems.map((item) => item.id);
 
+    const scrollToHashSection = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (!hash) return;
+
+      window.setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ block: "start" });
+      }, 120);
+    };
+
     const updateActiveSection = () => {
       const headerHeight = document.querySelector(".site-header")?.offsetHeight || 0;
       const marker = headerHeight + window.innerHeight * 0.28;
@@ -397,6 +406,7 @@ export default function App() {
     };
 
     updateActiveSection();
+    scrollToHashSection();
     window.addEventListener("scroll", updateActiveSection, { passive: true });
     window.addEventListener("resize", updateActiveSection);
 
@@ -979,7 +989,7 @@ console.log("Order ID:", orderId);
   };
 
   return (
-    <div>
+    <div className="siteShell">
       <header className="site-header" id="top">
         <div className="main-header">
           <img
@@ -1105,15 +1115,15 @@ console.log("Order ID:", orderId);
 
       <section className="customerAssurance">
         <div>
-          <b>🌿 Premium Natural Nutrition</b>
+          <b>Premium Natural Nutrition</b>
           <span>Made with real dry fruits, seeds and wholesome ingredients</span>
         </div>
         <div>
-          <b>🚚 Fast &amp; Secure Delivery</b>
+          <b>Fast &amp; Secure Delivery</b>
           <span>Pan India shipping with trusted delivery partners</span>
         </div>
         <div>
-          <b>⭐ Trusted by Families &amp; Fitness Users</b>
+          <b>Trusted by Families &amp; Fitness Users</b>
           <span>Daily nutrition support for kids, adults and active lifestyles</span>
         </div>
       </section>
@@ -1954,6 +1964,45 @@ console.log("Order ID:", orderId);
       </section>
 
       <section id="contact" className="contact">
+        <div className="footerBrand">
+          <img src="/banners/logo-banner.png" alt="SatvaPusti Nutrition" />
+          <p>
+            Premium family nutrition made with real dry fruits, seeds, banana powder and clean everyday ingredients.
+          </p>
+          <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
+            Contact on WhatsApp
+          </a>
+        </div>
+
+        <div className="footerColumn">
+          <h2>Helpful Links</h2>
+          <a href="#products">Shop Products</a>
+          <a href="#about">About Us</a>
+          <a href="#ingredients">Ingredients</a>
+          <a href="#faq">FAQ</a>
+          <a href="/?page=track-order">Track Order</a>
+        </div>
+
+        <div className="footerColumn">
+          <h2>Policies</h2>
+          <a href="#faq">Privacy Policy</a>
+          <a href="#faq">Terms of Service</a>
+          <a href="#faq">Shipping Policy</a>
+          <a href="#faq">Refund Policy</a>
+        </div>
+
+        <div className="footerColumn contactDetails">
+          <h2>Contact Us</h2>
+          <p><strong>Brand:</strong> SatvaPusti Nutrition</p>
+          <p><strong>Phone:</strong> +91 96396 30828</p>
+          <p><strong>Email:</strong> info@satvapusti.com</p>
+          <p><strong>Website:</strong> www.satvapusti.com</p>
+          <p><strong>FSSAI No:</strong> 20526034000204</p>
+          <p><strong>FBO Name:</strong> Satvapusti Nutrition</p>
+          <p><strong>Business Type:</strong> General Manufacturing</p>
+          <p><strong>Address:</strong> H No 59, Pendri, Pandri, Berla, Bemetara, Chhattisgarh - 491335</p>
+        </div>
+
         <h2>Contact SatvaPusti Nutrition</h2>
         <p><strong>Brand:</strong> SatvaPusti Nutrition</p>
         <p><strong>Phone:</strong> +91 96396 30828</p>
