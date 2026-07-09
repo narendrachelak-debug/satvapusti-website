@@ -7895,3 +7895,91 @@ h3,
     min-height: auto !important;
   }
 }
+
+.heroShopRail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(320px, calc(100% - 32px));
+  min-height: 48px;
+  margin: 14px auto 0;
+  border: 1px solid rgba(241, 216, 139, 0.48);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f2d87a, #c99726);
+  color: #032719;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+  box-shadow: 0 18px 42px rgba(3, 31, 22, 0.24);
+}
+
+.heroShopRail:hover,
+.heroShopRail:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 48px rgba(3, 31, 22, 0.28);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding-bottom: 16px !important;
+  }
+
+  .heroShopRail {
+    width: calc(100% - 36px);
+    min-height: 46px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+}
+
+/* Keep banner artwork crisp: no dark overlay, blur-like filters, or scaling. */
+.hero {
+  background: #ffffff !important;
+  padding-top: 0 !important;
+}
+
+.heroFrame {
+  aspect-ratio: 1920 / 820 !important;
+  max-height: none !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.heroFrame::before,
+.heroFrame::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+
+.slider img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  image-rendering: auto;
+  backface-visibility: hidden;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 0 0 12px !important;
+  }
+
+  .heroFrame {
+    width: 100% !important;
+    aspect-ratio: 1920 / 820 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .slider img {
+    object-fit: contain !important;
+    object-position: center center !important;
+  }
+}

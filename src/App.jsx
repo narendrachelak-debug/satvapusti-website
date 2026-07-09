@@ -259,6 +259,7 @@ export default function App() {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [lastOrder, setLastOrder] = useState(null);
   const [inventory, setInventory] = useState([]);
+  const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [products, setProducts] = useState(defaultProducts);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [showHomeMenu, setShowHomeMenu] = useState(false);
@@ -298,7 +299,7 @@ export default function App() {
     const item = inventory.find(
       (stockItem) => stockItem.productId === productId && stockItem.weight === weight
     );
-    return Number(item?.stock ?? 0);
+    return item ? Number(item.stock ?? 0) : null;
   };
 
   useEffect(() => {
@@ -364,6 +365,8 @@ export default function App() {
         }
       } catch (error) {
         console.log("Inventory load error:", error);
+      } finally {
+        setInventoryLoaded(true);
       }
     };
 
@@ -430,12 +433,12 @@ export default function App() {
     const existing = cart.find((item) => item.cartId === cartId);
     const existingQty = existing?.quantity || 0;
 
-    if (stock <= 0) {
+    if (stock !== null && stock <= 0) {
       alert("This pack is currently out of stock.");
       return;
     }
 
-    if (existingQty + quantity > stock) {
+    if (stock !== null && existingQty + quantity > stock) {
       alert(`Only ${stock} item(s) available for this pack.`);
       return;
     }
@@ -479,7 +482,7 @@ export default function App() {
         const stock = getStock(item.productId, item.weight);
         const nextQuantity = Math.max(1, item.quantity + value);
 
-        if (nextQuantity > stock) {
+        if (stock !== null && nextQuantity > stock) {
           alert(`Only ${stock} item(s) available for this pack.`);
           return item;
         }
@@ -1092,6 +1095,9 @@ console.log("Order ID:", orderId);
             <span />
           </div>
         </div>
+        <a className="heroShopRail" href="#products">
+          Shop best sellers
+        </a>
       </section>
 
       <section className="trust">
@@ -1142,8 +1148,9 @@ console.log("Order ID:", orderId);
             const total = offer * quantity;
             const savePercent = mrp > 0 ? Math.round(((mrp - offer) / mrp) * 100) : 0;
             const stock = getStock(product.id, weight);
-            const isOutOfStock = stock <= 0;
-            const isLowStock = stock > 0 && stock < 10;
+            const hasKnownStock = inventoryLoaded && stock !== null;
+            const isOutOfStock = hasKnownStock && stock <= 0;
+            const isLowStock = hasKnownStock && stock > 0 && stock < 10;
             const activeTab = activeProductTabs[product.id] || "description";
             const whatsappText = encodeURIComponent(
               `Hi, I want to buy ${product.name} ${weight}. Quantity: ${quantity}.`
@@ -1356,6 +1363,7 @@ console.log("Order ID:", orderId);
         </div>
       </section>
 
+      {false && (
       <section id="productsLegacy" className="section legacyProductsSection">
         <h2>Order SatvaPusti Products</h2>
         <p className="sectionText">Select products, add them to cart, and place one combined order.</p>
@@ -1443,6 +1451,7 @@ console.log("Order ID:", orderId);
           })}
         </div>
       </section>
+      )}
 
       {showProfile && (
         <div className="modalBg">
