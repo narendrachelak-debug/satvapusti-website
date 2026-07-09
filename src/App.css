@@ -7983,3 +7983,56 @@ h3,
     object-position: center center !important;
   }
 }
+
+/* Mobile product contrast pass: keep all purchase controls readable on cream panels. */
+@media (max-width: 768px) {
+  .premiumBuyPanel,
+  .premiumBuyPanel p,
+  .premiumBuyPanel span,
+  .premiumBuyPanel small,
+  .premiumBuyPanel b {
+    color: #063823 !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+
+  .premiumBuyPanel h3 {
+    color: #063823 !important;
+  }
+
+  .premiumBuyPanel h4,
+  .premiumPackBlock > b {
+    color: #8c6513 !important;
+  }
+
+  .premiumPurchaseRow p,
+  .stockOk {
+    color: #075f35 !important;
+    font-weight: 900 !important;
+  }
+
+  .stockLow {
+    color: #9a5a00 !important;
+    font-weight: 900 !important;
+  }
+
+  .stockOut {
+    color: #a00000 !important;
+    font-weight: 900 !important;
+  }
+
+  .premiumWhatsappBtn {
+    border: 1px solid rgba(6, 56, 35, 0.34) !important;
+    background: #fffdf6 !important;
+    color: #063823 !important;
+    -webkit-text-fill-color: #063823 !important;
+    box-shadow: 0 12px 28px rgba(3, 31, 22, 0.08) !important;
+  }
+
+  .mobileTrustStrip span {
+    border: 1px solid rgba(6, 56, 35, 0.18) !important;
+    background: #fffdf6 !important;
+    color: #063823 !important;
+    -webkit-text-fill-color: #063823 !important;
+    opacity: 1 !important;
+  }
+}
