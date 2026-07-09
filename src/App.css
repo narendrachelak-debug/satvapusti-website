@@ -8040,7 +8040,9 @@ h3,
 /* Desktop nav active state: keep selected section label readable. */
 @media (min-width: 769px) {
   .nav-links a.active,
-  .nav-links a[aria-current="page"] {
+  .nav-links a[aria-current="page"],
+  .nav-links a:hover,
+  .nav-links a:focus-visible {
     background: linear-gradient(135deg, #fff8e6, #f2d87a) !important;
     color: #032719 !important;
     -webkit-text-fill-color: #032719 !important;
@@ -8052,7 +8054,9 @@ h3,
   }
 
   .nav-links a.active::after,
-  .nav-links a[aria-current="page"]::after {
+  .nav-links a[aria-current="page"]::after,
+  .nav-links a:hover::after,
+  .nav-links a:focus-visible::after {
     width: 68% !important;
     background: #c4952c !important;
     box-shadow: none !important;
