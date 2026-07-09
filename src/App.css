@@ -8036,3 +8036,25 @@ h3,
     opacity: 1 !important;
   }
 }
+
+/* Desktop nav active state: keep selected section label readable. */
+@media (min-width: 769px) {
+  .nav-links a.active,
+  .nav-links a[aria-current="page"] {
+    background: linear-gradient(135deg, #fff8e6, #f2d87a) !important;
+    color: #032719 !important;
+    -webkit-text-fill-color: #032719 !important;
+    text-shadow: none !important;
+    border-radius: 999px !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      0 12px 28px rgba(3, 31, 22, 0.18) !important;
+  }
+
+  .nav-links a.active::after,
+  .nav-links a[aria-current="page"]::after {
+    width: 68% !important;
+    background: #c4952c !important;
+    box-shadow: none !important;
+  }
+}
