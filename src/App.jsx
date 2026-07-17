@@ -979,7 +979,12 @@ console.log("Order ID:", orderId);
       city: address.city,
       district: address.district,
       pincode: address.pincode,
-      shippingAddress: address.fullAddress,
+      shippingAddress: [
+        address.fullAddress,
+        address.addressLine2,
+        address.district,
+        `${address.city} - ${address.pincode}`,
+      ].filter(Boolean).join(", "),
       billingAddress: address.billingSameAsShipping
         ? `${address.fullAddress}, ${address.city} - ${address.pincode}`
         : `${address.billingAddress}, ${address.billingCity} - ${address.billingPincode}`,

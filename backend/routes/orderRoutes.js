@@ -370,9 +370,20 @@ router.post("/create", async (req, res) => {
         message: "GSTIN and registered legal name are required for a business invoice",
       });
     }
+    const completeShippingAddress = [
+      req.body.address,
+      req.body.addressLine2,
+      req.body.district,
+      `${String(req.body.city || "").trim()} - ${String(req.body.pincode || "").trim()}`,
+    ].map((part) => String(part || "").trim()).filter(Boolean).join(", ");
+    const completeBillingAddress = String(
+      req.body.billingAddress || completeShippingAddress
+    ).trim();
     const orderId = await getNextOrderId();
     const snapshot = {
       ...pricing,
+      billingAddress: completeBillingAddress,
+      shippingAddress: completeShippingAddress,
       customerGstin,
       customerRegistrationType: customerGstin ? "REGISTERED_B2B" : "UNREGISTERED_B2C",
       customerLegalName: String(req.body.customerLegalName || "").trim(),
@@ -400,8 +411,8 @@ router.post("/create", async (req, res) => {
       district: String(req.body.district || "").trim(),
       pincode: String(req.body.pincode || "").trim(),
       country: "India",
-      billingAddress: String(req.body.billingAddress || req.body.address || "").trim(),
-      shippingAddress: String(req.body.shippingAddress || req.body.address || "").trim(),
+      billingAddress: completeBillingAddress,
+      shippingAddress: completeShippingAddress,
       billingStateName: pricing.billingStateName,
       billingStateCode: pricing.billingStateCode,
       shippingStateName: pricing.shippingStateName,

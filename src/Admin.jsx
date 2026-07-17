@@ -669,7 +669,19 @@ ${order.mobile || ""}`;
       </tr>`).join("");
     const sellerAddress = businessConfig.addressLines.map(escapeHtml).join(", ");
     const billingAddress = order.billingAddress || order.address;
-    const shippingAddress = order.shippingAddress || `${order.address}, ${order.city} - ${order.pincode}`;
+    const shippingBase = snapshot.shippingAddress || order.shippingAddress || order.address || "";
+    const shippingBaseLower = shippingBase.toLowerCase();
+    const shippingParts = [shippingBase, order.addressLine2, order.district]
+      .map((part) => String(part || "").trim())
+      .filter((part, index, parts) => part && parts.indexOf(part) === index);
+    if (
+      (order.city || order.pincode) &&
+      !(shippingBaseLower.includes(String(order.city || "").toLowerCase()) &&
+        shippingBase.includes(String(order.pincode || "")))
+    ) {
+      shippingParts.push(`${order.city || ""}${order.city && order.pincode ? " - " : ""}${order.pincode || ""}`);
+    }
+    const shippingAddress = shippingParts.join(", ");
     const taxTotals = intraState
       ? `<div class="totalLine"><span>CGST @ 2.5%</span><b>${paise(snapshot.cgstAmountPaise)}</b></div>
          <div class="totalLine"><span>SGST @ 2.5%</span><b>${paise(snapshot.sgstAmountPaise)}</b></div>`
