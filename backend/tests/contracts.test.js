@@ -40,4 +40,5 @@ test("new invoice template includes required state and GST fields", () => {
     assert.ok(admin.includes(label), `missing invoice label: ${label}`);
   }
   assert.match(admin, /banners\/logo-banner\.png/);
+  assert.match(admin, /authorized-signature\.png/);
 });
