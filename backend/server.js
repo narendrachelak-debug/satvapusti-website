@@ -7,8 +7,18 @@ const orderRoutes = require("./routes/orderRoutes");
 const business = require("./config/business");
 const { GST_STATES } = require("./data/gstStates");
 const { calculateOrder, rupeesToPaise } = require("./services/pricingService");
+const {
+  createAdminSession,
+  createRateLimiter,
+  destroyAdminSession,
+  optionalAdmin,
+  requireAdmin,
+  safePasswordEqual,
+} = require("./middleware/security");
 
 const app = express();
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
 
 const defaultProducts = [
   {
@@ -63,19 +73,62 @@ const defaultProducts = [
   },
 ];
 
-app.use(cors());
-app.use(express.json());
+const configuredOrigins = String(process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowedOrigins = new Set([
+  "https://satvapusti.com",
+  "https://www.satvapusti.com",
+  "https://satvapusti-website.onrender.com",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  ...configuredOrigins,
+]);
+
+app.use(cors({
+  origin(origin, callback) {
+    callback(null, !origin || allowedOrigins.has(origin) ? origin || false : false);
+  },
+  methods: ["GET", "POST", "PUT", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  maxAge: 86400,
+}));
+app.use((req, res, next) => {
+  res.set({
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "same-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Cross-Origin-Resource-Policy": "same-site",
+  });
+  next();
+});
+app.use(express.json({ limit: "100kb" }));
+
+const adminLoginLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: "Too many login attempts. Please try again after 15 minutes.",
+});
+const quoteLimiter = createRateLimiter({ windowMs: 10 * 60 * 1000, max: 60 });
 
 app.get("/", (req, res) => {
   res.send("SatvaPusti Backend Running");
 });
-app.post("/api/admin/login", (req, res) => {
+app.post("/api/admin/login", adminLoginLimiter, (req, res) => {
   const { password } = req.body;
 
-  if (password === process.env.ADMIN_PASSWORD) {
+  if (!process.env.ADMIN_PASSWORD) {
+    return res.status(503).json({ success: false, message: "Admin login is not configured" });
+  }
+
+  if (safePasswordEqual(password, process.env.ADMIN_PASSWORD)) {
+    const session = createAdminSession();
     return res.json({
       success: true,
-      token: "satvapusti-admin-login",
+      token: session.token,
+      expiresAt: session.expiresAt,
     });
   }
 
@@ -85,7 +138,17 @@ app.post("/api/admin/login", (req, res) => {
   });
 });
 
-app.post("/api/admin/verify-password", (req, res) => {
+app.get("/api/admin/session", requireAdmin, (req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.json({ success: true, expiresAt: req.adminSession.expiresAt });
+});
+
+app.post("/api/admin/logout", requireAdmin, (req, res) => {
+  destroyAdminSession(req);
+  res.json({ success: true });
+});
+
+app.post("/api/admin/verify-password", requireAdmin, (req, res) => {
   const { currentPassword } = req.body;
 
   if (!currentPassword) {
@@ -95,7 +158,7 @@ app.post("/api/admin/verify-password", (req, res) => {
     });
   }
 
-  if (currentPassword === process.env.ADMIN_PASSWORD) {
+  if (safePasswordEqual(currentPassword, process.env.ADMIN_PASSWORD)) {
     return res.json({
       success: true,
       message: "Password verified",
@@ -108,7 +171,7 @@ app.post("/api/admin/verify-password", (req, res) => {
   });
 });
 
-app.post("/api/admin/change-password", (req, res) => {
+app.post("/api/admin/change-password", requireAdmin, (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
@@ -125,7 +188,7 @@ app.post("/api/admin/change-password", (req, res) => {
     });
   }
 
-  if (currentPassword !== process.env.ADMIN_PASSWORD) {
+  if (!safePasswordEqual(currentPassword, process.env.ADMIN_PASSWORD)) {
     return res.status(401).json({
       success: false,
       message: "Invalid current password",
@@ -164,16 +227,21 @@ app.get("/api/inventory/:productId/:weight", async (req, res) => {
   }
 });
 
-app.put("/api/inventory/:productId/:weight", async (req, res) => {
+app.put("/api/inventory/:productId/:weight", requireAdmin, async (req, res) => {
   try {
     const Inventory = require("./models/Inventory");
     const { stock, reorderLevel } = req.body;
+    for (const [label, value] of [["stock", stock], ["reorderLevel", reorderLevel]]) {
+      if (value !== undefined && (!Number.isSafeInteger(Number(value)) || Number(value) < 0 || Number(value) > 1000000)) {
+        return res.status(400).json({ success: false, message: `${label} must be a non-negative integer` });
+      }
+    }
     
     const item = await Inventory.findOneAndUpdate(
       { productId: req.params.productId, weight: req.params.weight },
       {
-        stock: stock !== undefined ? stock : undefined,
-        reorderLevel: reorderLevel !== undefined ? reorderLevel : undefined,
+        stock: stock !== undefined ? Number(stock) : undefined,
+        reorderLevel: reorderLevel !== undefined ? Number(reorderLevel) : undefined,
         lastRestocked: Date.now(),
       },
       { new: true, upsert: true }
@@ -185,7 +253,7 @@ app.put("/api/inventory/:productId/:weight", async (req, res) => {
   }
 });
 
-app.post("/api/inventory/reduce/:orderId", async (req, res) => {
+app.post("/api/inventory/reduce/:orderId", requireAdmin, async (req, res) => {
   try {
     const Order = require("./models/Order");
     const Inventory = require("./models/Inventory");
@@ -228,7 +296,7 @@ app.get("/api/gst-states", (req, res) => {
 app.get("/api/business-config", (req, res) => {
   res.json({ success: true, business });
 });
-app.post("/api/checkout/quote", async (req, res) => {
+app.post("/api/checkout/quote", quoteLimiter, async (req, res) => {
   try {
     const quote = await calculateOrder(req.body || {});
     res.set("Cache-Control", "no-store");
@@ -240,12 +308,19 @@ app.post("/api/checkout/quote", async (req, res) => {
 
 // PRODUCT ENDPOINTS
 const normalizeList = (value) => {
-  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
-  return String(value || "")
-    .split(",")
-    .map((item) => item.trim())
+  const items = Array.isArray(value) ? value : String(value || "").split(",");
+  return items
+    .slice(0, 20)
+    .map((item) => String(item).replace(/[<>\u0000-\u001F\u007F]/g, " ").trim().slice(0, 150))
     .filter(Boolean);
 };
+
+const normalizeProductText = (value, maxLength) =>
+  String(value || "")
+    .replace(/[<>\u0000-\u001F\u007F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
 
 const normalizeProductPayload = (body) => {
   const productId = String(body.productId || body.id || "")
@@ -269,33 +344,40 @@ const normalizeProductPayload = (body) => {
     if (!Number.isSafeInteger(mrpPaise) || !Number.isSafeInteger(sellingPricePaise)) {
       throw new Error("Prices must resolve to integer paise");
     }
+    if (mrpPaise < 0 || sellingPricePaise < 0 || mrpPaise > 100000000) {
+      throw new Error("Prices must be within the allowed range");
+    }
     if (sellingPricePaise > mrpPaise) throw new Error("Selling price cannot exceed MRP");
+    const gstRateBasisPoints = Number(data.gstRateBasisPoints ?? 500);
+    if (!Number.isInteger(gstRateBasisPoints) || gstRateBasisPoints < 0 || gstRateBasisPoints > 2800) {
+      throw new Error("GST rate must be between 0% and 28%");
+    }
     normalizedWeights[weight] = {
       mrp: mrpPaise / 100,
       offer: sellingPricePaise / 100,
       mrpPaise,
       sellingPricePaise,
-      gstRateBasisPoints: Number(data.gstRateBasisPoints ?? 500),
+      gstRateBasisPoints,
       taxInclusive: data.taxInclusive !== false,
-      hsnCode: String(data.hsnCode || "1106").trim(),
-      discountLabel: String(data.discountLabel || "").trim(),
-      packSize: String(data.packSize || (weight === "1KG" ? "1 Kg" : weight)).trim(),
-      sku: String(data.sku || `${productId}-${weight}`).trim(),
-      image: String(data.image || ""),
+      hsnCode: normalizeProductText(data.hsnCode || "1106", 20),
+      discountLabel: normalizeProductText(data.discountLabel, 50),
+      packSize: normalizeProductText(data.packSize || (weight === "1KG" ? "1 Kg" : weight), 30),
+      sku: normalizeProductText(data.sku || `${productId}-${weight}`, 60),
+      image: normalizeProductText(data.image, 300),
     };
   }
 
   return {
     productId,
-    name: String(body.name || "").trim(),
-    subtitle: String(body.subtitle || "").trim(),
-    desc: String(body.desc || "").trim(),
+    name: normalizeProductText(body.name, 150),
+    subtitle: normalizeProductText(body.subtitle, 200),
+    desc: normalizeProductText(body.desc, 1000),
     bestFor: normalizeList(body.bestFor),
     benefits: normalizeList(body.benefits),
-    usage: String(body.usage || "").trim(),
+    usage: normalizeProductText(body.usage, 1000),
     weights: normalizedWeights,
     isActive: body.isActive !== false,
-    sortOrder: Number(body.sortOrder || 0),
+    sortOrder: Math.max(0, Math.min(10000, Number(body.sortOrder || 0))),
   };
 };
 
@@ -337,7 +419,11 @@ const serializeProduct = (productDocument) => {
 app.get("/api/products", async (req, res) => {
   try {
     const Product = require("./models/Product");
-    const query = req.query.includeInactive === "true" ? {} : { isActive: true };
+    const includeInactive = req.query.includeInactive === "true";
+    if (includeInactive && !optionalAdmin(req)) {
+      return res.status(401).json({ success: false, message: "Admin login required" });
+    }
+    const query = includeInactive ? {} : { isActive: true };
     const products = await Product.find(query).sort({ sortOrder: 1, createdAt: 1 });
     res.set("Cache-Control", "no-store");
     res.json({ success: true, products: products.map(serializeProduct) });
@@ -346,7 +432,7 @@ app.get("/api/products", async (req, res) => {
   }
 });
 
-app.post("/api/products", async (req, res) => {
+app.post("/api/products", requireAdmin, async (req, res) => {
   try {
     const Product = require("./models/Product");
     const payload = normalizeProductPayload(req.body);
@@ -371,7 +457,7 @@ app.post("/api/products", async (req, res) => {
   }
 });
 
-app.put("/api/products/:id", async (req, res) => {
+app.put("/api/products/:id", requireAdmin, async (req, res) => {
   try {
     const Product = require("./models/Product");
     const payload = normalizeProductPayload({

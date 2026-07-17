@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import businessConfig from "../shared/business.json";
+import { adminFetch, getAdminToken, logoutAdmin } from "./adminApi";
 
 const API_URL = "https://satvapusti-website.onrender.com";
-const ADMIN_SESSION_MS = 30 * 60 * 1000;
 
 const emptyProductForm = {
   productId: "",
@@ -70,21 +70,9 @@ const productToForm = (product) => ({
 
 export default function Admin() {
   useEffect(() => {
-    const token = localStorage.getItem("satvapustiAdminToken");
-    const loginTime = Number(localStorage.getItem("satvapustiLoginTime") || 0);
-
-    if (token !== "admin_logged_in" || !loginTime || Date.now() - loginTime > ADMIN_SESSION_MS) {
-      localStorage.removeItem("satvapustiAdminToken");
-      localStorage.removeItem("satvapustiLoginTime");
-      window.location.href = "/admin-login";
-    }
-
     const timeoutCheck = setInterval(() => {
-      const activeLoginTime = Number(localStorage.getItem("satvapustiLoginTime") || 0);
-      if (!activeLoginTime || Date.now() - activeLoginTime > ADMIN_SESSION_MS) {
-        localStorage.removeItem("satvapustiAdminToken");
-        localStorage.removeItem("satvapustiLoginTime");
-        window.location.href = "/admin-login";
+      if (!getAdminToken()) {
+        window.location.href = "/?page=admin-login";
       }
     }, 60000);
 
@@ -127,7 +115,7 @@ export default function Admin() {
 
   const loadOrders = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/orders/all`);
+      const res = await adminFetch(`${API_URL}/api/orders/all`);
       const data = await res.json();
 
       if (Array.isArray(data)) {
@@ -144,7 +132,7 @@ export default function Admin() {
 
   const loadInventory = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/inventory`);
+      const res = await adminFetch(`${API_URL}/api/inventory`);
       const data = await res.json();
       setInventory(data);
     } catch (error) {
@@ -154,7 +142,7 @@ export default function Admin() {
 
   const loadProducts = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/products?includeInactive=true`);
+      const res = await adminFetch(`${API_URL}/api/products?includeInactive=true`);
       const data = await res.json();
       setProducts(Array.isArray(data.products) ? data.products : []);
     } catch (error) {
@@ -222,7 +210,7 @@ export default function Admin() {
     try {
       setSavingId(order._id);
 
-      const res = await fetch(
+      const res = await adminFetch(
         `${API_URL}/api/orders/admin/update/${order._id}`,
         {
           method: "PUT",
@@ -1092,7 +1080,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/admin/verify-password`, {
+      const res = await adminFetch(`${API_URL}/api/admin/verify-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1125,7 +1113,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/admin/change-password`, {
+      const res = await adminFetch(`${API_URL}/api/admin/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1241,7 +1229,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
 
   const updateInventoryStock = async (productId, weight, newStock) => {
     try {
-      const res = await fetch(`${API_URL}/api/inventory/${productId}/${weight}`, {
+      const res = await adminFetch(`${API_URL}/api/inventory/${productId}/${weight}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stock: newStock }),
@@ -1328,7 +1316,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
       const url = editingProductId
         ? `${API_URL}/api/products/${editingProductId}`
         : `${API_URL}/api/products`;
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method: editingProductId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -1424,11 +1412,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         </div>
         <button
           className="adminLogoutBtn"
-          onClick={() => {
-            localStorage.removeItem("satvapustiAdminToken");
-            localStorage.removeItem("satvapustiLoginTime");
-            window.location.href = "/?page=admin";
-          }}
+          onClick={() => logoutAdmin(API_URL)}
         >
           Logout
         </button>

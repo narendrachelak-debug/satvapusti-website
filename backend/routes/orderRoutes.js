@@ -6,6 +6,40 @@ const Order = require("../models/Order");
 const Inventory = require("../models/Inventory");
 const Counter = require("../models/Counter");
 const { calculateOrder, validateGstin } = require("../services/pricingService");
+const { createRateLimiter, requireAdmin } = require("../middleware/security");
+
+const createOrderLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  message: "Too many orders from this connection. Please try again later.",
+});
+const trackOrderLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 30 });
+
+const cleanText = (value, maxLength = 200) =>
+  String(value || "")
+    .replace(/[<>\u0000-\u001F\u007F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const normalizeHttpUrl = (value) => {
+  const url = cleanText(value, 500);
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    return ["http:", "https:"].includes(parsed.protocol) ? parsed.toString() : "";
+  } catch {
+    return "";
+  }
+};
 
 const brevoClient = new BrevoClient({
   apiKey: process.env.BREVO_API_KEY || "",
@@ -70,8 +104,8 @@ const getOrderItemsHtml = (items = []) => {
   return items
     .map(
       (item) =>
-        `<p><b>${item.name || item.productId || "Product"}</b> - ${
-          item.weight || ""
+        `<p><b>${escapeHtml(item.name || item.productId || "Product")}</b> - ${
+          escapeHtml(item.weight || "")
         } x ${item.quantity || 0} = ${money(
           Number(item.offer || 0) * Number(item.quantity || 0)
         )}</p>`
@@ -80,6 +114,12 @@ const getOrderItemsHtml = (items = []) => {
 };
 
 const sendOrderEmail = async (order, type) => {
+  const safeCustomerName = escapeHtml(order.customerName || "Customer");
+  const safeOrderId = escapeHtml(order.orderId);
+  const safePaymentMethod = escapeHtml(order.paymentMethod || "N/A");
+  const safeCourierName = escapeHtml(order.courierName);
+  const safeTrackingNumber = escapeHtml(order.trackingNumber);
+  const safeTrackingUrl = normalizeHttpUrl(order.trackingUrl);
   const templates = {
     order: {
       subject: `Order Received - ${order.orderId}`,
@@ -94,11 +134,11 @@ const sendOrderEmail = async (order, type) => {
         `Thank you,\nSatvaPusti Nutrition`,
       html: `
         <h2>Order Received Successfully</h2>
-        <p>Dear ${order.customerName || "Customer"},</p>
+        <p>Dear ${safeCustomerName},</p>
         <p>Your order has been received.</p>
-        <p><b>Order ID:</b> ${order.orderId}</p>
+        <p><b>Order ID:</b> ${safeOrderId}</p>
         <p><b>Total Amount:</b> ${money(order.totalAmount)}</p>
-        <p><b>Payment Method:</b> ${order.paymentMethod || "N/A"}</p>
+        <p><b>Payment Method:</b> ${safePaymentMethod}</p>
         <p><b>Status:</b> Received</p>
         <br/>
         <p>Thank you,<br/>SatvaPusti Nutrition</p>
@@ -115,9 +155,9 @@ const sendOrderEmail = async (order, type) => {
         `Thank you,\nSatvaPusti Nutrition`,
       html: `
         <h2>Payment Confirmed</h2>
-        <p>Dear ${order.customerName || "Customer"},</p>
+        <p>Dear ${safeCustomerName},</p>
         <p>Your payment has been confirmed. We will process your order shortly.</p>
-        <p><b>Order ID:</b> ${order.orderId}</p>
+        <p><b>Order ID:</b> ${safeOrderId}</p>
         <p><b>Total Amount:</b> ${money(order.totalAmount)}</p>
         <br/>
         <p>Thank you,<br/>SatvaPusti Nutrition</p>
@@ -137,23 +177,23 @@ const sendOrderEmail = async (order, type) => {
         `\nThank you,\nSatvaPusti Nutrition`,
       html: `
         <h2>Your Order Has Been Shipped</h2>
-        <p>Dear ${order.customerName || "Customer"},</p>
+        <p>Dear ${safeCustomerName},</p>
         <p>Your SatvaPusti order has been shipped.</p>
-        <p><b>Order ID:</b> ${order.orderId}</p>
+        <p><b>Order ID:</b> ${safeOrderId}</p>
         <p><b>Status:</b> Shipped</p>
         ${
-          order.courierName
-            ? `<p><b>Courier:</b> ${order.courierName}</p>`
+          safeCourierName
+            ? `<p><b>Courier:</b> ${safeCourierName}</p>`
             : ""
         }
         ${
-          order.trackingNumber
-            ? `<p><b>Tracking Number:</b> ${order.trackingNumber}</p>`
+          safeTrackingNumber
+            ? `<p><b>Tracking Number:</b> ${safeTrackingNumber}</p>`
             : ""
         }
         ${
-          order.trackingUrl
-            ? `<p><a href="${order.trackingUrl}">Track your order</a></p>`
+          safeTrackingUrl
+            ? `<p><a href="${escapeHtml(safeTrackingUrl)}">Track your order</a></p>`
             : ""
         }
         <br/>
@@ -170,9 +210,9 @@ const sendOrderEmail = async (order, type) => {
         `Thank you for choosing SatvaPusti Nutrition.`,
       html: `
         <h2>Order Delivered Successfully</h2>
-        <p>Dear ${order.customerName || "Customer"},</p>
+        <p>Dear ${safeCustomerName},</p>
         <p>Your SatvaPusti order has been delivered.</p>
-        <p><b>Order ID:</b> ${order.orderId}</p>
+        <p><b>Order ID:</b> ${safeOrderId}</p>
         <br/>
         <p>Thank you for choosing SatvaPusti Nutrition.</p>
       `,
@@ -288,29 +328,42 @@ const buildOrderQuery = (query) => {
 
 const reduceInventoryForOrder = async (order) => {
   if (order.inventoryDeducted) return;
-
+  const deducted = [];
   for (const item of order.items || []) {
     const quantity = Number(item.quantity || 0);
     if (!item.productId || !item.weight || quantity <= 0) continue;
+    const inventoryItem = await Inventory.findOneAndUpdate(
+      { productId: item.productId, weight: item.weight, stock: { $gte: quantity } },
+      { $inc: { stock: -quantity } },
+      { new: true }
+    );
+    if (!inventoryItem) {
+      for (const previous of deducted) {
+        await Inventory.findOneAndUpdate(
+          { productId: previous.productId, weight: previous.weight },
+          { $inc: { stock: previous.quantity } }
+        );
+      }
+      throw new Error(`${item.name || item.productId} ${item.weight} is out of stock`);
+    }
+    deducted.push({ productId: item.productId, weight: item.weight, quantity });
+  }
 
+  order.inventoryDeducted = true;
+};
+
+const assertInventoryAvailable = async (order) => {
+  for (const item of order.items || []) {
+    const quantity = Number(item.quantity || 0);
+    if (!item.productId || !item.weight || quantity <= 0) continue;
     const inventoryItem = await Inventory.findOne({
       productId: item.productId,
       weight: item.weight,
     });
-
     if (!inventoryItem || inventoryItem.stock < quantity) {
       throw new Error(`${item.name || item.productId} ${item.weight} is out of stock`);
     }
   }
-
-  for (const item of order.items || []) {
-    await Inventory.findOneAndUpdate(
-      { productId: item.productId, weight: item.weight },
-      { $inc: { stock: -Number(item.quantity || 0) } }
-    );
-  }
-
-  order.inventoryDeducted = true;
 };
 
 const getNextOrderId = async () => {
@@ -347,8 +400,28 @@ const getFinancialYear = (date = new Date()) => {
 };
 
 // CREATE ORDER
-router.post("/create", async (req, res) => {
+router.post("/create", createOrderLimiter, async (req, res) => {
   try {
+    const customerName = cleanText(req.body.customerName, 100);
+    const email = cleanText(req.body.email, 254).toLowerCase();
+    const mobile = String(req.body.mobile || "").replace(/\D/g, "").slice(-10);
+    const address = cleanText(req.body.address, 300);
+    const addressLine2 = cleanText(req.body.addressLine2, 200);
+    const city = cleanText(req.body.city, 100);
+    const district = cleanText(req.body.district, 100);
+    const paymentMethod = cleanText(req.body.paymentMethod, 20).toUpperCase();
+    if (customerName.length < 2 || address.length < 5 || city.length < 2) {
+      return res.status(400).json({ success: false, message: "Complete customer and delivery address are required" });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ success: false, message: "Valid email address is required" });
+    }
+    if (!/^[6-9]\d{9}$/.test(mobile)) {
+      return res.status(400).json({ success: false, message: "Valid 10-digit Indian mobile number is required" });
+    }
+    if (!["COD", "UPI"].includes(paymentMethod)) {
+      return res.status(400).json({ success: false, message: "Unsupported payment method" });
+    }
     const shippingStateCode = String(req.body.shippingStateCode || "");
     const billingStateCode = String(req.body.billingStateCode || shippingStateCode);
     if (!/^\d{6}$/.test(String(req.body.pincode || ""))) {
@@ -371,14 +444,15 @@ router.post("/create", async (req, res) => {
       });
     }
     const completeShippingAddress = [
-      req.body.address,
-      req.body.addressLine2,
-      req.body.district,
-      `${String(req.body.city || "").trim()} - ${String(req.body.pincode || "").trim()}`,
+      address,
+      addressLine2,
+      district,
+      `${city} - ${String(req.body.pincode || "").trim()}`,
     ].map((part) => String(part || "").trim()).filter(Boolean).join(", ");
-    const completeBillingAddress = String(
-      req.body.billingAddress || completeShippingAddress
-    ).trim();
+    const completeBillingAddress = cleanText(
+      req.body.billingAddress || completeShippingAddress,
+      500
+    );
     const orderId = await getNextOrderId();
     const snapshot = {
       ...pricing,
@@ -386,8 +460,8 @@ router.post("/create", async (req, res) => {
       shippingAddress: completeShippingAddress,
       customerGstin,
       customerRegistrationType: customerGstin ? "REGISTERED_B2B" : "UNREGISTERED_B2C",
-      customerLegalName: String(req.body.customerLegalName || "").trim(),
-      customerTradeName: String(req.body.customerTradeName || "").trim(),
+      customerLegalName: cleanText(req.body.customerLegalName, 150),
+      customerTradeName: cleanText(req.body.customerTradeName, 150),
     };
     const orderItems = pricing.lines.map((line) => ({
       cartId: `${line.productId}-${line.weight}`,
@@ -402,13 +476,13 @@ router.post("/create", async (req, res) => {
 
     const order = new Order({
       orderId,
-      customerName: String(req.body.customerName || "").trim(),
-      email: String(req.body.email || "").trim(),
-      mobile: String(req.body.mobile || "").trim(),
-      address: String(req.body.address || "").trim(),
-      addressLine2: String(req.body.addressLine2 || "").trim(),
-      city: String(req.body.city || "").trim(),
-      district: String(req.body.district || "").trim(),
+      customerName,
+      email,
+      mobile,
+      address,
+      addressLine2,
+      city,
+      district,
       pincode: String(req.body.pincode || "").trim(),
       country: "India",
       billingAddress: completeBillingAddress,
@@ -432,7 +506,7 @@ router.post("/create", async (req, res) => {
       pricingSnapshot: snapshot,
       invoiceNumber: `SP/${getFinancialYear()}/${orderId}`,
       invoiceDate: new Date(),
-      paymentMethod: req.body.paymentMethod,
+      paymentMethod,
       paymentStatus: req.body.paymentStatus === "Awaiting Verification"
         ? "Awaiting Verification"
         : "Pending",
@@ -446,7 +520,7 @@ router.post("/create", async (req, res) => {
       ],
     });
 
-    await reduceInventoryForOrder(order);
+    await assertInventoryAvailable(order);
     await order.save();
     console.log("ORDER SAVED");
 
@@ -501,7 +575,7 @@ router.post("/create", async (req, res) => {
 });
 
 // GET ALL ORDERS
-router.get("/all", async (req, res) => {
+router.get("/all", requireAdmin, async (req, res) => {
   try {
 
     const orders = await Order.find(buildOrderQuery(req.query)).sort({
@@ -520,7 +594,7 @@ router.get("/all", async (req, res) => {
   }
 });
 
-router.get("/track", async (req, res) => {
+router.get("/track", trackOrderLimiter, async (req, res) => {
   try {
     const { orderId, mobile } = req.query;
 
@@ -531,10 +605,15 @@ router.get("/track", async (req, res) => {
       });
     }
 
+    const normalizedOrderId = cleanText(orderId, 30);
+    const normalizedMobile = String(mobile || "").replace(/\D/g, "").slice(-10);
+    if (!/^SP\d+$/.test(normalizedOrderId) || !/^[6-9]\d{9}$/.test(normalizedMobile)) {
+      return res.status(400).json({ success: false, message: "Enter a valid order ID and mobile number" });
+    }
     const order = await Order.findOne({
-      orderId: String(orderId).trim(),
-      mobile: String(mobile).trim(),
-    });
+      orderId: normalizedOrderId,
+      mobile: normalizedMobile,
+    }).select("orderId paymentStatus orderStatus totalAmount courierName trackingNumber trackingUrl statusHistory").lean();
 
     if (!order) {
       return res.status(404).json({
@@ -552,7 +631,7 @@ router.get("/track", async (req, res) => {
   }
 });
 
-router.get("/reports/sales", async (req, res) => {
+router.get("/reports/sales", requireAdmin, async (req, res) => {
   try {
     const groupFormat = req.query.type === "monthly" ? "%Y-%m" : "%Y-%m-%d";
     const match = {
@@ -591,7 +670,7 @@ router.get("/reports/sales", async (req, res) => {
 });
 
 // CUSTOMER ORDERS
-router.get("/customer/:mobile", async (req, res) => {
+router.get("/customer/:mobile", requireAdmin, async (req, res) => {
   try {
 
     const orders = await Order.find({
@@ -613,7 +692,7 @@ router.get("/customer/:mobile", async (req, res) => {
 });
 
 // UPDATE STATUS
-router.put("/status/:id", async (req, res) => {
+router.put("/status/:id", requireAdmin, async (req, res) => {
   try {
 
     const order = await Order.findByIdAndUpdate(
@@ -643,7 +722,7 @@ router.put("/status/:id", async (req, res) => {
 
 // UPDATE PAYMENT + ORDER STATUS
 
-router.put("/admin/update/:id", async (req, res) => {
+router.put("/admin/update/:id", requireAdmin, async (req, res) => {
   try {
     const oldOrder = await Order.findById(req.params.id);
 
@@ -654,13 +733,23 @@ router.put("/admin/update/:id", async (req, res) => {
       });
     }
 
+    const allowedPaymentStatuses = ["Pending", "Awaiting Verification", "Paid", "Failed"];
+    const allowedOrderStatuses = ["Received", "Processing", "Packed", "Shipped", "Delivered", "Cancelled"];
+    if (!allowedPaymentStatuses.includes(req.body.paymentStatus) || !allowedOrderStatuses.includes(req.body.orderStatus)) {
+      return res.status(400).json({ success: false, message: "Invalid order or payment status" });
+    }
+    const rawTrackingUrl = cleanText(req.body.trackingUrl, 500);
+    const trackingUrl = normalizeHttpUrl(rawTrackingUrl);
+    if (rawTrackingUrl && !trackingUrl) {
+      return res.status(400).json({ success: false, message: "Tracking URL must be a valid HTTP or HTTPS URL" });
+    }
     const updateData = {
       paymentStatus: req.body.paymentStatus,
       orderStatus: req.body.orderStatus,
-      courierName: req.body.courierName || "",
-      trackingNumber: req.body.trackingNumber || "",
-      trackingUrl: req.body.trackingUrl || "",
-      customerTrackingMessage: req.body.customerTrackingMessage || "",
+      courierName: cleanText(req.body.courierName, 100),
+      trackingNumber: cleanText(req.body.trackingNumber, 100),
+      trackingUrl,
+      customerTrackingMessage: cleanText(req.body.customerTrackingMessage, 500),
     };
 
     const statusHistory = Array.isArray(oldOrder.statusHistory)
@@ -691,6 +780,14 @@ router.put("/admin/update/:id", async (req, res) => {
     if (req.body.paymentStatus === "Paid" && !oldOrder.paymentDate) {
       updateData.paymentDate = new Date();
       updateData.paymentAmountPaise = oldOrder.gatewayOrderAmountPaise || oldOrder.totalAmountPaise;
+    }
+
+    const confirmedStatuses = new Set(["Processing", "Packed", "Shipped", "Delivered"]);
+    if (!oldOrder.inventoryDeducted && (
+      updateData.paymentStatus === "Paid" || confirmedStatuses.has(updateData.orderStatus)
+    )) {
+      await reduceInventoryForOrder(oldOrder);
+      await oldOrder.save();
     }
 
     const order = await Order.findByIdAndUpdate(
@@ -734,7 +831,7 @@ router.put("/admin/update/:id", async (req, res) => {
   }
 });
 
-router.get("/whatsapp-template/:id/:template", async (req, res) => {
+router.get("/whatsapp-template/:id/:template", requireAdmin, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
@@ -776,7 +873,7 @@ router.get("/whatsapp-template/:id/:template", async (req, res) => {
   }
 });
 
-router.post("/admin/test-email", async (req, res) => {
+router.post("/admin/test-email", requireAdmin, async (req, res) => {
   try {
     const { password, to } = req.body;
 

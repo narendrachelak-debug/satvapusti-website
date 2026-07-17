@@ -7,7 +7,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "migrate:family-gst": "node scripts/migrate-family-gst.js",
-    "test": "node --test tests/pricing.test.js tests/contracts.test.js"
+    "test": "node --test tests/pricing.test.js tests/contracts.test.js tests/security.test.js"
   },
   "keywords": [],
   "author": "",
