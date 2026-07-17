@@ -39,4 +39,5 @@ test("new invoice template includes required state and GST fields", () => {
   for (const label of ["TAX INVOICE", "Billing State:", "Shipping State:", "Place of Supply:", "HSN", "GST-inclusive price", "Unregistered (B2C)"]) {
     assert.ok(admin.includes(label), `missing invoice label: ${label}`);
   }
+  assert.match(admin, /banners\/logo-banner\.png/);
 });
