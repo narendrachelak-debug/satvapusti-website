@@ -22,7 +22,7 @@ const navItems = [
 const defaultProducts = [
   {
     id: "family",
-    name: "SatvaPusti+ Family",
+    name: "SatvaPusti Family Nutrition Formula",
     theme: "Family Wellness",
     subtitle: "Complete Daily Nutrition For The Whole Family",
     desc: "A family wellness blend made for everyday routines, with real dry fruits and seeds to support energy, focus and immunity for all ages.",
@@ -80,7 +80,11 @@ const defaultProducts = [
       "250G": "/products/family-250g.png",
     },
     prices: {
-      "1KG": { mrp: 1999, offer: 1799 },
+      "1KG": {
+        mrp: 1999, offer: 1799, mrpPaise: 199900, sellingPricePaise: 179900,
+        gstRateBasisPoints: 500, taxInclusive: true, hsnCode: "1106",
+        discountLabel: "10% OFF", packSize: "1 Kg",
+      },
       "500G": { mrp: 1099, offer: 999 },
       "250G": { mrp: 599, offer: 499 },
     },
@@ -261,6 +265,8 @@ export default function App() {
   const [inventory, setInventory] = useState([]);
   const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const [products, setProducts] = useState(defaultProducts);
+  const [gstStates, setGstStates] = useState([]);
+  const [checkoutQuote, setCheckoutQuote] = useState(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [showHomeMenu, setShowHomeMenu] = useState(false);
   const [activeSection, setActiveSection] = useState("top");
@@ -284,8 +290,20 @@ export default function App() {
     email: savedProfile?.email || "",
     mobile: savedProfile?.mobile || "",
     fullAddress: "",
+    addressLine2: "",
     city: "",
+    district: "",
+    stateCode: "",
     pincode: "",
+    billingSameAsShipping: true,
+    billingAddress: "",
+    billingCity: "",
+    billingStateCode: "",
+    billingPincode: "",
+    businessCustomer: false,
+    customerGstin: "",
+    customerLegalName: "",
+    customerTradeName: "",
   });
 
   const getWeight = (product) => selected[product.id] || "1KG";
@@ -315,6 +333,13 @@ export default function App() {
         prices[weight] = {
           mrp: Number(weights[weight]?.mrp || 0),
           offer: Number(weights[weight]?.offer || 0),
+          mrpPaise: Number(weights[weight]?.mrpPaise ?? Number(weights[weight]?.mrp || 0) * 100),
+          sellingPricePaise: Number(weights[weight]?.sellingPricePaise ?? Number(weights[weight]?.offer || 0) * 100),
+          gstRateBasisPoints: Number(weights[weight]?.gstRateBasisPoints ?? fallbackProduct.prices[weight]?.gstRateBasisPoints ?? 500),
+          taxInclusive: weights[weight]?.taxInclusive !== false,
+          hsnCode: weights[weight]?.hsnCode || fallbackProduct.prices[weight]?.hsnCode || "1106",
+          discountLabel: weights[weight]?.discountLabel || fallbackProduct.prices[weight]?.discountLabel || "",
+          packSize: weights[weight]?.packSize || fallbackProduct.prices[weight]?.packSize || weight,
         };
       }
 
@@ -370,8 +395,19 @@ export default function App() {
       }
     };
 
+    const loadGstStates = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/gst-states`);
+        const data = await res.json();
+        setGstStates(Array.isArray(data.states) ? data.states : []);
+      } catch (error) {
+        console.log("GST state master load error:", error);
+      }
+    };
+
     loadProducts();
     loadInventory();
+    loadGstStates();
   }, []);
 
   useEffect(() => {
@@ -498,6 +534,48 @@ export default function App() {
     0
   );
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  useEffect(() => {
+    setCart((currentCart) => {
+      let changed = false;
+      const repriced = currentCart.map((item) => {
+        const product = products.find((candidate) => candidate.id === item.productId);
+        const currentPrice = product?.prices?.[item.weight];
+        if (!currentPrice || (item.offer === currentPrice.offer && item.mrp === currentPrice.mrp)) {
+          return item;
+        }
+        changed = true;
+        return { ...item, mrp: currentPrice.mrp, offer: currentPrice.offer };
+      });
+      return changed ? repriced : currentCart;
+    });
+  }, [products]);
+
+  useEffect(() => {
+    if (!address.stateCode || cart.length === 0) {
+      setCheckoutQuote(null);
+      return;
+    }
+    const controller = new AbortController();
+    fetch(`${API_URL}/api/checkout/quote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: cart.map(({ productId, weight, quantity }) => ({ productId, weight, quantity })),
+        shippingStateCode: address.stateCode,
+        billingStateCode: address.billingSameAsShipping
+          ? address.stateCode
+          : address.billingStateCode,
+      }),
+      signal: controller.signal,
+    })
+      .then((response) => response.json())
+      .then((data) => setCheckoutQuote(data.success ? data.quote : null))
+      .catch((error) => {
+        if (error.name !== "AbortError") console.log("Checkout quote error:", error);
+      });
+    return () => controller.abort();
+  }, [address.stateCode, address.billingStateCode, address.billingSameAsShipping, cart]);
 
  const makeUpiLink = (orderId, amount) => {
   return (
@@ -846,9 +924,38 @@ console.log("Order ID:", orderId);
       !address.mobile ||
       !address.fullAddress ||
       !address.city ||
+      !address.stateCode ||
       !address.pincode
     ) {
       alert("Please complete full shipping address.");
+      return;
+    }
+
+    if (!/^\d{6}$/.test(address.pincode)) {
+      alert("Please enter a valid six-digit Indian PIN code.");
+      return;
+    }
+
+    if (
+      !address.billingSameAsShipping &&
+      (!address.billingAddress || !address.billingCity || !address.billingStateCode ||
+        !/^\d{6}$/.test(address.billingPincode))
+    ) {
+      alert("Please complete the billing address with a valid six-digit PIN code.");
+      return;
+    }
+
+    if (address.businessCustomer && (!address.customerGstin || !address.customerLegalName)) {
+      alert("Enter the registered legal name and GSTIN for a GST invoice.");
+      return;
+    }
+
+    if (
+      address.businessCustomer &&
+      String(address.customerGstin).trim().slice(0, 2) !==
+        (address.billingSameAsShipping ? address.stateCode : address.billingStateCode)
+    ) {
+      alert("GSTIN state code must match the selected billing state.");
       return;
     }
 
@@ -859,83 +966,31 @@ console.log("Order ID:", orderId);
 
     setIsSubmittingOrder(true);
 
-    const orderId = `SP${Date.now()}`;
-    const shipping =
-      selectedPaymentMode === "UPI" ? "Free Shipping" : "Shipping charges as applicable";
+    const shipping = "₹0 (no configured shipping charge)";
     const paymentStatus =
       selectedPaymentMode === "UPI" ? "Awaiting Verification" : "Pending";
-    const orderStatus = "Received";
-
-    const itemsText = cart
-      .map(
-        (item, index) =>
-          `${index + 1}) ${item.name}\n` +
-          `Pack: ${item.weight}\n` +
-          `Qty: ${item.quantity}\n` +
-          `Price: Rs. ${item.offer}\n` +
-          `Amount: Rs. ${item.offer * item.quantity}`
-      )
-      .join("\n\n");
-
-    const whatsappText =
-      `New SatvaPusti Order\n\n` +
-      `Order ID: ${orderId}\n\n` +
-      `${itemsText}\n\n` +
-      `----------------------\n` +
-      `Total Amount: Rs. ${cartTotal}\n` +
-      `You Save: Rs. ${cartSaving}\n` +
-      `Payment Method: ${selectedPaymentMode}\n` +
-      `Payment Status: ${paymentStatus}\n` +
-      `Order Status: ${orderStatus}\n` +
-      `UPI Note: ${orderId}|${cartTotal}\n` +
-      `Shipping: ${shipping}\n\n` +
-      `Customer Name: ${address.name}\n` +
-      `Email: ${address.email}\n` +
-      `Mobile: ${address.mobile}\n` +
-      `Address: ${address.fullAddress}\n` +
-      `City: ${address.city}\n` +
-      `Pincode: ${address.pincode}\n\n` +
-      `Please confirm this order.`;
-
-    let finalOrderId = orderId;
-    let finalWhatsappText = whatsappText;
-    let whatsappMessage = encodeURIComponent(finalWhatsappText);
-
-    const order = {
-      id: orderId,
-      items: cart,
-      total: cartTotal,
-      saving: cartSaving,
-      paymentMode: selectedPaymentMode,
-      shipping,
-      customer: { ...address },
-      status: "Order Created Successfully",
-      orderStatus,
-      paymentStatus,
-      whatsappMessage,
-      createdAt: new Date().toLocaleString(),
-    };
-
-    const updatedOrders = [order, ...myOrders];
-    setLastOrder(order);
-    setMyOrders(updatedOrders);
-    setOrderSuccess(true);
-    localStorage.setItem("satvapustiOrders", JSON.stringify(updatedOrders));
 
     const orderPayload = {
-      orderId,
       customerName: address.name,
       email: address.email,
       mobile: address.mobile,
       address: address.fullAddress,
+      addressLine2: address.addressLine2,
       city: address.city,
+      district: address.district,
       pincode: address.pincode,
-      items: cart,
-      totalAmount: cartTotal,
-      saving: cartSaving,
+      shippingAddress: address.fullAddress,
+      billingAddress: address.billingSameAsShipping
+        ? `${address.fullAddress}, ${address.city} - ${address.pincode}`
+        : `${address.billingAddress}, ${address.billingCity} - ${address.billingPincode}`,
+      shippingStateCode: address.stateCode,
+      billingStateCode: address.billingSameAsShipping ? address.stateCode : address.billingStateCode,
+      businessCustomer: address.businessCustomer,
+      customerGstin: address.businessCustomer ? address.customerGstin : "",
+      customerLegalName: address.businessCustomer ? address.customerLegalName : "",
+      customerTradeName: address.businessCustomer ? address.customerTradeName : "",
+      items: cart.map(({ productId, weight, quantity }) => ({ productId, weight, quantity })),
       paymentMethod: selectedPaymentMode,
-      shipping,
-      orderStatus,
       paymentStatus,
     };
 
@@ -948,40 +1003,55 @@ console.log("Order ID:", orderId);
         body: JSON.stringify(orderPayload),
       });
       const data = await res.json().catch(() => ({}));
-        const savedOrder = data?.order || data?.savedOrder || data?.newOrder || data?.data;
-        const savedOrderId = savedOrder?.orderId || savedOrder?.id || data?.orderId || data?.id;
-
-      if (savedOrderId && savedOrderId !== orderId) {
-        finalOrderId = savedOrderId;
-        finalWhatsappText = whatsappText.replace(orderId, savedOrderId);
-        whatsappMessage = encodeURIComponent(finalWhatsappText);
-
-        const syncedOrder = {
-          ...order,
-          id: savedOrderId,
-          whatsappMessage,
-        };
-        const syncedOrders = [syncedOrder, ...myOrders];
-        setLastOrder(syncedOrder);
-        setMyOrders(syncedOrders);
-        localStorage.setItem("satvapustiOrders", JSON.stringify(syncedOrders));
+      if (!res.ok || !data.success || !data.order) {
+        throw new Error(data.message || "Order could not be created");
       }
+      const savedOrder = data.order;
+      const authoritativeTotal = Number(savedOrder.totalAmountPaise || 0) / 100;
+      const snapshot = savedOrder.pricingSnapshot || data.quote;
+      setCheckoutQuote(snapshot);
+      const itemsText = (snapshot?.lines || []).map((item, index) =>
+        `${index + 1}) ${item.productName}\nPack: ${item.packSize}\nQty: ${item.quantity}\n` +
+        `Price: Rs. ${(item.sellingPricePaise / 100).toFixed(2)}\n` +
+        `Amount: Rs. ${(item.lineInclusivePaise / 100).toFixed(2)}`
+      ).join("\n\n");
+      const whatsappText = `New SatvaPusti Order\n\nOrder ID: ${savedOrder.orderId}\n\n${itemsText}\n\n` +
+        `Total Amount: Rs. ${authoritativeTotal.toFixed(2)}\nPayment Method: ${selectedPaymentMode}\n` +
+        `Payment Status: ${savedOrder.paymentStatus}\nShipping: ${shipping}\n` +
+        `Place of Supply: ${snapshot.placeOfSupplyState} (${snapshot.placeOfSupplyStateCode})\n` +
+        `Prices are inclusive of GST.\n\nCustomer: ${address.name}\n${address.fullAddress}, ${address.city} - ${address.pincode}`;
+      const whatsappMessage = encodeURIComponent(whatsappText);
+      const localOrder = {
+        id: savedOrder.orderId,
+        items: savedOrder.items,
+        total: authoritativeTotal,
+        saving: (snapshot.productDiscountPaise || 0) / 100,
+        paymentMode: selectedPaymentMode,
+        shipping,
+        customer: { ...address },
+        orderStatus: savedOrder.orderStatus,
+        paymentStatus: savedOrder.paymentStatus,
+        whatsappMessage,
+        createdAt: new Date(savedOrder.createdAt).toLocaleString(),
+      };
+      const updatedOrders = [localOrder, ...myOrders];
+      setLastOrder(localOrder);
+      setMyOrders(updatedOrders);
+      setOrderSuccess(true);
+      localStorage.setItem("satvapustiOrders", JSON.stringify(updatedOrders));
+
+      if (selectedPaymentMode === "COD") {
+        window.location.href = `https://wa.me/${phone}?text=${whatsappMessage}`;
+        return;
+      }
+
+      window.location.href = makeUpiLink(savedOrder.orderId, authoritativeTotal);
     } catch (error) {
       console.log("Backend order save error:", error);
-      alert("Order could not be saved right now. Please try again.");
+      alert(error.message || "Order could not be saved right now. Please try again.");
+    } finally {
       setIsSubmittingOrder(false);
-      return;
     }
-
-    if (selectedPaymentMode === "COD") {
-      window.location.href = `https://wa.me/${phone}?text=${whatsappMessage}`;
-      setIsSubmittingOrder(false);
-      return;
-    }
-
-    const upiLink = makeUpiLink(finalOrderId, cartTotal);
-    window.location.href = upiLink;
-    setIsSubmittingOrder(false);
   };
 
   const continueShopping = () => {
@@ -1144,6 +1214,7 @@ console.log("Order ID:", orderId);
             const quantity = getQty(product);
             const mrp = product.prices[weight].mrp;
             const offer = product.prices[weight].offer;
+            const priceMeta = product.prices[weight];
             const save = (mrp - offer) * quantity;
             const total = offer * quantity;
             const savePercent = mrp > 0 ? Math.round(((mrp - offer) / mrp) * 100) : 0;
@@ -1258,8 +1329,9 @@ console.log("Order ID:", orderId);
                       <span>You Save</span>
                       <b className="saveText">₹{save}</b>
                     </div>
-                    <strong>Save {savePercent}%</strong>
+                    <strong>{priceMeta.discountLabel || `Save ${savePercent}%`}</strong>
                   </div>
+                  {priceMeta.taxInclusive && <p className="taxInclusiveText">Inclusive of all taxes</p>}
 
                   <div className="premiumPackBlock">
                     <b>Pack Size</b>
@@ -1608,7 +1680,7 @@ console.log("Order ID:", orderId);
                       <img src={item.image} alt={item.name} />
                       <div>
                         <h4>{item.name}</h4>
-                        <p>{item.weight} | ₹{item.offer}</p>
+                        <p>{item.weight} | Unit price: ₹{item.offer}</p>
 
                         <div className="cartQty">
                           <button onClick={() => updateCartQty(item.cartId, -1)}>-</button>
@@ -1616,7 +1688,7 @@ console.log("Order ID:", orderId);
                           <button onClick={() => updateCartQty(item.cartId, 1)}>+</button>
                         </div>
 
-                        <p><b>Amount:</b> ₹{item.offer * item.quantity}</p>
+                        <p><b>Line total:</b> ₹{item.offer * item.quantity}</p>
                       </div>
 
                       <button className="removeBtn" onClick={() => removeFromCart(item.cartId)}>
@@ -1627,8 +1699,13 @@ console.log("Order ID:", orderId);
                 </div>
 
                 <div className="cartTotalBox">
-                  <p><b>You Save:</b> ₹{cartSaving}</p>
-                  <h3>Total: ₹{cartTotal}</h3>
+                  <p><b>MRP total:</b> ₹{cartTotal + cartSaving}</p>
+                  <p><b>Product discount:</b> -₹{cartSaving}</p>
+                  <p><b>Selling-price total:</b> ₹{cartTotal}</p>
+                  <p><b>Coupon discount:</b> ₹0</p>
+                  <p><b>Shipping:</b> ₹0</p>
+                  <p>Prices are inclusive of GST.</p>
+                  <h3>Grand total: ₹{cartTotal}</h3>
                 </div>
 
                <button
@@ -1724,7 +1801,22 @@ console.log("Order ID:", orderId);
                       {item.offer * item.quantity}
                     </p>
                   ))}
-                  <h3>Total: ₹{cartTotal}</h3>
+                  <p>MRP total: ₹{cartTotal + cartSaving}</p>
+                  <p>Product discount: -₹{cartSaving}</p>
+                  <p>Coupon discount: ₹0</p>
+                  <p>Shipping: ₹0</p>
+                  <p>Prices are inclusive of GST.</p>
+                  {checkoutQuote && (
+                    <>
+                      <p><b>Place of Supply:</b> {checkoutQuote.placeOfSupplyState} ({checkoutQuote.placeOfSupplyStateCode})</p>
+                      {checkoutQuote.supplyType === "INTRA_STATE" ? (
+                        <p>Included CGST @ 2.5%: ₹{(checkoutQuote.cgstAmountPaise / 100).toFixed(2)} | Included SGST @ 2.5%: ₹{(checkoutQuote.sgstAmountPaise / 100).toFixed(2)}</p>
+                      ) : (
+                        <p>Included IGST @ 5%: ₹{(checkoutQuote.igstAmountPaise / 100).toFixed(2)}</p>
+                      )}
+                    </>
+                  )}
+                  <h3>Grand total: ₹{checkoutQuote ? (checkoutQuote.finalPayablePaise / 100).toFixed(2) : cartTotal}</h3>
                 </div>
 
                 <input
@@ -1747,9 +1839,15 @@ console.log("Order ID:", orderId);
                 />
 
                 <textarea
-                  placeholder="Full Shipping Address"
+                  placeholder="Shipping address line 1"
                   value={address.fullAddress}
                   onChange={(e) => setAddress({ ...address, fullAddress: e.target.value })}
+                />
+
+                <input
+                  placeholder="Shipping address line 2 (optional)"
+                  value={address.addressLine2}
+                  onChange={(e) => setAddress({ ...address, addressLine2: e.target.value })}
                 />
 
                 <input
@@ -1759,10 +1857,106 @@ console.log("Order ID:", orderId);
                 />
 
                 <input
-                  placeholder="Pincode"
-                  value={address.pincode}
-                  onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
+                  placeholder="District (optional)"
+                  value={address.district}
+                  onChange={(e) => setAddress({ ...address, district: e.target.value })}
                 />
+
+                <select
+                  value={address.stateCode}
+                  onChange={(e) => setAddress({ ...address, stateCode: e.target.value })}
+                  required
+                >
+                  <option value="">Select shipping State / UT</option>
+                  {gstStates.map((state) => (
+                    <option key={state.gst_state_code} value={state.gst_state_code}>
+                      {state.state_name} ({state.gst_state_code})
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  placeholder="Pincode"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={address.pincode}
+                  onChange={(e) => setAddress({ ...address, pincode: e.target.value.replace(/\D/g, "") })}
+                />
+
+                <input value="India" readOnly aria-label="Country" />
+
+                <label className="checkoutCheckRow">
+                  <input
+                    type="checkbox"
+                    checked={address.billingSameAsShipping}
+                    onChange={(e) => setAddress({ ...address, billingSameAsShipping: e.target.checked })}
+                  />
+                  Billing address is the same as shipping address
+                </label>
+
+                {!address.billingSameAsShipping && (
+                  <>
+                    <h3>Billing Address</h3>
+                    <textarea
+                      placeholder="Complete billing address"
+                      value={address.billingAddress}
+                      onChange={(e) => setAddress({ ...address, billingAddress: e.target.value })}
+                    />
+                    <input
+                      placeholder="Billing city"
+                      value={address.billingCity}
+                      onChange={(e) => setAddress({ ...address, billingCity: e.target.value })}
+                    />
+                    <select
+                      value={address.billingStateCode}
+                      onChange={(e) => setAddress({ ...address, billingStateCode: e.target.value })}
+                    >
+                      <option value="">Select billing State / UT</option>
+                      {gstStates.map((state) => (
+                        <option key={state.gst_state_code} value={state.gst_state_code}>
+                          {state.state_name} ({state.gst_state_code})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      placeholder="Billing PIN code"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={address.billingPincode}
+                      onChange={(e) => setAddress({ ...address, billingPincode: e.target.value.replace(/\D/g, "") })}
+                    />
+                  </>
+                )}
+
+                <label className="checkoutCheckRow">
+                  <input
+                    type="checkbox"
+                    checked={address.businessCustomer}
+                    onChange={(e) => setAddress({ ...address, businessCustomer: e.target.checked })}
+                  />
+                  Buying for a business / GST invoice required
+                </label>
+
+                {address.businessCustomer && (
+                  <>
+                    <input
+                      placeholder="Registered legal name"
+                      value={address.customerLegalName}
+                      onChange={(e) => setAddress({ ...address, customerLegalName: e.target.value })}
+                    />
+                    <input
+                      placeholder="Trade name (optional)"
+                      value={address.customerTradeName}
+                      onChange={(e) => setAddress({ ...address, customerTradeName: e.target.value })}
+                    />
+                    <input
+                      placeholder="Customer GSTIN"
+                      maxLength={15}
+                      value={address.customerGstin}
+                      onChange={(e) => setAddress({ ...address, customerGstin: e.target.value.toUpperCase().replace(/\s/g, "") })}
+                    />
+                  </>
+                )}
 
                 <h3>Select Payment Option</h3>
 

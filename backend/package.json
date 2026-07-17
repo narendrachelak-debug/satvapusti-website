@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "migrate:family-gst": "node scripts/migrate-family-gst.js",
+    "test": "node --test tests/pricing.test.js tests/contracts.test.js"
   },
   "keywords": [],
   "author": "",

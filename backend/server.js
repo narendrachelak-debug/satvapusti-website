@@ -4,20 +4,28 @@ const cors = require("cors");
 require("dotenv").config();
 
 const orderRoutes = require("./routes/orderRoutes");
+const business = require("./config/business");
+const { GST_STATES } = require("./data/gstStates");
+const { calculateOrder, rupeesToPaise } = require("./services/pricingService");
 
 const app = express();
 
 const defaultProducts = [
   {
     productId: "family",
-    name: "SatvaPusti+ Family",
+    name: "SatvaPusti Family Nutrition Formula",
     subtitle: "Premium Nutrition Powder",
     desc: "Complete nutrition for every member of your family.",
     bestFor: ["Family Nutrition", "Daily Energy", "Balanced Routine"],
     benefits: ["Real dry fruits and seeds", "Daily nutrition support", "No artificial colours"],
     usage: "Mix 2 spoons with 200 ml milk or warm water and consume daily.",
     weights: {
-      "1KG": { mrp: 1999, offer: 1799, image: "/products/family-1kg.png" },
+      "1KG": {
+        mrp: 1999, offer: 1799, mrpPaise: 199900, sellingPricePaise: 179900,
+        gstRateBasisPoints: 500, taxInclusive: true, hsnCode: "1106",
+        discountLabel: "10% OFF", packSize: "1 Kg", sku: "FAMILY-1KG",
+        image: "/products/family-1kg.png",
+      },
       "500G": { mrp: 1099, offer: 999, image: "/products/family-500g.png" },
       "250G": { mrp: 599, offer: 499, image: "/products/family-250g.png" },
     },
@@ -213,6 +221,22 @@ app.post("/api/inventory/reduce/:orderId", async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+app.get("/api/gst-states", (req, res) => {
+  res.set("Cache-Control", "public, max-age=86400, immutable");
+  res.json({ success: true, states: GST_STATES });
+});
+app.get("/api/business-config", (req, res) => {
+  res.json({ success: true, business });
+});
+app.post("/api/checkout/quote", async (req, res) => {
+  try {
+    const quote = await calculateOrder(req.body || {});
+    res.set("Cache-Control", "no-store");
+    res.json({ success: true, quote });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
 
 // PRODUCT ENDPOINTS
 const normalizeList = (value) => {
@@ -236,9 +260,27 @@ const normalizeProductPayload = (body) => {
 
   for (const weight of ["1KG", "500G", "250G"]) {
     const data = weights[weight] || {};
+    const mrpPaise = data.mrpPaise !== undefined
+      ? Number(data.mrpPaise)
+      : rupeesToPaise(data.mrp || 0);
+    const sellingPricePaise = data.sellingPricePaise !== undefined
+      ? Number(data.sellingPricePaise)
+      : rupeesToPaise(data.offer || data.sellingPrice || 0);
+    if (!Number.isSafeInteger(mrpPaise) || !Number.isSafeInteger(sellingPricePaise)) {
+      throw new Error("Prices must resolve to integer paise");
+    }
+    if (sellingPricePaise > mrpPaise) throw new Error("Selling price cannot exceed MRP");
     normalizedWeights[weight] = {
-      mrp: Number(data.mrp || 0),
-      offer: Number(data.offer || 0),
+      mrp: mrpPaise / 100,
+      offer: sellingPricePaise / 100,
+      mrpPaise,
+      sellingPricePaise,
+      gstRateBasisPoints: Number(data.gstRateBasisPoints ?? 500),
+      taxInclusive: data.taxInclusive !== false,
+      hsnCode: String(data.hsnCode || "1106").trim(),
+      discountLabel: String(data.discountLabel || "").trim(),
+      packSize: String(data.packSize || (weight === "1KG" ? "1 Kg" : weight)).trim(),
+      sku: String(data.sku || `${productId}-${weight}`).trim(),
       image: String(data.image || ""),
     };
   }
@@ -269,12 +311,36 @@ const ensureInventoryForProduct = async (productId) => {
   }
 };
 
+const serializeProduct = (productDocument) => {
+  const product = productDocument.toObject ? productDocument.toObject() : productDocument;
+  const weights = Object.fromEntries(["1KG", "500G", "250G"].map((weight) => {
+    const variant = product.weights?.[weight] || {};
+    const mrpPaise = variant.mrpPaise ?? Number(variant.mrp || 0) * 100;
+    const sellingPricePaise = variant.sellingPricePaise ?? Number(variant.offer || 0) * 100;
+    return [weight, {
+      ...variant,
+      mrpPaise,
+      sellingPricePaise,
+      selling_price: sellingPricePaise / 100,
+      formatted_mrp: `₹${(mrpPaise / 100).toLocaleString("en-IN")}`,
+      formatted_selling_price: `₹${(sellingPricePaise / 100).toLocaleString("en-IN")}`,
+      tax_rate: Number(variant.gstRateBasisPoints ?? 500) / 100,
+      tax_inclusive: variant.taxInclusive !== false,
+      hsn_code: variant.hsnCode || "1106",
+      discount_label: variant.discountLabel || "",
+      pack_size: variant.packSize || weight,
+    }];
+  }));
+  return { ...product, weights };
+};
+
 app.get("/api/products", async (req, res) => {
   try {
     const Product = require("./models/Product");
     const query = req.query.includeInactive === "true" ? {} : { isActive: true };
     const products = await Product.find(query).sort({ sortOrder: 1, createdAt: 1 });
-    res.json({ success: true, products });
+    res.set("Cache-Control", "no-store");
+    res.json({ success: true, products: products.map(serializeProduct) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -299,7 +365,7 @@ app.post("/api/products", async (req, res) => {
     );
 
     await ensureInventoryForProduct(product.productId);
-    res.json({ success: true, product });
+    res.json({ success: true, product: serializeProduct(product) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -324,7 +390,7 @@ app.put("/api/products/:id", async (req, res) => {
     }
 
     await ensureInventoryForProduct(product.productId);
-    res.json({ success: true, product });
+    res.json({ success: true, product: serializeProduct(product) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

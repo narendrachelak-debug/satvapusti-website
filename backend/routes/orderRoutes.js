@@ -4,6 +4,8 @@ const { BrevoClient } = require("@getbrevo/brevo");
 
 const Order = require("../models/Order");
 const Inventory = require("../models/Inventory");
+const Counter = require("../models/Counter");
+const { calculateOrder, validateGstin } = require("../services/pricingService");
 
 const brevoClient = new BrevoClient({
   apiKey: process.env.BREVO_API_KEY || "",
@@ -311,31 +313,122 @@ const reduceInventoryForOrder = async (order) => {
   order.inventoryDeducted = true;
 };
 
+const getNextOrderId = async () => {
+  let counter = await Counter.findById("order");
+  if (!counter) {
+    const existingIds = await Order.find({ orderId: /^SP\d+$/ }).select("orderId").lean();
+    const highest = existingIds.reduce(
+      (max, item) => Math.max(max, Number(String(item.orderId).slice(2)) || 1000),
+      1000
+    );
+    try {
+      counter = await Counter.create({ _id: "order", seq: highest });
+    } catch (error) {
+      if (error.code !== 11000) throw error;
+    }
+  }
+  const next = await Counter.findOneAndUpdate(
+    { _id: "order" },
+    { $inc: { seq: 1 } },
+    { new: true }
+  );
+  return `SP${next.seq}`;
+};
+
+const getFinancialYear = (date = new Date()) => {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit",
+    }).formatToParts(date).map((part) => [part.type, part.value])
+  );
+  const year = Number(parts.year);
+  const startYear = Number(parts.month) >= 4 ? year : year - 1;
+  return `${startYear}-${String(startYear + 1).slice(-2)}`;
+};
+
 // CREATE ORDER
 router.post("/create", async (req, res) => {
   try {
-
-    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
-
-    let nextNumber = 1001;
-
-    if (
-      lastOrder &&
-      lastOrder.orderId &&
-      lastOrder.orderId.startsWith("SP")
-    ) {
-      nextNumber =
-        parseInt(lastOrder.orderId.replace("SP", "")) + 1;
+    const shippingStateCode = String(req.body.shippingStateCode || "");
+    const billingStateCode = String(req.body.billingStateCode || shippingStateCode);
+    if (!/^\d{6}$/.test(String(req.body.pincode || ""))) {
+      return res.status(400).json({ success: false, message: "PIN code must be six digits" });
     }
-
-    const orderId = `SP${nextNumber}`;
+    const pricing = await calculateOrder({
+      items: req.body.items,
+      shippingStateCode,
+      billingStateCode,
+      couponDiscountPaise: 0,
+    });
+    const customerGstin = validateGstin({
+      gstin: req.body.customerGstin,
+      billingStateCode: pricing.billingStateCode,
+    });
+    if (req.body.businessCustomer && (!customerGstin || !String(req.body.customerLegalName || "").trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "GSTIN and registered legal name are required for a business invoice",
+      });
+    }
+    const orderId = await getNextOrderId();
+    const snapshot = {
+      ...pricing,
+      customerGstin,
+      customerRegistrationType: customerGstin ? "REGISTERED_B2B" : "UNREGISTERED_B2C",
+      customerLegalName: String(req.body.customerLegalName || "").trim(),
+      customerTradeName: String(req.body.customerTradeName || "").trim(),
+    };
+    const orderItems = pricing.lines.map((line) => ({
+      cartId: `${line.productId}-${line.weight}`,
+      productId: line.productId,
+      name: line.productName,
+      weight: line.weight,
+      quantity: line.quantity,
+      mrp: line.mrpPaise / 100,
+      offer: line.sellingPricePaise / 100,
+      image: line.image,
+    }));
 
     const order = new Order({
-      ...req.body,
       orderId,
+      customerName: String(req.body.customerName || "").trim(),
+      email: String(req.body.email || "").trim(),
+      mobile: String(req.body.mobile || "").trim(),
+      address: String(req.body.address || "").trim(),
+      addressLine2: String(req.body.addressLine2 || "").trim(),
+      city: String(req.body.city || "").trim(),
+      district: String(req.body.district || "").trim(),
+      pincode: String(req.body.pincode || "").trim(),
+      country: "India",
+      billingAddress: String(req.body.billingAddress || req.body.address || "").trim(),
+      shippingAddress: String(req.body.shippingAddress || req.body.address || "").trim(),
+      billingStateName: pricing.billingStateName,
+      billingStateCode: pricing.billingStateCode,
+      shippingStateName: pricing.shippingStateName,
+      shippingStateCode: pricing.shippingStateCode,
+      placeOfSupplyState: pricing.placeOfSupplyState,
+      placeOfSupplyStateCode: pricing.placeOfSupplyStateCode,
+      customerGstin,
+      customerRegistrationType: snapshot.customerRegistrationType,
+      customerLegalName: snapshot.customerLegalName,
+      customerTradeName: snapshot.customerTradeName,
+      items: orderItems,
+      totalAmount: pricing.finalPayablePaise / 100,
+      totalAmountPaise: pricing.finalPayablePaise,
+      gatewayOrderAmountPaise: pricing.finalPayablePaise,
+      currency: pricing.currency,
+      calculationVersion: pricing.calculationVersion,
+      pricingSnapshot: snapshot,
+      invoiceNumber: `SP/${getFinancialYear()}/${orderId}`,
+      invoiceDate: new Date(),
+      paymentMethod: req.body.paymentMethod,
+      paymentStatus: req.body.paymentStatus === "Awaiting Verification"
+        ? "Awaiting Verification"
+        : "Pending",
+      orderStatus: "Received",
       statusHistory: [
         {
-          status: req.body.orderStatus || "Received",
+          status: "Received",
           note: "Order received",
           date: new Date(),
         },
@@ -374,9 +467,10 @@ router.post("/create", async (req, res) => {
       `,
     });
 
-    res.status(200).json({
+    res.status(201).json({
       success: true,
       order,
+      quote: pricing,
       email: {
         customer: customerEmailSent,
         admin: adminEmailSent,
@@ -387,7 +481,7 @@ router.post("/create", async (req, res) => {
 
     console.log(error);
 
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: error.message,
     });
@@ -440,7 +534,7 @@ router.get("/track", async (req, res) => {
 
     res.json({ success: true, order });
   } catch (error) {
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: error.message,
     });
@@ -585,6 +679,7 @@ router.put("/admin/update/:id", async (req, res) => {
 
     if (req.body.paymentStatus === "Paid" && !oldOrder.paymentDate) {
       updateData.paymentDate = new Date();
+      updateData.paymentAmountPaise = oldOrder.gatewayOrderAmountPaise || oldOrder.totalAmountPaise;
     }
 
     const order = await Order.findByIdAndUpdate(

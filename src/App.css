@@ -2489,7 +2489,8 @@ nav a:hover,
 }
 
 .checkoutBox input,
-.checkoutBox textarea {
+.checkoutBox textarea,
+.checkoutBox select {
   width: 100%;
   padding: 14px;
   margin-bottom: 12px;
@@ -2500,9 +2501,30 @@ nav a:hover,
 }
 
 .checkoutBox input:focus,
-.checkoutBox textarea:focus {
+.checkoutBox textarea:focus,
+.checkoutBox select:focus {
   outline: 2px solid rgba(0, 128, 55, 0.16);
   border-color: var(--leaf);
+}
+
+.checkoutCheckRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  font-weight: 600;
+}
+
+.checkoutCheckRow input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.taxInclusiveText {
+  margin: -4px 0 14px;
+  color: #35634a;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .checkoutBox textarea {

@@ -1,20 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import businessConfig from "../shared/business.json";
 
 const API_URL = "https://satvapusti-website.onrender.com";
 const ADMIN_SESSION_MS = 30 * 60 * 1000;
-const SELLER_DETAILS = {
-  brand: "SatvaPusti Nutrition",
-  fboName: "Satvapusti Nutrition",
-  businessType: "General Manufacturing",
-  address:
-    "H No 59, Pendri, Pandri, Berla, Bemetara, Chhattisgarh - 491335",
-  phone: "+91 96396 30828",
-  email: "info@satvapusti.com",
-  website: "www.satvapusti.com",
-  fssai: "20526034000204",
-  upi: "9993265857@ybl",
-  gstStatus: "GST Unregistered",
-};
 
 const emptyProductForm = {
   productId: "",
@@ -27,9 +15,9 @@ const emptyProductForm = {
   sortOrder: 0,
   isActive: true,
   weights: {
-    "1KG": { mrp: "", offer: "", image: "" },
-    "500G": { mrp: "", offer: "", image: "" },
-    "250G": { mrp: "", offer: "", image: "" },
+    "1KG": { mrp: "", offer: "", image: "", gstRateBasisPoints: 500, taxInclusive: true, hsnCode: "1106", discountLabel: "", packSize: "1 Kg", sku: "" },
+    "500G": { mrp: "", offer: "", image: "", gstRateBasisPoints: 500, taxInclusive: true, hsnCode: "1106", discountLabel: "", packSize: "500G", sku: "" },
+    "250G": { mrp: "", offer: "", image: "", gstRateBasisPoints: 500, taxInclusive: true, hsnCode: "1106", discountLabel: "", packSize: "250G", sku: "" },
   },
 };
 
@@ -48,16 +36,34 @@ const productToForm = (product) => ({
       mrp: product.weights?.["1KG"]?.mrp || "",
       offer: product.weights?.["1KG"]?.offer || "",
       image: product.weights?.["1KG"]?.image || "",
+      gstRateBasisPoints: product.weights?.["1KG"]?.gstRateBasisPoints ?? 500,
+      taxInclusive: product.weights?.["1KG"]?.taxInclusive !== false,
+      hsnCode: product.weights?.["1KG"]?.hsnCode || "1106",
+      discountLabel: product.weights?.["1KG"]?.discountLabel || "",
+      packSize: product.weights?.["1KG"]?.packSize || "1 Kg",
+      sku: product.weights?.["1KG"]?.sku || "",
     },
     "500G": {
       mrp: product.weights?.["500G"]?.mrp || "",
       offer: product.weights?.["500G"]?.offer || "",
       image: product.weights?.["500G"]?.image || "",
+      gstRateBasisPoints: product.weights?.["500G"]?.gstRateBasisPoints ?? 500,
+      taxInclusive: product.weights?.["500G"]?.taxInclusive !== false,
+      hsnCode: product.weights?.["500G"]?.hsnCode || "1106",
+      discountLabel: product.weights?.["500G"]?.discountLabel || "",
+      packSize: product.weights?.["500G"]?.packSize || "500G",
+      sku: product.weights?.["500G"]?.sku || "",
     },
     "250G": {
       mrp: product.weights?.["250G"]?.mrp || "",
       offer: product.weights?.["250G"]?.offer || "",
       image: product.weights?.["250G"]?.image || "",
+      gstRateBasisPoints: product.weights?.["250G"]?.gstRateBasisPoints ?? 500,
+      taxInclusive: product.weights?.["250G"]?.taxInclusive !== false,
+      hsnCode: product.weights?.["250G"]?.hsnCode || "1106",
+      discountLabel: product.weights?.["250G"]?.discountLabel || "",
+      packSize: product.weights?.["250G"]?.packSize || "250G",
+      sku: product.weights?.["250G"]?.sku || "",
     },
   },
 });
@@ -634,7 +640,55 @@ ${order.mobile || ""}`;
     return `${words.join(" ")} Rupees Only`;
   };
 
+  const buildGstInvoiceHtml = (order) => {
+    const snapshot = order.pricingSnapshot;
+    const payment = getPaymentClassification(order);
+    const paise = (value) => `₹${(Number(value || 0) / 100).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+    const intraState = snapshot.supplyType === "INTRA_STATE";
+    const taxHeaders = intraState ? "<th>CGST</th><th>SGST</th>" : "<th>IGST</th>";
+    const rows = (snapshot.lines || []).map((line, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td><b>${escapeHtml(line.productName)}</b></td>
+        <td>${escapeHtml(line.hsnCode)}</td>
+        <td>${escapeHtml(line.packSize)}</td>
+        <td class="num">${line.quantity}</td>
+        <td>Unit</td>
+        <td class="num">${paise(line.mrpPaise)}</td>
+        <td class="num">${paise(line.productDiscountPaise + line.couponDiscountPaise)}</td>
+        <td class="num">${paise(line.sellingPricePaise)}</td>
+        <td class="num">${paise(line.taxableValuePaise)}</td>
+        <td class="num">${Number(line.gstRateBasisPoints || 0) / 100}%</td>
+        ${intraState
+          ? `<td class="num">${paise(line.cgstAmountPaise)}</td><td class="num">${paise(line.sgstAmountPaise)}</td>`
+          : `<td class="num">${paise(line.igstAmountPaise)}</td>`}
+        <td class="num">${paise(line.lineConsiderationPaise)}</td>
+      </tr>`).join("");
+    const sellerAddress = businessConfig.addressLines.map(escapeHtml).join(", ");
+    const billingAddress = order.billingAddress || order.address;
+    const shippingAddress = order.shippingAddress || `${order.address}, ${order.city} - ${order.pincode}`;
+    const taxTotals = intraState
+      ? `<div class="totalLine"><span>CGST @ 2.5%</span><b>${paise(snapshot.cgstAmountPaise)}</b></div>
+         <div class="totalLine"><span>SGST @ 2.5%</span><b>${paise(snapshot.sgstAmountPaise)}</b></div>`
+      : `<div class="totalLine"><span>IGST @ 5%</span><b>${paise(snapshot.igstAmountPaise)}</b></div>`;
+
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Tax Invoice - ${escapeHtml(order.orderId)}</title>
+      <style>
+        *{box-sizing:border-box}body{margin:0;background:#eee;color:#17211b;font:12px Arial,sans-serif}.page{width:297mm;min-height:210mm;margin:auto;padding:12mm;background:#fff}.top{display:flex;justify-content:space-between;border-bottom:2px solid #164c2b;padding-bottom:10px}.top h1{color:#164c2b;margin:0}.top h2{margin:0;text-align:right}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.box{border:1px solid #bbb;padding:9px}.box h3{margin:0 0 6px;color:#164c2b}p{margin:2px 0;line-height:1.45}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #bbb;padding:6px;vertical-align:top}th{background:#eaf6ee}.num{text-align:right;white-space:nowrap}.totals{display:grid;grid-template-columns:1fr 320px;gap:12px;margin-top:10px}.totalLine{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:5px}.grand{font-size:15px}.footer{display:flex;justify-content:space-between;margin-top:25px}.sign{border-top:1px solid #222;padding-top:7px;text-align:center;min-width:220px}.actions{position:sticky;top:0;background:#222;padding:8px;text-align:center}.actions button{padding:8px 14px;background:#159451;color:white;border:0;border-radius:5px}@media print{body{background:#fff}.actions{display:none}.page{margin:0;padding:0;width:auto}}
+      </style></head><body><div class="actions"><button onclick="window.print()">Print / Save PDF</button></div><main class="page">
+      <section class="top"><div><h1>${escapeHtml(businessConfig.tradeName)}</h1><p><b>Legal Name:</b> ${escapeHtml(businessConfig.legalName)}</p><p><b>GSTIN:</b> ${escapeHtml(businessConfig.gstin)}</p><p>${sellerAddress}</p><p><b>State:</b> ${escapeHtml(businessConfig.stateName)} | <b>State Code:</b> ${escapeHtml(businessConfig.stateCode)}</p></div><div><h2>TAX INVOICE</h2><p><b>Invoice No:</b> ${escapeHtml(order.invoiceNumber || buildBillNumber(order))}</p><p><b>Invoice Date:</b> ${escapeHtml(formatDate(order.invoiceDate || order.createdAt))}</p><p><b>Order No:</b> ${escapeHtml(order.orderId)}</p><p><b>Payment:</b> ${escapeHtml(payment.status)} | ${escapeHtml(payment.type)}</p></div></section>
+      <section class="grid"><div class="box"><h3>Billing Details</h3><p><b>${escapeHtml(order.customerLegalName || order.customerName)}</b></p><p>${escapeHtml(billingAddress)}</p><p><b>Billing State:</b> ${escapeHtml(snapshot.billingStateName)} (${escapeHtml(snapshot.billingStateCode)})</p>${order.customerGstin ? `<p><b>Customer GSTIN:</b> ${escapeHtml(order.customerGstin)}<br><b>Registration:</b> Registered (B2B)</p>` : `<p><b>Customer GSTIN:</b> Unregistered (B2C)</p>`}<p>Mobile: ${escapeHtml(order.mobile)} | Email: ${escapeHtml(order.email)}</p></div>
+      <div class="box"><h3>Shipping Details</h3><p><b>${escapeHtml(order.customerName)}</b></p><p>${escapeHtml(shippingAddress)}</p><p><b>Shipping State:</b> ${escapeHtml(snapshot.shippingStateName)} (${escapeHtml(snapshot.shippingStateCode)})</p><p><b>Place of Supply:</b> ${escapeHtml(snapshot.placeOfSupplyState)} (${escapeHtml(snapshot.placeOfSupplyStateCode)})</p><p><b>Supply Type:</b> ${intraState ? "Intra-State" : "Inter-State"}</p></div></section>
+      <table><thead><tr><th>#</th><th>Description</th><th>HSN</th><th>Pack</th><th>Qty</th><th>Unit</th><th>MRP</th><th>Discount</th><th>GST-inclusive price</th><th>Taxable value</th><th>GST rate</th>${taxHeaders}<th>Line total</th></tr></thead><tbody>${rows}</tbody></table>
+      <section class="totals"><div class="box"><h3>Amount in Words</h3><p>${escapeHtml(numberToIndianWords(snapshot.finalPayablePaise / 100))}</p><p>Prices are inclusive of GST. Tax shown is extracted and is not added again.</p></div><div class="box"><div class="totalLine"><span>Taxable value</span><b>${paise(snapshot.taxableValuePaise)}</b></div>${taxTotals}<div class="totalLine"><span>Shipping</span><b>${paise(snapshot.shippingPaise)}</b></div><div class="totalLine"><span>Round-off</span><b>₹0.00</b></div><div class="totalLine grand"><span>Grand total</span><b>${paise(snapshot.finalPayablePaise)}</b></div></div></section>
+      <section class="footer"><p>This is a computer-generated tax invoice.</p><div class="sign">Authorized Signatory<br>${escapeHtml(businessConfig.tradeName)}</div></section></main></body></html>`;
+  };
+
   const buildInvoiceHtml = (order) => {
+    if (order.pricingSnapshot) return buildGstInvoiceHtml(order);
     const payment = getPaymentClassification(order);
     const items = Array.isArray(order.items) && order.items.length > 0
       ? order.items
@@ -702,14 +756,13 @@ ${order.mobile || ""}`;
   <main class="page">
     <section class="top">
       <div>
-        <h1>${escapeHtml(SELLER_DETAILS.brand)}</h1>
+        <h1>${escapeHtml(businessConfig.tradeName)}</h1>
         <p class="muted">
-          FBO Name: ${escapeHtml(SELLER_DETAILS.fboName)}<br>
-          Business Type: ${escapeHtml(SELLER_DETAILS.businessType)}<br>
-          ${escapeHtml(SELLER_DETAILS.address)}<br>
-          Phone: ${escapeHtml(SELLER_DETAILS.phone)} | Email: ${escapeHtml(SELLER_DETAILS.email)}<br>
-          Website: ${escapeHtml(SELLER_DETAILS.website)} | UPI: ${escapeHtml(SELLER_DETAILS.upi)}<br>
-          FSSAI Registration No: ${escapeHtml(SELLER_DETAILS.fssai)} | ${escapeHtml(SELLER_DETAILS.gstStatus)}
+          FBO Name: ${escapeHtml(businessConfig.tradeName)}<br>
+          ${escapeHtml(businessConfig.addressLines.join(", "))}<br>
+          Phone: ${escapeHtml(businessConfig.phone)} | Email: ${escapeHtml(businessConfig.email)}<br>
+          Website: ${escapeHtml(businessConfig.website)} | UPI: ${escapeHtml(businessConfig.upi)}<br>
+          FSSAI Registration No: ${escapeHtml(businessConfig.fssai)}
         </p>
       </div>
       <div>
@@ -787,7 +840,7 @@ ${order.mobile || ""}`;
 
     <section class="footer">
       <p class="muted">This is a computer generated bill.</p>
-      <div class="sign">Authorized Signatory<br>${escapeHtml(SELLER_DETAILS.brand)}</div>
+      <div class="sign">Authorized Signatory<br>${escapeHtml(businessConfig.tradeName)}</div>
     </section>
   </main>
 </body>
@@ -853,10 +906,10 @@ ${order.mobile || ""}`;
   <main class="page">
     <section class="top">
       <div>
-        <h1>${escapeHtml(SELLER_DETAILS.brand)}</h1>
+        <h1>${escapeHtml(businessConfig.tradeName)}</h1>
         <p class="muted">
-          Phone: ${escapeHtml(SELLER_DETAILS.phone)} | ${escapeHtml(SELLER_DETAILS.website)}<br>
-          FSSAI Registration No: ${escapeHtml(SELLER_DETAILS.fssai)}
+          Phone: ${escapeHtml(businessConfig.phone)} | ${escapeHtml(businessConfig.website)}<br>
+          FSSAI Registration No: ${escapeHtml(businessConfig.fssai)}
         </p>
       </div>
       <div>
@@ -1222,6 +1275,18 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
       return;
     }
 
+    for (const weight of ["1KG", "500G", "250G"]) {
+      const variant = productForm.weights[weight];
+      if (Number(variant.mrp) < 0 || Number(variant.offer) < 0 || Number(variant.offer) > Number(variant.mrp)) {
+        alert(`${weight}: selling price must be non-negative and cannot exceed MRP`);
+        return;
+      }
+      if (Number(variant.gstRateBasisPoints) < 0 || (variant.taxInclusive && !variant.hsnCode.trim())) {
+        alert(`${weight}: enter a valid GST rate and HSN code`);
+        return;
+      }
+    }
+
     try {
       setSavingProduct(true);
       const payload = {
@@ -1236,6 +1301,12 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
               mrp: Number(productForm.weights[weight].mrp || 0),
               offer: Number(productForm.weights[weight].offer || 0),
               image: productForm.weights[weight].image || "",
+              gstRateBasisPoints: Number(productForm.weights[weight].gstRateBasisPoints || 0),
+              taxInclusive: productForm.weights[weight].taxInclusive,
+              hsnCode: productForm.weights[weight].hsnCode,
+              discountLabel: productForm.weights[weight].discountLabel,
+              packSize: productForm.weights[weight].packSize,
+              sku: productForm.weights[weight].sku,
             },
           ])
         ),
@@ -1512,6 +1583,47 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
                       placeholder="Offer price"
                       value={productForm.weights[weight].offer}
                       onChange={(e) => updateProductWeight(weight, "offer", e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="GST rate %"
+                      value={Number(productForm.weights[weight].gstRateBasisPoints || 0) / 100}
+                      onChange={(e) => updateProductWeight(weight, "gstRateBasisPoints", Math.round(Number(e.target.value || 0) * 100))}
+                      style={inputStyle}
+                    />
+                    <label style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={productForm.weights[weight].taxInclusive}
+                        onChange={(e) => updateProductWeight(weight, "taxInclusive", e.target.checked)}
+                      />
+                      GST inclusive (GST is not added at checkout)
+                    </label>
+                    <input
+                      placeholder="HSN code"
+                      value={productForm.weights[weight].hsnCode}
+                      onChange={(e) => updateProductWeight(weight, "hsnCode", e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      placeholder="Discount label"
+                      value={productForm.weights[weight].discountLabel}
+                      onChange={(e) => updateProductWeight(weight, "discountLabel", e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      placeholder="Pack size"
+                      value={productForm.weights[weight].packSize}
+                      onChange={(e) => updateProductWeight(weight, "packSize", e.target.value)}
+                      style={inputStyle}
+                    />
+                    <input
+                      placeholder="SKU"
+                      value={productForm.weights[weight].sku}
+                      onChange={(e) => updateProductWeight(weight, "sku", e.target.value)}
                       style={inputStyle}
                     />
                     <input
@@ -2158,6 +2270,21 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
                         style={inputStyle}
                       />
                     </div>
+                    {order.pricingSnapshot && (
+                      <div className="adminDetailPanel">
+                        <h4>GST Pricing Snapshot</h4>
+                        <p><b>Place of Supply:</b> {order.pricingSnapshot.placeOfSupplyState} ({order.pricingSnapshot.placeOfSupplyStateCode})</p>
+                        <p><b>Supply Type:</b> {order.pricingSnapshot.supplyType}</p>
+                        <p><b>Taxable Value:</b> ₹{(order.pricingSnapshot.taxableValuePaise / 100).toFixed(2)}</p>
+                        {order.pricingSnapshot.supplyType === "INTRA_STATE" ? (
+                          <p><b>CGST:</b> ₹{(order.pricingSnapshot.cgstAmountPaise / 100).toFixed(2)} | <b>SGST:</b> ₹{(order.pricingSnapshot.sgstAmountPaise / 100).toFixed(2)}</p>
+                        ) : (
+                          <p><b>IGST:</b> ₹{(order.pricingSnapshot.igstAmountPaise / 100).toFixed(2)}</p>
+                        )}
+                        <p><b>Gateway amount:</b> ₹{(Number(order.gatewayOrderAmountPaise || 0) / 100).toFixed(2)}</p>
+                        <p><b>Calculation:</b> {order.calculationVersion}</p>
+                      </div>
+                    )}
                   </div>
 
                   <textarea
