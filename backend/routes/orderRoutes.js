@@ -6,7 +6,7 @@ const Order = require("../models/Order");
 const Inventory = require("../models/Inventory");
 const Counter = require("../models/Counter");
 const { calculateOrder, validateGstin } = require("../services/pricingService");
-const { createRateLimiter, requireAdmin } = require("../middleware/security");
+const { createRateLimiter, requireAdmin, safePasswordEqual } = require("../middleware/security");
 
 const createOrderLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
@@ -350,6 +350,17 @@ const reduceInventoryForOrder = async (order) => {
   }
 
   order.inventoryDeducted = true;
+};
+
+const restoreInventoryForOrder = async (order) => {
+  for (const item of order.items || []) {
+    const quantity = Number(item.quantity || 0);
+    if (!item.productId || !item.weight || quantity <= 0) continue;
+    await Inventory.findOneAndUpdate(
+      { productId: item.productId, weight: item.weight },
+      { $inc: { stock: quantity } }
+    );
+  }
 };
 
 const assertInventoryAvailable = async (order) => {
@@ -790,6 +801,11 @@ router.put("/admin/update/:id", requireAdmin, async (req, res) => {
       await oldOrder.save();
     }
 
+    if (oldOrder.inventoryDeducted && updateData.orderStatus === "Cancelled") {
+      await restoreInventoryForOrder(oldOrder);
+      updateData.inventoryDeducted = false;
+    }
+
     const order = await Order.findByIdAndUpdate(
       req.params.id,
       updateData,
@@ -877,7 +893,7 @@ router.post("/admin/test-email", requireAdmin, async (req, res) => {
   try {
     const { password, to } = req.body;
 
-    if (password !== process.env.ADMIN_PASSWORD) {
+    if (!safePasswordEqual(password, process.env.ADMIN_PASSWORD)) {
       return res.status(401).json({
         success: false,
         message: "Invalid admin password",

@@ -979,12 +979,7 @@ console.log("Order ID:", orderId);
       city: address.city,
       district: address.district,
       pincode: address.pincode,
-      shippingAddress: [
-        address.fullAddress,
-        address.addressLine2,
-        address.district,
-        `${address.city} - ${address.pincode}`,
-      ].filter(Boolean).join(", "),
+      shippingAddress: address.fullAddress,
       billingAddress: address.billingSameAsShipping
         ? `${address.fullAddress}, ${address.city} - ${address.pincode}`
         : `${address.billingAddress}, ${address.billingCity} - ${address.billingPincode}`,
@@ -1839,8 +1834,10 @@ console.log("Order ID:", orderId);
 
                 <input
                   placeholder="Mobile Number"
+                  inputMode="numeric"
+                  maxLength={10}
                   value={address.mobile}
-                  onChange={(e) => setAddress({ ...address, mobile: e.target.value })}
+                  onChange={(e) => setAddress({ ...address, mobile: e.target.value.replace(/\D/g, "").slice(0, 10) })}
                 />
 
                 <textarea

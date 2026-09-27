@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /admin-login
+Disallow: /*?page=admin
 
 Sitemap: https://www.satvapusti.com/sitemap.xml
