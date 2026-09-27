@@ -7,6 +7,7 @@ const Inventory = require("../models/Inventory");
 const Counter = require("../models/Counter");
 const { calculateOrder, validateGstin } = require("../services/pricingService");
 const { createRateLimiter, requireAdmin, safePasswordEqual } = require("../middleware/security");
+const { computeOrderSignature, ORDER_RETRY_WINDOW_MS } = require("../services/idempotency");
 
 const createOrderLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
@@ -438,6 +439,27 @@ router.post("/create", createOrderLimiter, async (req, res) => {
     if (!/^\d{6}$/.test(String(req.body.pincode || ""))) {
       return res.status(400).json({ success: false, message: "PIN code must be six digits" });
     }
+
+    const requestSignature = computeOrderSignature({
+      mobile,
+      pincode: req.body.pincode,
+      paymentMethod,
+      items: req.body.items,
+    });
+    const duplicateOrder = await Order.findOne({
+      requestSignature,
+      createdAt: { $gte: new Date(Date.now() - ORDER_RETRY_WINDOW_MS) },
+    });
+    if (duplicateOrder) {
+      return res.status(200).json({
+        success: true,
+        order: duplicateOrder,
+        quote: duplicateOrder.pricingSnapshot,
+        replay: true,
+        email: {},
+      });
+    }
+
     const pricing = await calculateOrder({
       items: req.body.items,
       shippingStateCode,
@@ -517,6 +539,7 @@ router.post("/create", createOrderLimiter, async (req, res) => {
       pricingSnapshot: snapshot,
       invoiceNumber: `SP/${getFinancialYear()}/${orderId}`,
       invoiceDate: new Date(),
+      requestSignature,
       paymentMethod,
       paymentStatus: req.body.paymentStatus === "Awaiting Verification"
         ? "Awaiting Verification"

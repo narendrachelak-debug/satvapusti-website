@@ -86,6 +86,7 @@ const orderSchema = new mongoose.Schema(
     trackingUrl: { type: String, default: "" },
     customerTrackingMessage: { type: String, default: "" },
     inventoryDeducted: { type: Boolean, default: false },
+    requestSignature: { type: String, default: "", index: true },
     statusHistory: [
       {
         status: String,

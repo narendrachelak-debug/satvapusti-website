@@ -210,7 +210,8 @@ app.get("/api/inventory", async (req, res) => {
     const inventory = await Inventory.find();
     res.json(inventory);
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.log("Inventory list error:", error.message);
+    res.status(500).json({ success: false, message: "Something went wrong. Please try again." });
   }
 });
 
@@ -223,7 +224,8 @@ app.get("/api/inventory/:productId/:weight", async (req, res) => {
     });
     res.json(item || { stock: 0 });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.log("Inventory lookup error:", error.message);
+    res.status(500).json({ success: false, message: "Something went wrong. Please try again." });
   }
 });
 
@@ -249,7 +251,8 @@ app.put("/api/inventory/:productId/:weight", requireAdmin, async (req, res) => {
     
     res.json({ success: true, item });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.log("Inventory update error:", error.message);
+    res.status(500).json({ success: false, message: "Something went wrong. Please try again." });
   }
 });
 
@@ -286,7 +289,8 @@ app.post("/api/inventory/reduce/:orderId", requireAdmin, async (req, res) => {
     
     res.json({ success: true, message: "Inventory reduced" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.log("Inventory reduce error:", error.message);
+    res.status(500).json({ success: false, message: "Something went wrong. Please try again." });
   }
 });
 app.get("/api/gst-states", (req, res) => {
@@ -428,7 +432,8 @@ app.get("/api/products", async (req, res) => {
     res.set("Cache-Control", "no-store");
     res.json({ success: true, products: products.map(serializeProduct) });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.log("Product list error:", error.message);
+    res.status(500).json({ success: false, message: "Something went wrong. Please try again." });
   }
 });
 
