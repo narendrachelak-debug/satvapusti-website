@@ -8,6 +8,7 @@ const Counter = require("../models/Counter");
 const { calculateOrder, validateGstin } = require("../services/pricingService");
 const { createRateLimiter, requireAdmin, safePasswordEqual } = require("../middleware/security");
 const { computeOrderSignature, ORDER_RETRY_WINDOW_MS } = require("../services/idempotency");
+const { deductInventoryOnce, restoreInventoryOnce } = require("../services/inventoryConcurrency");
 
 const createOrderLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
@@ -325,43 +326,6 @@ const buildOrderQuery = (query) => {
   if (query.paymentStatus) filter.paymentStatus = query.paymentStatus;
 
   return filter;
-};
-
-const reduceInventoryForOrder = async (order) => {
-  if (order.inventoryDeducted) return;
-  const deducted = [];
-  for (const item of order.items || []) {
-    const quantity = Number(item.quantity || 0);
-    if (!item.productId || !item.weight || quantity <= 0) continue;
-    const inventoryItem = await Inventory.findOneAndUpdate(
-      { productId: item.productId, weight: item.weight, stock: { $gte: quantity } },
-      { $inc: { stock: -quantity } },
-      { new: true }
-    );
-    if (!inventoryItem) {
-      for (const previous of deducted) {
-        await Inventory.findOneAndUpdate(
-          { productId: previous.productId, weight: previous.weight },
-          { $inc: { stock: previous.quantity } }
-        );
-      }
-      throw new Error(`${item.name || item.productId} ${item.weight} is out of stock`);
-    }
-    deducted.push({ productId: item.productId, weight: item.weight, quantity });
-  }
-
-  order.inventoryDeducted = true;
-};
-
-const restoreInventoryForOrder = async (order) => {
-  for (const item of order.items || []) {
-    const quantity = Number(item.quantity || 0);
-    if (!item.productId || !item.weight || quantity <= 0) continue;
-    await Inventory.findOneAndUpdate(
-      { productId: item.productId, weight: item.weight },
-      { $inc: { stock: quantity } }
-    );
-  }
 };
 
 const assertInventoryAvailable = async (order) => {
@@ -817,16 +781,12 @@ router.put("/admin/update/:id", requireAdmin, async (req, res) => {
     }
 
     const confirmedStatuses = new Set(["Processing", "Packed", "Shipped", "Delivered"]);
-    if (!oldOrder.inventoryDeducted && (
-      updateData.paymentStatus === "Paid" || confirmedStatuses.has(updateData.orderStatus)
-    )) {
-      await reduceInventoryForOrder(oldOrder);
-      await oldOrder.save();
+    if (updateData.paymentStatus === "Paid" || confirmedStatuses.has(updateData.orderStatus)) {
+      await deductInventoryOnce(oldOrder._id, oldOrder.items);
     }
 
-    if (oldOrder.inventoryDeducted && updateData.orderStatus === "Cancelled") {
-      await restoreInventoryForOrder(oldOrder);
-      updateData.inventoryDeducted = false;
+    if (updateData.orderStatus === "Cancelled") {
+      await restoreInventoryOnce(oldOrder._id, oldOrder.items);
     }
 
     const order = await Order.findByIdAndUpdate(
