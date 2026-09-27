@@ -1305,6 +1305,26 @@ nav a:hover,
   gap: 10px;
 }
 
+.premiumSafetyInfo {
+  display: grid;
+  gap: 8px;
+}
+
+.premiumSafetyInfo p {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfff6;
+  margin: 0;
+}
+
+.safetyInfoPending {
+  color: #7a5a00;
+  background: #fff8e6 !important;
+  border-color: #ead9a8 !important;
+  font-size: 13px;
+}
+
 .nutritionFactCard {
   --nutrition-accent: var(--leaf);
   --nutrition-soft: #f3fbf5;
@@ -3273,6 +3293,17 @@ nav a:hover,
 .termsBox input {
   width: auto !important;
   margin-top: 3px;
+}
+
+.policyInlineLink {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: #0f6f45;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .policyLinks {

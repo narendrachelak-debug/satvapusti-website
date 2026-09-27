@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
+import businessConfig from "../shared/business.json";
 
 const phone = "919639630828";
 const upiId = "9993265857@ybl";
 const API_URL = "https://satvapusti-website.onrender.com";
 
 const banners = [
-  "/banners/wide/banner-family-wide.png",
-  "/banners/wide/banner-active-kids-wide.png",
-  "/banners/wide/banner-active-wide.png",
+  "/banners/wide/banner-family-wide.webp",
+  "/banners/wide/banner-active-kids-wide.webp",
+  "/banners/wide/banner-active-wide.webp",
 ];
 
 const navItems = [
@@ -75,9 +76,9 @@ const defaultProducts = [
       ["Cholesterol", "Below quantification limit"],
     ],
     images: {
-      "1KG": "/products/family-1kg.png",
-      "500G": "/products/family-500g.png",
-      "250G": "/products/family-250g.png",
+      "1KG": "/products/family-1kg.webp",
+      "500G": "/products/family-500g.webp",
+      "250G": "/products/family-250g.webp",
     },
     prices: {
       "1KG": {
@@ -146,9 +147,9 @@ const defaultProducts = [
       ["Trans Fat", "Not detected"],
     ],
     images: {
-      "1KG": "/products/active-kids-1kg.png",
-      "500G": "/products/active-kids-500g.png",
-      "250G": "/products/active-kids-250g.png",
+      "1KG": "/products/active-kids-1kg.webp",
+      "500G": "/products/active-kids-500g.webp",
+      "250G": "/products/active-kids-250g.webp",
     },
     prices: {
       "1KG": { mrp: 2099, offer: 1999 },
@@ -214,9 +215,9 @@ const defaultProducts = [
       ["Trans Fat", "Not detected"],
     ],
     images: {
-      "1KG": "/products/active-1kg.png",
-      "500G": "/products/active-500g.png",
-      "250G": "/products/active-250g.png",
+      "1KG": "/products/active-1kg.webp",
+      "500G": "/products/active-500g.webp",
+      "250G": "/products/active-250g.webp",
     },
     prices: {
       "1KG": { mrp: 2299, offer: 2099 },
@@ -231,22 +232,22 @@ const defaultProductById = Object.fromEntries(
 );
 
 const ingredients = [
-  ["roasted-chana.png", "Roasted Chana"],
-  ["peanut.png", "Peanut"],
-  ["almond.png", "Almond"],
-  ["cashew.png", "Cashew"],
-  ["walnut.png", "Walnut"],
-  ["makhana.png", "Makhana"],
-  ["pumpkin-seed.png", "Pumpkin Seed"],
-  ["watermelon-seed.png", "Watermelon Seed"],
-  ["banana-power.png", "Banana Powder"],
-  ["dhaga-mishri.png", "Dhaga Mishri"],
-  ["saunf.png", "Saunf"],
-  ["elaichi.png", "Elaichi"],
-  ["cocoa-powder.png", "Cocoa Powder"],
-  ["date-powder.png", "Date Powder"],
-  ["soy-protein.png", "Soy Protein"],
-  ["ragi.png", "Ragi"],
+  ["roasted-chana.webp", "Roasted Chana"],
+  ["peanut.webp", "Peanut"],
+  ["almond.webp", "Almond"],
+  ["cashew.webp", "Cashew"],
+  ["walnut.webp", "Walnut"],
+  ["makhana.webp", "Makhana"],
+  ["pumpkin-seed.webp", "Pumpkin Seed"],
+  ["watermelon-seed.webp", "Watermelon Seed"],
+  ["banana-power.webp", "Banana Powder"],
+  ["dhaga-mishri.webp", "Dhaga Mishri"],
+  ["saunf.webp", "Saunf"],
+  ["elaichi.webp", "Elaichi"],
+  ["cocoa-powder.webp", "Cocoa Powder"],
+  ["date-powder.webp", "Date Powder"],
+  ["soy-protein.webp", "Soy Protein"],
+  ["ragi.webp", "Ragi"],
 ];
 
 export default function App() {
@@ -271,7 +272,15 @@ export default function App() {
   const [showHomeMenu, setShowHomeMenu] = useState(false);
   const [activeSection, setActiveSection] = useState("top");
   const [activeProductTabs, setActiveProductTabs] = useState({});
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [policyModalSection, setPolicyModalSection] = useState("terms");
+  const [checkoutTermsAccepted, setCheckoutTermsAccepted] = useState(false);
   const paymentModeRef = useRef("");
+
+  const openPolicy = (section) => {
+    setPolicyModalSection(section);
+    setShowPolicyModal(true);
+  };
 
   const [profile, setProfile] = useState(
     savedProfile || {
@@ -654,6 +663,7 @@ export default function App() {
     setShowCart(false);
     setShowCheckout(true);
     setOrderSuccess(false);
+    setCheckoutTermsAccepted(false);
     selectPaymentMode("");
 
     setAddress({
@@ -670,248 +680,6 @@ export default function App() {
     setShowCheckout(false);
     selectPaymentMode("");
     setOrderSuccess(false);
-  };
-
-  const submitOrderOld = async () => {
-    if (
-      !address.name ||
-      !address.email ||
-      !address.mobile ||
-      !address.fullAddress ||
-      !address.city ||
-      !address.pincode
-    ) {
-      alert("Please complete full shipping address.");
-      return;
-    }
-
-    if (!paymentMode) {
-      alert("Please select COD or UPI payment.");
-      return;
-    }
-
-    const shipping =
-      paymentMode === "UPI" ? "Free Shipping" : "Shipping charges as applicable";
-
-    let orderId = `SP${Date.now()}`;
-
-    const order = {
-      id: orderId,
-      items: cart,
-      total: cartTotal,
-      saving: cartSaving,
-      paymentMode,
-      shipping,
-      customer: { ...address },
-      status: "Order Created Successfully",
-
-orderStatus: "Received",
-
-paymentStatus: paymentMode === "UPI" ? "Awaiting Verification" : "Pending",
-      createdAt: new Date().toLocaleString(),
-    };
-
-    const itemsMessage = cart
-      .map(
-        (item, index) =>
-          `${index + 1}) ${item.name}%0A` +
-          `Pack: ${item.weight}%0A` +
-          `Qty: ${item.quantity}%0A` +
-          `Price: â‚¹${item.offer}%0A` +
-          `Amount: â‚¹${item.offer * item.quantity}%0A`
-      )
-      .join("%0A");
-
-    const message =
-      `New SatvaPusti Order%0A%0A` +
-      `Order ID: ${orderId}%0A%0A` +
-      `${itemsMessage}%0A` +
-      `----------------------%0A` +
-      `Total Amount: â‚¹${cartTotal}%0A` +
-      `You Save: â‚¹${cartSaving}%0A` +
-      `Payment Method: ${paymentMode}%0A` +
-      `Payment Status: ${order.paymentStatus}%0A` +
-      `Order Status: ${order.orderStatus}%0A` +
-      `UPI Note: ${orderId}|${cartTotal}%0A` +
-      `Shipping: ${shipping}%0A%0A` +
-      `Customer Name: ${address.name}%0A` +
-      `Email: ${address.email}%0A` +
-      `Mobile: ${address.mobile}%0A` +
-      `Address: ${address.fullAddress}%0A` +
-      `City: ${address.city}%0A` +
-      `Pincode: ${address.pincode}%0A%0A` +
-      `Please confirm this order.`;
-
-    order.whatsappMessage = message;
-
-    const initialOrders = [order, ...myOrders];
-    setLastOrder(order);
-    setMyOrders(initialOrders);
-    setOrderSuccess(true);
-    localStorage.setItem("satvapustiOrders", JSON.stringify(initialOrders));
-
-    if (paymentMode === "COD") {
-      const whatsappLink = `https://wa.me/${phone}?text=${message}`;
-      setTimeout(() => {
-        window.location.href = whatsappLink;
-      }, 300);
-    }
-
-    if (paymentMode === "UPI") {
-      const upiLink = makeUpiLink(orderId, cartTotal);
-      setTimeout(() => {
-        window.location.href = upiLink;
-      }, 300);
-    }
-
-    try {
-      const res = await fetch(`${API_URL}/api/orders/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderId,
-          customerName: address.name,
-          email: address.email,
-          mobile: address.mobile,
-          address: address.fullAddress,
-          city: address.city,
-          pincode: address.pincode,
-          items: cart,
-          totalAmount: cartTotal,
-          saving: cartSaving,
-          paymentMethod: paymentMode,
-          shipping,
-          orderStatus: order.orderStatus,
-          paymentStatus: order.paymentStatus,
-        }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      console.log("Order response:", data);
-      console.log("STEP 2 response received", data);
-
-      const findSavedOrder = async () => {
-        try {
-          const customerRes = await fetch(
-            `${API_URL}/api/orders/customer/${encodeURIComponent(address.mobile)}`
-          );
-          const customerOrders = await customerRes.json();
-
-          if (!Array.isArray(customerOrders)) return null;
-
-          return customerOrders.find(
-            (saved) =>
-              Number(saved.totalAmount) === Number(cartTotal) &&
-              saved.paymentMethod === paymentMode &&
-              saved.mobile === address.mobile
-          );
-        } catch (error) {
-          console.log("Saved order recovery error:", error);
-          return null;
-        }
-      };
-
-      // Treat order as successful if res.ok OR data.success OR data.order exists
-      const isSuccess =
-  res.ok ||
-  data?.success === true ||
-  !!data?.order ||
-  !!data?.savedOrder ||
-  !!data?.data;
-      let recoveredOrder = null;
-
-      if (!isSuccess) {
-        recoveredOrder = await findSavedOrder();
-
-        if (!recoveredOrder) {
-          alert(data?.message || "Order could not be placed.");
-          return;
-        }
-      }
-
-      // Extract actual order ID from response
-      const savedOrder =
-        data?.order || data?.savedOrder || data?.newOrder || data?.data || recoveredOrder;
-      const savedOrderId =
-        savedOrder?.orderId ||
-        savedOrder?.id ||
-        data?.orderId ||
-        data?.id;
-
-      if (savedOrderId) {
-        order.id = savedOrderId;
-        orderId = savedOrderId;
-      }
-    } catch (error) {
-      console.log("Backend order save error:", error);
-    }
-
-    const legacyItemsMessage = cart
-      .map(
-        (item, index) =>
-          `${index + 1}) ${item.name}%0A` +
-          `Pack: ${item.weight}%0A` +
-          `Qty: ${item.quantity}%0A` +
-          `Price: ₹${item.offer}%0A` +
-          `Amount: ₹${item.offer * item.quantity}%0A`
-      )
-      .join("%0A");
-
-    const legacyMessage =
-      `🛒 New SatvaPusti Order%0A%0A` +
-      `Order ID: ${orderId}%0A%0A` +
-      `${itemsMessage}%0A` +
-      `----------------------%0A` +
-      `Total Amount: ₹${cartTotal}%0A` +
-      `You Save: ₹${cartSaving}%0A` +
-      `Total Amount: ₹${cartTotal}%0A` +
-`You Save: ₹${cartSaving}%0A` +
-`Payment Method: ${paymentMode}%0A` +
-`Payment Status: ${order.paymentStatus}%0A` +
-`Order Status: ${order.orderStatus}%0A` +
-`UPI Note: ${orderId}|${cartTotal}%0A` +
-`Shipping: ${shipping}%0A%0A` +
-`Customer Name: ${address.name}%0A` +
-      `Email: ${address.email}%0A` +
-      `Mobile: ${address.mobile}%0A` +
-      `Address: ${address.fullAddress}%0A` +
-      `City: ${address.city}%0A` +
-      `Pincode: ${address.pincode}%0A%0A` +
-      `Please confirm this order.`;
-
-    order.whatsappMessage = message;
-
-    const updatedOrders = [order, ...myOrders];
-    setMyOrders(updatedOrders);
-    localStorage.setItem("satvapustiOrders", JSON.stringify(updatedOrders));
-
-    // Set state to show success modal - DO NOT redirect page
-    console.log("STEP 3 before success state", order);
-
-setLastOrder(order);
-setOrderSuccess(true);
-
-if (false && paymentMode === "COD") {
-  const whatsappLink = `https://wa.me/${phone}?text=${message}`;
-
-  setTimeout(() => {
-    window.open(
-      whatsappLink,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  }, 500);
-}
-
-if (paymentMode === "UPI") {
-  console.log("UPI order ready. Customer can pay from success screen.");
-}
-
-console.log("STEP 4 after success state");
-console.log("Order Success");
-console.log("Order ID:", orderId);
   };
 
   const submitOrder = async () => {
@@ -961,6 +729,11 @@ console.log("Order ID:", orderId);
 
     if (!selectedPaymentMode) {
       alert("Please select COD or UPI payment.");
+      return;
+    }
+
+    if (!checkoutTermsAccepted) {
+      alert("Please accept the Terms & Conditions, Privacy Policy and Refund/Cancellation Policy to place your order.");
       return;
     }
 
@@ -1061,12 +834,80 @@ console.log("Order ID:", orderId);
     setLastOrder(null);
   };
 
+  const policyContent = (
+    <div className="policyLinks legalPolicyBox">
+      <h3>Legal Agreement</h3>
+
+      <p>
+        SatvaPusti Nutrition is registered under FSSAI Registration No.
+        <b> 20526034000204</b>, issued under the Food Safety and Standards Act, 2006.
+      </p>
+
+      <details open={policyModalSection === "terms"}>
+        <summary>Terms & Conditions</summary>
+        <p>
+          SatvaPusti Nutrition provides food and nutrition products through this
+          website. Product prices, offers, availability, packaging, and delivery
+          timelines may change without prior notice. Orders are accepted only after
+          confirmation by SatvaPusti Nutrition. Customers must provide correct name,
+          mobile number, email address, and shipping address. Any misuse of the
+          website, false order, fake information, or fraudulent activity may result
+          in order cancellation.
+        </p>
+      </details>
+
+      <details open={policyModalSection === "privacy"}>
+        <summary>Privacy Policy</summary>
+        <p>
+          We collect customer name, mobile number, email address, shipping address,
+          order details, and payment mode only for order processing, delivery,
+          customer support, and communication. We do not sell customer personal data.
+          Customer information may be shared only with delivery partners, payment
+          service providers, or legal authorities when required by law.
+        </p>
+      </details>
+
+      <details open={policyModalSection === "shipping"}>
+        <summary>Shipping Policy</summary>
+        <p>
+          SatvaPusti Nutrition's detailed shipping policy (delivery timelines,
+          serviceable areas, and courier partners) is being finalized and will be
+          published here once confirmed. For any delivery question about an order,
+          please contact us on WhatsApp.
+        </p>
+      </details>
+
+      <details open={policyModalSection === "disclaimer"}>
+        <summary>Product Disclaimer</summary>
+        <p>
+          SatvaPusti products are food and nutrition products, not medicines. They
+          are not intended to diagnose, treat, cure, or prevent any disease. Results
+          may vary from person to person. Pregnant women, nursing mothers, children,
+          elderly persons, and people with medical conditions should consult a doctor
+          before use. Please read ingredients carefully before consumption.
+        </p>
+      </details>
+
+      <details open={policyModalSection === "refund"}>
+        <summary>Return &amp; Refund Policy</summary>
+        <p>
+          Due to food safety reasons, opened or used products are not returnable.
+          Return or replacement may be accepted only if the customer receives a
+          damaged product, wrong product, expired product, or manufacturing defect.
+          The customer must report the issue within 48 hours of delivery with clear
+          photo or video proof. Refund approval is subject to verification by
+          SatvaPusti Nutrition.
+        </p>
+      </details>
+    </div>
+  );
+
   return (
     <div className="siteShell">
       <header className="site-header" id="top">
         <div className="main-header">
           <img
-            src="/banners/logo-banner.png"
+            src="/banners/logo-banner.webp"
             alt="Satvapusti Branding"
             className="brand-ribbon"
           />
@@ -1231,6 +1072,7 @@ console.log("Order ID:", orderId);
               ["ingredients", "Ingredients"],
               ["howToUse", "How To Use"],
               ["nutrition", "Nutrition Facts"],
+              ["safetyInfo", "Product & Safety Info"],
             ];
             const premiumBenefits = product.benefits?.length
               ? product.benefits
@@ -1427,6 +1269,39 @@ console.log("Order ID:", orderId);
                         ))}
                       </div>
                     )}
+                    {activeTab === "safetyInfo" && (
+                      <div className="premiumSafetyInfo">
+                        <p><b>Net Quantity:</b> {priceMeta.packSize}</p>
+                        <p><b>FSSAI Registration No:</b> 20526034000204</p>
+                        <p><b>HSN Code:</b> {priceMeta.hsnCode}</p>
+                        {product.compliance?.vegetarian !== undefined && (
+                          <p><b>Vegetarian:</b> {product.compliance.vegetarian ? "Yes" : "No"}</p>
+                        )}
+                        {product.compliance?.allergens && (
+                          <p><b>Allergen Information:</b> {product.compliance.allergens}</p>
+                        )}
+                        {product.compliance?.shelfLife && (
+                          <p><b>Best Before / Shelf Life:</b> {product.compliance.shelfLife}</p>
+                        )}
+                        {product.compliance?.storageInstructions && (
+                          <p><b>Storage Instructions:</b> {product.compliance.storageInstructions}</p>
+                        )}
+                        {product.compliance?.manufacturedBy && (
+                          <p><b>Manufactured By:</b> {product.compliance.manufacturedBy}</p>
+                        )}
+                        {(product.compliance?.vegetarian === undefined ||
+                          !product.compliance?.allergens ||
+                          !product.compliance?.shelfLife ||
+                          !product.compliance?.storageInstructions ||
+                          !product.compliance?.manufacturedBy) && (
+                          <p className="safetyInfoPending">
+                            Vegetarian mark, allergen declaration, best-before/shelf-life and storage
+                            instructions for this pack will be published here once confirmed by
+                            SatvaPusti Nutrition.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </article>
@@ -1528,7 +1403,7 @@ console.log("Order ID:", orderId);
       {showProfile && (
         <div className="modalBg">
           <div className="checkoutBox">
-            <button className="closeBtn" onClick={() => setShowProfile(false)}>×</button>
+            <button className="closeBtn" onClick={() => setShowProfile(false)} aria-label="Close">×</button>
 
             <h2>👤 My Profile</h2>
 
@@ -1566,62 +1441,7 @@ console.log("Order ID:", orderId);
                   </span>
                 </label>
 
-                <div className="policyLinks legalPolicyBox">
-  <h3>Legal Agreement</h3>
-
-  <p>
-  SatvaPusti Nutrition is registered under FSSAI Registration No.
-  <b> 20526034000204</b>, issued under the Food Safety and Standards Act, 2006.
-</p>
-  
-
-  <details>
-    <summary>Terms & Conditions</summary>
-    <p>
-      SatvaPusti Nutrition provides food and nutrition products through this
-      website. Product prices, offers, availability, packaging, and delivery
-      timelines may change without prior notice. Orders are accepted only after
-      confirmation by SatvaPusti Nutrition. Customers must provide correct name,
-      mobile number, email address, and shipping address. Any misuse of the
-      website, false order, fake information, or fraudulent activity may result
-      in order cancellation.
-    </p>
-  </details>
-
-  <details>
-    <summary>Privacy Policy</summary>
-    <p>
-      We collect customer name, mobile number, email address, shipping address,
-      order details, and payment mode only for order processing, delivery,
-      customer support, and communication. We do not sell customer personal data.
-      Customer information may be shared only with delivery partners, payment
-      service providers, or legal authorities when required by law.
-    </p>
-  </details>
-
-  <details>
-    <summary>Product Disclaimer</summary>
-    <p>
-      SatvaPusti products are food and nutrition products, not medicines. They
-      are not intended to diagnose, treat, cure, or prevent any disease. Results
-      may vary from person to person. Pregnant women, nursing mothers, children,
-      elderly persons, and people with medical conditions should consult a doctor
-      before use. Please read ingredients carefully before consumption.
-    </p>
-  </details>
-
-  <details>
-    <summary>Return & Refund Policy</summary>
-    <p>
-      Due to food safety reasons, opened or used products are not returnable.
-      Return or replacement may be accepted only if the customer receives a
-      damaged product, wrong product, expired product, or manufacturing defect.
-      The customer must report the issue within 48 hours of delivery with clear
-      photo or video proof. Refund approval is subject to verification by
-      SatvaPusti Nutrition.
-    </p>
-  </details>
-</div>
+                {policyContent}
 
 
                 <button className="guestBtn" onClick={continueAsGuest}>
@@ -1663,10 +1483,26 @@ console.log("Order ID:", orderId);
         </div>
       )}
 
+      {showPolicyModal && (
+        <div className="modalBg" role="dialog" aria-modal="true" aria-label="Site policies">
+          <div className="checkoutBox">
+            <button
+              className="closeBtn"
+              onClick={() => setShowPolicyModal(false)}
+              aria-label="Close policy details"
+            >
+              ×
+            </button>
+            <h2>Our Policies</h2>
+            {policyContent}
+          </div>
+        </div>
+      )}
+
       {showCart && (
         <div className="modalBg">
           <div className="checkoutBox">
-            <button className="closeBtn" onClick={() => setShowCart(false)}>×</button>
+            <button className="closeBtn" onClick={() => setShowCart(false)} aria-label="Close">×</button>
 
             <h2>🛒 Your Cart</h2>
 
@@ -1724,7 +1560,7 @@ console.log("Order ID:", orderId);
       {showCheckout && (
         <div className="modalBg">
           <div className="checkoutBox">
-            <button className="closeBtn" onClick={closeCheckout}>×</button>
+            <button className="closeBtn" onClick={closeCheckout} aria-label="Close">×</button>
 
             {orderSuccess ? (
               <div className="successBox">
@@ -1990,6 +1826,30 @@ console.log("Order ID:", orderId);
   </>
 )}
 
+<label className="checkoutCheckRow">
+  <input
+    type="checkbox"
+    checked={checkoutTermsAccepted}
+    onChange={(e) => setCheckoutTermsAccepted(e.target.checked)}
+    aria-required="true"
+  />
+  <span>
+    I agree to the{" "}
+    <button type="button" className="policyInlineLink" onClick={() => openPolicy("terms")}>
+      Terms &amp; Conditions
+    </button>
+    ,{" "}
+    <button type="button" className="policyInlineLink" onClick={() => openPolicy("privacy")}>
+      Privacy Policy
+    </button>{" "}
+    and{" "}
+    <button type="button" className="policyInlineLink" onClick={() => openPolicy("refund")}>
+      Refund/Cancellation Policy
+    </button>
+    .
+  </span>
+</label>
+
 <button
   type="button"
   className="submitOrderBtn"
@@ -2170,7 +2030,7 @@ console.log("Order ID:", orderId);
 
       <section id="contact" className="contact">
         <div className="footerBrand">
-          <img src="/banners/logo-banner.png" alt="SatvaPusti Nutrition" />
+          <img src="/banners/logo-banner.webp" alt="SatvaPusti Nutrition" />
           <p>
             Premium family nutrition made with real dry fruits, seeds, banana powder and clean everyday ingredients.
           </p>
@@ -2190,38 +2050,24 @@ console.log("Order ID:", orderId);
 
         <div className="footerColumn">
           <h2>Policies</h2>
-          <a href="#faq">Privacy Policy</a>
-          <a href="#faq">Terms of Service</a>
-          <a href="#faq">Shipping Policy</a>
-          <a href="#faq">Refund Policy</a>
+          <a href="#faq" onClick={(e) => { e.preventDefault(); openPolicy("privacy"); }}>Privacy Policy</a>
+          <a href="#faq" onClick={(e) => { e.preventDefault(); openPolicy("terms"); }}>Terms of Service</a>
+          <a href="#faq" onClick={(e) => { e.preventDefault(); openPolicy("shipping"); }}>Shipping Policy</a>
+          <a href="#faq" onClick={(e) => { e.preventDefault(); openPolicy("refund"); }}>Refund Policy</a>
         </div>
 
         <div className="footerColumn contactDetails">
           <h2>Contact Us</h2>
           <p><strong>Brand:</strong> SatvaPusti Nutrition</p>
-          <p><strong>Phone:</strong> +91 96396 30828</p>
-          <p><strong>Email:</strong> info@satvapusti.com</p>
-          <p><strong>Website:</strong> www.satvapusti.com</p>
-          <p><strong>FSSAI No:</strong> 20526034000204</p>
+          <p><strong>Phone:</strong> {businessConfig.phone}</p>
+          <p><strong>Email:</strong> {businessConfig.email}</p>
+          <p><strong>Website:</strong> {businessConfig.website}</p>
+          <p><strong>FSSAI No:</strong> {businessConfig.fssai}</p>
           <p><strong>FBO Name:</strong> Satvapusti Nutrition</p>
           <p><strong>Business Type:</strong> General Manufacturing</p>
           <p><strong>Address:</strong> H No 59, Pendri, Pandri, Berla, Bemetara, Chhattisgarh - 491335</p>
+          <p><strong>UPI ID:</strong> {upiId}</p>
         </div>
-
-        <h2>Contact SatvaPusti Nutrition</h2>
-        <p><strong>Brand:</strong> SatvaPusti Nutrition</p>
-        <p><strong>Phone:</strong> +91 96396 30828</p>
-        <p><strong>Email:</strong> info@satvapusti.com</p>
-        <p><strong>Website:</strong> www.satvapusti.com</p>
-        <p><strong>FSSAI Registration No:</strong> 20526034000204</p>
-<p><strong>FBO Name:</strong> Satvapusti Nutrition</p>
-<p><strong>Business Type:</strong> General Manufacturing</p>
-<p><strong>Registered Address:</strong> H No 59, Pendri, Pandri, Berla, Bemetara, Chhattisgarh - 491335</p>
-        <p><strong>UPI ID:</strong> 9993265857@ybl</p>
-
-        <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
-          Contact on WhatsApp
-        </a>
 
         <p className="footerText">© 2026 SatvaPusti Nutrition. All Rights Reserved.</p>
       </section>
