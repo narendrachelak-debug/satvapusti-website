@@ -58,6 +58,8 @@ const orderSchema = new mongoose.Schema(
     invoiceNumber: { type: String, immutable: true, unique: true, sparse: true },
     invoiceDate: { type: Date, immutable: true },
     paymentMethod: String,
+    razorpayOrderId: { type: String, default: "", index: true },
+    razorpayPaymentId: { type: String, default: "" },
 
     paymentStatus: {
       type: String,

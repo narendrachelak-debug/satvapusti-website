@@ -104,6 +104,9 @@ app.use((req, res, next) => {
   });
   next();
 });
+// Razorpay signs the exact raw bytes of a webhook, so this path keeps the raw
+// body (a Buffer) and must be registered before the JSON parser.
+app.use("/api/orders/razorpay/webhook", express.raw({ type: "*/*", limit: "100kb" }));
 app.use(express.json({ limit: "100kb" }));
 
 const adminLoginLimiter = createRateLimiter({

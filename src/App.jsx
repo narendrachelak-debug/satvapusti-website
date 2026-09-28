@@ -238,6 +238,30 @@ const COMING_SOON_PRODUCT_IDS = new Set(productAvailability.comingSoonProductIds
 const isComingSoon = (productId) => COMING_SOON_PRODUCT_IDS.has(productId);
 const COMING_SOON_MESSAGE = productAvailability.comingSoonMessage;
 
+// Razorpay Standard Checkout, loaded only when a customer pays online.
+const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
+let razorpayCheckoutPromise = null;
+const loadRazorpayCheckout = () => {
+  if (window.Razorpay) return Promise.resolve(window.Razorpay);
+  if (!razorpayCheckoutPromise) {
+    razorpayCheckoutPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = RAZORPAY_CHECKOUT_URL;
+      script.async = true;
+      script.onload = () => (window.Razorpay
+        ? resolve(window.Razorpay)
+        : reject(new Error("Online payment could not be loaded. Please try again.")));
+      script.onerror = () => {
+        razorpayCheckoutPromise = null;
+        script.remove();
+        reject(new Error("Online payment could not be loaded. Please check your connection and try again."));
+      };
+      document.body.appendChild(script);
+    });
+  }
+  return razorpayCheckoutPromise;
+};
+
 const ingredients = [
   ["roasted-chana.webp", "Roasted Chana"],
   ["peanut.webp", "Peanut"],
@@ -282,6 +306,7 @@ export default function App() {
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyModalSection, setPolicyModalSection] = useState("terms");
   const [checkoutTermsAccepted, setCheckoutTermsAccepted] = useState(false);
+  const [onlinePayment, setOnlinePayment] = useState({ enabled: false, testMode: false });
   const paymentModeRef = useRef("");
 
   const openPolicy = (section) => {
@@ -421,9 +446,23 @@ export default function App() {
       }
     };
 
+    const loadPaymentOptions = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/orders/payment-options`);
+        const data = await res.json();
+        setOnlinePayment({
+          enabled: data?.razorpay?.enabled === true,
+          testMode: data?.razorpay?.testMode === true,
+        });
+      } catch (error) {
+        console.log("Payment options load error:", error);
+      }
+    };
+
     loadProducts();
     loadInventory();
     loadGstStates();
+    loadPaymentOptions();
   }, []);
 
   useEffect(() => {
@@ -811,30 +850,45 @@ export default function App() {
         `Price: Rs. ${(item.sellingPricePaise / 100).toFixed(2)}\n` +
         `Amount: Rs. ${(item.lineInclusivePaise / 100).toFixed(2)}`
       ).join("\n\n");
-      const whatsappText = `New SatvaPusti Order\n\nOrder ID: ${savedOrder.orderId}\n\n${itemsText}\n\n` +
-        `Total Amount: Rs. ${authoritativeTotal.toFixed(2)}\nPayment Method: ${selectedPaymentMode}\n` +
-        `Payment Status: ${savedOrder.paymentStatus}\nShipping: ${shipping}\n` +
-        `Place of Supply: ${snapshot.placeOfSupplyState} (${snapshot.placeOfSupplyStateCode})\n` +
-        `Prices are inclusive of GST.\n\nCustomer: ${address.name}\n${address.fullAddress}, ${address.city} - ${address.pincode}`;
-      const whatsappMessage = encodeURIComponent(whatsappText);
-      const localOrder = {
-        id: savedOrder.orderId,
-        items: savedOrder.items,
-        total: authoritativeTotal,
-        saving: (snapshot.productDiscountPaise || 0) / 100,
-        paymentMode: selectedPaymentMode,
-        shipping,
-        customer: { ...address },
-        orderStatus: savedOrder.orderStatus,
-        paymentStatus: savedOrder.paymentStatus,
-        whatsappMessage,
-        createdAt: new Date(savedOrder.createdAt).toLocaleString(),
+      const buildLocalOrder = (paymentStatus) => {
+        const whatsappText = `New SatvaPusti Order\n\nOrder ID: ${savedOrder.orderId}\n\n${itemsText}\n\n` +
+          `Total Amount: Rs. ${authoritativeTotal.toFixed(2)}\nPayment Method: ${selectedPaymentMode}\n` +
+          `Payment Status: ${paymentStatus}\nShipping: ${shipping}\n` +
+          `Place of Supply: ${snapshot.placeOfSupplyState} (${snapshot.placeOfSupplyStateCode})\n` +
+          `Prices are inclusive of GST.\n\nCustomer: ${address.name}\n${address.fullAddress}, ${address.city} - ${address.pincode}`;
+        return {
+          id: savedOrder.orderId,
+          items: savedOrder.items,
+          total: authoritativeTotal,
+          saving: (snapshot.productDiscountPaise || 0) / 100,
+          paymentMode: selectedPaymentMode,
+          shipping,
+          customer: { ...address },
+          orderStatus: savedOrder.orderStatus,
+          paymentStatus,
+          whatsappMessage: encodeURIComponent(whatsappText),
+          createdAt: new Date(savedOrder.createdAt).toLocaleString(),
+        };
       };
-      const updatedOrders = [localOrder, ...myOrders];
-      setLastOrder(localOrder);
-      setMyOrders(updatedOrders);
-      setOrderSuccess(true);
-      localStorage.setItem("satvapustiOrders", JSON.stringify(updatedOrders));
+      const recordPlacedOrder = (localOrder) => {
+        const updatedOrders = [localOrder, ...myOrders];
+        setLastOrder(localOrder);
+        setMyOrders(updatedOrders);
+        setOrderSuccess(true);
+        localStorage.setItem("satvapustiOrders", JSON.stringify(updatedOrders));
+      };
+
+      if (selectedPaymentMode === "RAZORPAY") {
+        if (!data.razorpay?.orderId || !data.razorpay?.keyId) {
+          throw new Error("Online payment could not be started. Please try again.");
+        }
+        await payWithRazorpay({ razorpay: data.razorpay, orderId: savedOrder.orderId, buildLocalOrder, recordPlacedOrder });
+        return;
+      }
+
+      const localOrder = buildLocalOrder(savedOrder.paymentStatus);
+      const { whatsappMessage } = localOrder;
+      recordPlacedOrder(localOrder);
 
       if (selectedPaymentMode === "COD") {
         window.location.href = `https://wa.me/${phone}?text=${whatsappMessage}`;
@@ -848,6 +902,68 @@ export default function App() {
     } finally {
       setIsSubmittingOrder(false);
     }
+  };
+
+  // Opens Razorpay Checkout for an order the backend has already priced and
+  // saved. The order is shown as paid only after the backend verifies the
+  // payment signature; closing or failing the payment leaves it unpaid.
+  const payWithRazorpay = async ({ razorpay, orderId, buildLocalOrder, recordPlacedOrder }) => {
+    const Razorpay = await loadRazorpayCheckout();
+
+    await new Promise((resolve) => {
+      let paymentSubmitted = false;
+      const checkout = new Razorpay({
+        key: razorpay.keyId,
+        amount: razorpay.amount,
+        currency: razorpay.currency,
+        order_id: razorpay.orderId,
+        name: razorpay.name,
+        description: razorpay.description,
+        prefill: { name: address.name, email: address.email, contact: address.mobile },
+        notes: { orderId },
+        theme: { color: "#178a52" },
+        handler: async (response) => {
+          paymentSubmitted = true;
+          try {
+            const res = await fetch(`${API_URL}/api/orders/razorpay/verify`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const result = await res.json().catch(() => ({}));
+            if (res.ok && result.success) {
+              recordPlacedOrder(buildLocalOrder("Paid"));
+            } else if (res.status === 202 && result.pending) {
+              recordPlacedOrder(buildLocalOrder("Pending"));
+              alert(result.message);
+            } else {
+              alert(`${result.message || "Payment could not be verified."} Order ID: ${orderId}`);
+            }
+          } catch (error) {
+            console.log("Payment verification error:", error);
+            alert(`Payment could not be verified right now. If money was debited, please contact us with Order ID ${orderId}.`);
+          } finally {
+            resolve();
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            if (!paymentSubmitted) {
+              alert(`Payment was not completed. Order ${orderId} is saved but unpaid. Press Confirm Order to try again, or choose another payment option.`);
+              resolve();
+            }
+          },
+        },
+      });
+      checkout.on("payment.failed", (response) => {
+        console.log("Razorpay payment failed:", response?.error?.code, response?.error?.reason);
+      });
+      checkout.open();
+    });
   };
 
   const continueShopping = () => {
@@ -1616,7 +1732,12 @@ export default function App() {
                     ))}
                     <hr />
                     <p><b>Total:</b> ₹{lastOrder?.total}</p>
-                    <p><b>Payment:</b> {lastOrder?.paymentMode}</p>
+                    <p>
+                      <b>Payment:</b>{" "}
+                      {lastOrder?.paymentMode === "RAZORPAY"
+                        ? `Online (Razorpay) - ${lastOrder?.paymentStatus}`
+                        : lastOrder?.paymentMode}
+                    </p>
                     <p><b>Status:</b> {lastOrder?.orderStatus}</p>
                   </div>
                 )}
@@ -1855,6 +1976,17 @@ export default function App() {
                     <b>UPI Prepaid</b>
                     <span>Free shipping after verification</span>
                   </button>
+
+                  {onlinePayment.enabled && (
+                    <button
+                      type="button"
+                      className={paymentMode === "RAZORPAY" ? "selectedPay" : ""}
+                      onClick={() => selectPaymentMode("RAZORPAY")}
+                    >
+                      <b>Pay Online{onlinePayment.testMode ? " (Test Mode)" : ""}</b>
+                      <span>UPI, cards &amp; netbanking via Razorpay</span>
+                    </button>
+                  )}
                 </div>
 
                 {paymentMode === "UPI" && (
@@ -1897,7 +2029,9 @@ export default function App() {
     submitOrder();
   }}
 >
-  {isSubmittingOrder ? "Placing Order..." : "Confirm Order"}
+  {isSubmittingOrder
+    ? paymentMode === "RAZORPAY" ? "Waiting for payment..." : "Placing Order..."
+    : "Confirm Order"}
 </button>
                  
               </>

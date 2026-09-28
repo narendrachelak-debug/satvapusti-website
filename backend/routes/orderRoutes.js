@@ -10,6 +10,17 @@ const { createRateLimiter, requireAdmin, safePasswordEqual } = require("../middl
 const { computeOrderSignature, ORDER_RETRY_WINDOW_MS } = require("../services/idempotency");
 const { deductInventoryOnce, restoreInventoryOnce } = require("../services/inventoryConcurrency");
 const { COMING_SOON_MESSAGE, hasComingSoonItem } = require("../config/productAvailability");
+const {
+  RazorpayError,
+  createRazorpayOrder,
+  fetchRazorpayPayment,
+  getKeyId,
+  isRazorpayConfigured,
+  isRazorpayTestMode,
+  isRazorpayWebhookConfigured,
+  isValidWebhookSignature,
+  isValidPaymentSignature,
+} = require("../services/razorpay");
 
 const createOrderLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
@@ -17,6 +28,10 @@ const createOrderLimiter = createRateLimiter({
   message: "Too many orders from this connection. Please try again later.",
 });
 const trackOrderLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 30 });
+const paymentVerifyLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 30 });
+const PAYMENT_NOT_VERIFIED =
+  "Payment could not be verified. If money was debited, please contact us with your order ID.";
+const ONLINE_PAYMENT_START_FAILED = "Online payment could not be started. Please try again.";
 
 const cleanText = (value, maxLength = 200) =>
   String(value || "")
@@ -376,6 +391,79 @@ const getFinancialYear = (date = new Date()) => {
   return `${startYear}-${String(startYear + 1).slice(-2)}`;
 };
 
+const sendNewOrderNotifications = async (order) => {
+  console.log("Sending order received email:", {
+    orderId: order.orderId,
+    to: order.email,
+  });
+  console.log("EMAIL SENDING");
+  const customerEmailSent = await safeSendOrderEmail(order, "order");
+  if (customerEmailSent.sent) {
+    console.log("EMAIL SENT");
+  } else {
+    console.log(`Error: ${customerEmailSent.error || "Email was not sent"}`);
+  }
+
+  // ADMIN EMAIL
+  const adminEmailSent = await safeSendAdminEmail({
+    to: process.env.ADMIN_EMAIL,
+    subject: `New Order Received - ${order.orderId}`,
+    html: `
+        <h2>New Order Received</h2>
+
+        <p><b>Order ID:</b> ${order.orderId}</p>
+        <p><b>Customer:</b> ${order.customerName}</p>
+        <p><b>Email:</b> ${order.email}</p>
+        <p><b>Mobile:</b> ${order.mobile}</p>
+        <p><b>Amount:</b> ₹${order.totalAmount}</p>
+        <p><b>Payment:</b> ${order.paymentMethod}</p>
+      `,
+  });
+
+  return { customer: customerEmailSent, admin: adminEmailSent };
+};
+
+// Creates (once) the Razorpay order for a saved order, always for the
+// server-calculated payable amount, and returns what Checkout needs.
+// Only the Key ID is exposed; the secret never leaves the backend.
+const startRazorpayCheckout = async (order) => {
+  let razorpayOrderId = order.razorpayOrderId;
+  if (!razorpayOrderId) {
+    const razorpayOrder = await createRazorpayOrder({
+      amountPaise: order.totalAmountPaise,
+      receipt: order.orderId,
+      notes: { orderId: order.orderId },
+    });
+    const claimed = await Order.findOneAndUpdate(
+      { _id: order._id, razorpayOrderId: "" },
+      { $set: { razorpayOrderId: razorpayOrder.id } },
+      { new: true }
+    );
+    // A concurrent retry may have attached its Razorpay order first; reuse that one.
+    razorpayOrderId = claimed
+      ? claimed.razorpayOrderId
+      : (await Order.findById(order._id).lean())?.razorpayOrderId;
+  }
+  if (!razorpayOrderId) throw new RazorpayError("Razorpay order could not be attached");
+  return {
+    keyId: getKeyId(),
+    orderId: razorpayOrderId,
+    amount: order.totalAmountPaise,
+    currency: "INR",
+    name: "SatvaPusti Nutrition",
+    description: `Order ${order.orderId}`,
+    testMode: isRazorpayTestMode(),
+  };
+};
+
+router.get("/payment-options", (req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.json({
+    success: true,
+    razorpay: { enabled: isRazorpayConfigured(), testMode: isRazorpayTestMode() },
+  });
+});
+
 // CREATE ORDER
 router.post("/create", createOrderLimiter, async (req, res) => {
   try {
@@ -396,8 +484,15 @@ router.post("/create", createOrderLimiter, async (req, res) => {
     if (!/^[6-9]\d{9}$/.test(mobile)) {
       return res.status(400).json({ success: false, message: "Valid 10-digit Indian mobile number is required" });
     }
-    if (!["COD", "UPI"].includes(paymentMethod)) {
+    if (!["COD", "UPI", "RAZORPAY"].includes(paymentMethod)) {
       return res.status(400).json({ success: false, message: "Unsupported payment method" });
+    }
+    const onlinePayment = paymentMethod === "RAZORPAY";
+    if (onlinePayment && !isRazorpayConfigured()) {
+      return res.status(400).json({
+        success: false,
+        message: "Online payment is not available right now. Please choose COD or UPI.",
+      });
     }
     const shippingStateCode = String(req.body.shippingStateCode || "");
     const billingStateCode = String(req.body.billingStateCode || shippingStateCode);
@@ -420,12 +515,17 @@ router.post("/create", createOrderLimiter, async (req, res) => {
       createdAt: { $gte: new Date(Date.now() - ORDER_RETRY_WINDOW_MS) },
     });
     if (duplicateOrder) {
+      // A retry of an unpaid online order reuses the same order and Razorpay order.
+      const razorpay = onlinePayment && duplicateOrder.paymentStatus !== "Paid"
+        ? await startRazorpayCheckout(duplicateOrder)
+        : undefined;
       return res.status(200).json({
         success: true,
         order: duplicateOrder,
         quote: duplicateOrder.pricingSnapshot,
         replay: true,
         email: {},
+        razorpay,
       });
     }
 
@@ -510,7 +610,8 @@ router.post("/create", createOrderLimiter, async (req, res) => {
       invoiceDate: new Date(),
       requestSignature,
       paymentMethod,
-      paymentStatus: req.body.paymentStatus === "Awaiting Verification"
+      // An online order becomes Paid only through signature verification.
+      paymentStatus: !onlinePayment && req.body.paymentStatus === "Awaiting Verification"
         ? "Awaiting Verification"
         : "Pending",
       orderStatus: "Received",
@@ -527,53 +628,224 @@ router.post("/create", createOrderLimiter, async (req, res) => {
     await order.save();
     console.log("ORDER SAVED");
 
-    console.log("Sending order received email:", {
-      orderId: order.orderId,
-      to: order.email,
-    });
-    console.log("EMAIL SENDING");
-    const customerEmailSent = await safeSendOrderEmail(order, "order");
-    if (customerEmailSent.sent) {
-      console.log("EMAIL SENT");
-    } else {
-      console.log(`Error: ${customerEmailSent.error || "Email was not sent"}`);
+    if (onlinePayment) {
+      // Order emails for online payments are sent after the payment is verified.
+      const razorpay = await startRazorpayCheckout(order);
+      return res.status(201).json({
+        success: true,
+        order,
+        quote: pricing,
+        email: {},
+        razorpay,
+      });
     }
 
-    // ADMIN EMAIL
-    const adminEmailSent = await safeSendAdminEmail({
-      to: process.env.ADMIN_EMAIL,
-      subject: `New Order Received - ${orderId}`,
-      html: `
-        <h2>New Order Received</h2>
-
-        <p><b>Order ID:</b> ${orderId}</p>
-        <p><b>Customer:</b> ${order.customerName}</p>
-        <p><b>Email:</b> ${order.email}</p>
-        <p><b>Mobile:</b> ${order.mobile}</p>
-        <p><b>Amount:</b> ₹${order.totalAmount}</p>
-        <p><b>Payment:</b> ${order.paymentMethod}</p>
-      `,
-    });
+    const notifications = await sendNewOrderNotifications(order);
 
     res.status(201).json({
       success: true,
       order,
       quote: pricing,
-      email: {
-        customer: customerEmailSent,
-        admin: adminEmailSent,
-      },
+      email: notifications,
     });
 
   } catch (error) {
 
     console.log(error);
 
+    if (error instanceof RazorpayError) {
+      return res.status(502).json({ success: false, message: ONLINE_PAYMENT_START_FAILED });
+    }
+
     res.status(400).json({
       success: false,
       message: error.message,
     });
 
+  }
+});
+
+// Confirms a Razorpay payment with Razorpay's API and marks the order Paid.
+// Shared by browser verification and the webhook: callers must first prove
+// authenticity (Checkout signature or webhook signature). The Paid transition
+// is one atomic update, so whichever caller arrives second, or any duplicate
+// or replayed callback, finds the order already Paid and does nothing more:
+// stock is deducted and emails are sent exactly once.
+const settleRazorpayPayment = async ({ razorpayOrderId, razorpayPaymentId, source }) => {
+  const order = await Order.findOne({ razorpayOrderId, paymentMethod: "RAZORPAY" });
+  if (!order) return { outcome: "unknownOrder" };
+  const isSamePayment = (current) =>
+    current?.paymentStatus === "Paid" && current.razorpayPaymentId === razorpayPaymentId;
+  if (order.paymentStatus === "Paid") {
+    return isSamePayment(order) ? { outcome: "alreadyPaid", order } : { outcome: "conflict", order };
+  }
+  if (hasComingSoonItem(order.items)) return { outcome: "comingSoon", order };
+
+  const payment = await fetchRazorpayPayment(razorpayPaymentId);
+  if (
+    payment.order_id !== razorpayOrderId ||
+    payment.amount !== order.totalAmountPaise ||
+    payment.currency !== "INR"
+  ) {
+    console.log("Razorpay payment mismatch:", {
+      source,
+      orderId: order.orderId,
+      razorpayOrderId,
+      razorpayPaymentId,
+      expectedAmountPaise: order.totalAmountPaise,
+      paidAmountPaise: payment.amount,
+    });
+    return { outcome: "mismatch", order };
+  }
+  if (payment.status === "authorized") return { outcome: "authorized", order };
+  if (payment.status !== "captured") return { outcome: "notCaptured", order };
+
+  const paidOrder = await Order.findOneAndUpdate(
+    { _id: order._id, paymentStatus: { $ne: "Paid" } },
+    {
+      $set: {
+        paymentStatus: "Paid",
+        paymentDate: new Date(),
+        paymentAmountPaise: payment.amount,
+        razorpayPaymentId,
+      },
+    },
+    { new: true }
+  );
+  if (!paidOrder) {
+    const current = await Order.findById(order._id);
+    return isSamePayment(current)
+      ? { outcome: "alreadyPaid", order: current }
+      : { outcome: "conflict", order: current };
+  }
+  console.log("Razorpay payment settled:", { source, orderId: paidOrder.orderId, razorpayPaymentId });
+
+  // Same follow-up as when an admin marks an order Paid.
+  try {
+    await deductInventoryOnce(paidOrder._id, paidOrder.items);
+  } catch (error) {
+    console.log("Inventory deduction after online payment failed:", {
+      orderId: paidOrder.orderId,
+      message: error.message,
+    });
+  }
+  const email = await sendNewOrderNotifications(paidOrder);
+  email.payment = await safeSendOrderEmail(paidOrder, "payment");
+  return { outcome: "paid", order: paidOrder, email };
+};
+
+const isRazorpayOrderId = (value) => /^order_[A-Za-z0-9]{6,40}$/.test(value);
+const isRazorpayPaymentId = (value) => /^pay_[A-Za-z0-9]{6,40}$/.test(value);
+
+// VERIFY RAZORPAY PAYMENT (browser, after Checkout success)
+// An order is marked Paid only after the Checkout signature is verified with
+// the key secret AND Razorpay confirms a captured payment for this order's
+// exact server-side amount.
+router.post("/razorpay/verify", paymentVerifyLimiter, async (req, res) => {
+  try {
+    if (!isRazorpayConfigured()) {
+      return res.status(503).json({ success: false, message: "Online payment is not available right now." });
+    }
+    const razorpayOrderId = String(req.body.razorpay_order_id || "");
+    const razorpayPaymentId = String(req.body.razorpay_payment_id || "");
+    const signature = String(req.body.razorpay_signature || "");
+    if (!isRazorpayOrderId(razorpayOrderId) || !isRazorpayPaymentId(razorpayPaymentId)) {
+      return res.status(400).json({ success: false, message: PAYMENT_NOT_VERIFIED });
+    }
+    // Checked before any database access.
+    if (!isValidPaymentSignature({ razorpayOrderId, razorpayPaymentId, signature })) {
+      console.log("Razorpay signature rejected:", { razorpayOrderId, razorpayPaymentId });
+      return res.status(400).json({ success: false, message: PAYMENT_NOT_VERIFIED });
+    }
+
+    const result = await settleRazorpayPayment({ razorpayOrderId, razorpayPaymentId, source: "checkout" });
+    switch (result.outcome) {
+      case "paid":
+        return res.json({ success: true, order: result.order, email: result.email });
+      case "alreadyPaid":
+        return res.json({ success: true, alreadyVerified: true, order: result.order });
+      case "conflict":
+        return res.status(409).json({ success: false, message: "This order has already been paid." });
+      case "unknownOrder":
+        return res.status(404).json({ success: false, message: PAYMENT_NOT_VERIFIED });
+      case "comingSoon":
+        return res.status(400).json({ success: false, message: COMING_SOON_MESSAGE });
+      case "authorized":
+        return res.status(202).json({
+          success: false,
+          pending: true,
+          message: "Payment is authorised and awaiting confirmation. We will update your order shortly.",
+        });
+      default:
+        return res.status(400).json({ success: false, message: PAYMENT_NOT_VERIFIED });
+    }
+  } catch (error) {
+    console.log("Razorpay verification error:", { name: error.name, message: error.message, statusCode: error.statusCode });
+    res.status(error instanceof RazorpayError ? 502 : 500).json({
+      success: false,
+      message: PAYMENT_NOT_VERIFIED,
+    });
+  }
+});
+
+// RAZORPAY WEBHOOK (server-to-server)
+// Settles a payment even if the customer closed the browser before
+// /razorpay/verify ran. req.body is the raw Buffer (see server.js): the
+// signature is checked on those exact bytes before the body is parsed.
+const SETTLING_WEBHOOK_EVENTS = new Set(["payment.captured", "order.paid"]);
+router.post("/razorpay/webhook", async (req, res) => {
+  const eventId = String(req.get("x-razorpay-event-id") || "").slice(0, 100);
+  try {
+    if (!isRazorpayWebhookConfigured()) {
+      return res.status(503).json({ success: false, message: "Webhook is not configured" });
+    }
+    if (!Buffer.isBuffer(req.body) || !isValidWebhookSignature(req.body, req.get("x-razorpay-signature"))) {
+      console.log("Razorpay webhook signature rejected:", { eventId });
+      return res.status(400).json({ success: false, message: "Invalid webhook signature" });
+    }
+
+    let event;
+    try {
+      event = JSON.parse(req.body.toString("utf8"));
+    } catch {
+      return res.status(400).json({ success: false, message: "Invalid webhook payload" });
+    }
+    // Authentic events that do not settle a payment are acknowledged so
+    // Razorpay does not keep retrying them.
+    if (!SETTLING_WEBHOOK_EVENTS.has(event?.event)) {
+      return res.json({ success: true, processed: false, reason: "ignored event" });
+    }
+    const payment = event.payload?.payment?.entity || {};
+    const razorpayOrderId = String(payment.order_id || "");
+    const razorpayPaymentId = String(payment.id || "");
+    const orderEntityId = event.payload?.order?.entity?.id;
+    if (
+      !isRazorpayOrderId(razorpayOrderId) ||
+      !isRazorpayPaymentId(razorpayPaymentId) ||
+      (orderEntityId !== undefined && orderEntityId !== razorpayOrderId)
+    ) {
+      console.log("Razorpay webhook payload rejected:", { eventId, event: event.event });
+      return res.json({ success: true, processed: false, reason: "invalid payload" });
+    }
+
+    const result = await settleRazorpayPayment({ razorpayOrderId, razorpayPaymentId, source: "webhook" });
+    console.log("Razorpay webhook handled:", {
+      eventId,
+      event: event.event,
+      razorpayOrderId,
+      razorpayPaymentId,
+      outcome: result.outcome,
+    });
+    res.json({
+      success: true,
+      processed: result.outcome === "paid",
+      outcome: result.outcome,
+    });
+  } catch (error) {
+    // Transient failures (e.g. Razorpay API unreachable) return 5xx so
+    // Razorpay retries the webhook later.
+    console.log("Razorpay webhook error:", { eventId, name: error.name, message: error.message, statusCode: error.statusCode });
+    res.status(error instanceof RazorpayError ? 502 : 500).json({ success: false, message: "Webhook could not be processed" });
   }
 });
 
