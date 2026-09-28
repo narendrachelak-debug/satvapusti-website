@@ -5,13 +5,19 @@ const API_URL = "https://satvapusti-website.onrender.com";
 
 export default function AdminLogin() {
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const login = async () => {
+  const login = async (event) => {
+    event.preventDefault();
+    if (submitting) return;
+    setErrorMessage("");
     if (!password) {
-      alert("Please enter the password");
+      setErrorMessage("Please enter the password");
       return;
     }
 
+    setSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/api/admin/login`, {
         method: "POST",
@@ -23,21 +29,23 @@ export default function AdminLogin() {
 
       const data = await res.json();
 
-      if (!data.success) {
-        alert(data.message || "Invalid password");
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.message || "Login failed. Please try again.");
         return;
       }
 
       saveAdminSession(data);
       window.location.href = "/?page=admin";
     } catch (error) {
-      console.error(error);
-      alert("Login failed");
+      setErrorMessage(error.message || "Login failed. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div
+    <form
+      onSubmit={login}
       style={{
         maxWidth: "400px",
         margin: "100px auto",
@@ -51,6 +59,8 @@ export default function AdminLogin() {
 
       <input
         type="password"
+        autoComplete="current-password"
+        aria-label="Admin password"
         placeholder="Enter Admin Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
@@ -62,8 +72,10 @@ export default function AdminLogin() {
         }}
       />
 
+      {errorMessage && <p role="alert">{errorMessage}</p>}
       <button
-        onClick={login}
+        type="submit"
+        disabled={submitting}
         style={{
           width: "100%",
           padding: "10px",
@@ -74,8 +86,8 @@ export default function AdminLogin() {
           cursor: "pointer",
         }}
       >
-        Login
+        {submitting ? "Logging in..." : "Login"}
       </button>
-    </div>
+    </form>
   );
 }

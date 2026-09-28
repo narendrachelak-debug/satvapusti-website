@@ -2,6 +2,11 @@ export const ADMIN_TOKEN_KEY = "satvapustiAdminToken";
 export const ADMIN_EXPIRY_KEY = "satvapustiAdminExpiry";
 
 export const saveAdminSession = ({ token, expiresAt }) => {
+  if (typeof token !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(token) ||
+      !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    clearAdminSession();
+    throw new Error("The login server did not issue a valid session. Please update the backend deployment and try again.");
+  }
   localStorage.setItem(ADMIN_TOKEN_KEY, token);
   localStorage.setItem(ADMIN_EXPIRY_KEY, String(expiresAt || 0));
 };
