@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import businessConfig from "../shared/business.json";
+import productAvailability from "../shared/productAvailability.json";
 
 const phone = "919639630828";
 const upiId = "9993265857@ybl";
@@ -230,6 +231,12 @@ const defaultProducts = [
 const defaultProductById = Object.fromEntries(
   defaultProducts.map((product) => [product.id, product])
 );
+
+// Shown on the storefront with full details, but not yet purchasable.
+// The same list is enforced by the backend on order creation.
+const COMING_SOON_PRODUCT_IDS = new Set(productAvailability.comingSoonProductIds);
+const isComingSoon = (productId) => COMING_SOON_PRODUCT_IDS.has(productId);
+const COMING_SOON_MESSAGE = productAvailability.comingSoonMessage;
 
 const ingredients = [
   ["roasted-chana.webp", "Roasted Chana"],
@@ -470,6 +477,11 @@ export default function App() {
   };
 
   const addToCart = (product) => {
+    if (isComingSoon(product.id)) {
+      alert(COMING_SOON_MESSAGE);
+      return;
+    }
+
     const weight = getWeight(product);
     const quantity = getQty(product);
     const stock = getStock(product.id, weight);
@@ -522,7 +534,7 @@ export default function App() {
   const updateCartQty = (cartId, value) => {
     setCart(
       cart.map((item) => {
-        if (item.cartId !== cartId) return item;
+        if (item.cartId !== cartId || isComingSoon(item.productId)) return item;
 
         const stock = getStock(item.productId, item.weight);
         const nextQuantity = Math.max(1, item.quantity + value);
@@ -660,6 +672,12 @@ export default function App() {
       return;
     }
 
+    if (cart.some((item) => isComingSoon(item.productId))) {
+      setCart(cart.filter((item) => !isComingSoon(item.productId)));
+      alert(COMING_SOON_MESSAGE);
+      return;
+    }
+
     setShowCart(false);
     setShowCheckout(true);
     setOrderSuccess(false);
@@ -734,6 +752,11 @@ export default function App() {
 
     if (!checkoutTermsAccepted) {
       alert("Please accept the Terms & Conditions, Privacy Policy and Refund/Cancellation Policy to place your order.");
+      return;
+    }
+
+    if (cart.length === 0 || cart.some((item) => isComingSoon(item.productId))) {
+      alert(COMING_SOON_MESSAGE);
       return;
     }
 
@@ -1063,6 +1086,7 @@ export default function App() {
             const hasKnownStock = inventoryLoaded && stock !== null;
             const isOutOfStock = hasKnownStock && stock <= 0;
             const isLowStock = hasKnownStock && stock > 0 && stock < 10;
+            const comingSoon = isComingSoon(product.id);
             const activeTab = activeProductTabs[product.id] || "description";
             const whatsappText = encodeURIComponent(
               `Hi, I want to buy ${product.name} ${weight}. Quantity: ${quantity}.`
@@ -1148,6 +1172,7 @@ export default function App() {
 
                 <div className="premiumBuyPanel">
                   <div className="premiumBadgeRow">
+                    {comingSoon && <span className="comingSoonBadge">COMING SOON</span>}
                     {product.theme && <span className="themeBadge">{product.theme}</span>}
                     {product.bestFor.map((tag) => (
                       <span key={tag}>{tag}</span>
@@ -1192,32 +1217,46 @@ export default function App() {
                   </div>
 
                   <div className="premiumPurchaseRow">
-                    <div className="premiumQty">
-                      <button onClick={() => changeQty(product, -1)}>-</button>
-                      <span>{quantity}</span>
-                      <button onClick={() => changeQty(product, 1)}>+</button>
-                    </div>
-                    <p className={isOutOfStock ? "stockOut" : isLowStock ? "stockLow" : "stockOk"}>
-                      {isOutOfStock ? "Out of stock" : isLowStock ? `Only ${stock} left` : "In Stock"}
-                    </p>
+                    {!comingSoon && (
+                      <div className="premiumQty">
+                        <button onClick={() => changeQty(product, -1)}>-</button>
+                        <span>{quantity}</span>
+                        <button onClick={() => changeQty(product, 1)}>+</button>
+                      </div>
+                    )}
+                    {comingSoon ? (
+                      <p className="stockOut">Coming Soon</p>
+                    ) : (
+                      <p className={isOutOfStock ? "stockOut" : isLowStock ? "stockLow" : "stockOk"}>
+                        {isOutOfStock ? "Out of stock" : isLowStock ? `Only ${stock} left` : "In Stock"}
+                      </p>
+                    )}
                   </div>
 
-                  <button
-                    className="premiumCartBtn"
-                    onClick={() => addToCart(product)}
-                    disabled={isOutOfStock}
-                  >
-                    {isOutOfStock ? "Out of Stock" : `Add To Cart - ₹${total}`}
-                  </button>
+                  {comingSoon ? (
+                    <button className="premiumCartBtn" disabled aria-disabled="true">
+                      Coming Soon
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        className="premiumCartBtn"
+                        onClick={() => addToCart(product)}
+                        disabled={isOutOfStock}
+                      >
+                        {isOutOfStock ? "Out of Stock" : `Add To Cart - ₹${total}`}
+                      </button>
 
-                  <a
-                    className="premiumWhatsappBtn"
-                    href={`https://wa.me/${phone}?text=${whatsappText}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Buy on WhatsApp
-                  </a>
+                      <a
+                        className="premiumWhatsappBtn"
+                        href={`https://wa.me/${phone}?text=${whatsappText}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Buy on WhatsApp
+                      </a>
+                    </>
+                  )}
                   <div className="mobileTrustStrip" aria-label="Checkout trust badges">
                     <span>✓ FSSAI</span>
                     <span>✓ Delivery</span>
