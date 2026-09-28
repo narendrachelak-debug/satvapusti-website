@@ -9,6 +9,7 @@ const { calculateOrder, validateGstin } = require("../services/pricingService");
 const { createRateLimiter, requireAdmin, safePasswordEqual } = require("../middleware/security");
 const { computeOrderSignature, ORDER_RETRY_WINDOW_MS } = require("../services/idempotency");
 const { deductInventoryOnce, restoreInventoryOnce } = require("../services/inventoryConcurrency");
+const { COMING_SOON_MESSAGE, hasComingSoonItem } = require("../config/productAvailability");
 
 const createOrderLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
@@ -402,6 +403,10 @@ router.post("/create", createOrderLimiter, async (req, res) => {
     const billingStateCode = String(req.body.billingStateCode || shippingStateCode);
     if (!/^\d{6}$/.test(String(req.body.pincode || ""))) {
       return res.status(400).json({ success: false, message: "PIN code must be six digits" });
+    }
+    // Rejected before any database access, so no order, counter or stock is touched.
+    if (hasComingSoonItem(req.body.items)) {
+      return res.status(400).json({ success: false, message: COMING_SOON_MESSAGE });
     }
 
     const requestSignature = computeOrderSignature({

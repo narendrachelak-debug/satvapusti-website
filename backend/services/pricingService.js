@@ -1,6 +1,7 @@
 const Product = require("../models/Product");
 const business = require("../config/business");
 const { getStateByCode } = require("../data/gstStates");
+const { COMING_SOON_MESSAGE, hasComingSoonItem } = require("../config/productAvailability");
 
 const CALCULATION_VERSION = "gst-inclusive-v1";
 const GST_RATE_BPS = 500;
@@ -44,6 +45,7 @@ const calculateOrder = async ({ items, shippingStateCode, billingStateCode, coup
   if (!shippingState) throw new Error("Select a valid shipping state");
   if (!billingState) throw new Error("Select a valid billing state");
   if (!Array.isArray(items) || items.length === 0) throw new Error("Cart is empty");
+  if (hasComingSoonItem(items)) throw new Error(COMING_SOON_MESSAGE);
 
   const lines = [];
   let mrpTotalPaise = 0;
