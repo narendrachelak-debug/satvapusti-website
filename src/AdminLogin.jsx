@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { saveAdminSession } from "./adminApi";
+import "./admin.css";
 
 const API_URL = "https://satvapusti-website.onrender.com";
 

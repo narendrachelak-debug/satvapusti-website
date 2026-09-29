@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import businessConfig from "../shared/business.json";
+import "./admin.css";
 import { adminFetch, getAdminToken, logoutAdmin } from "./adminApi";
 
 const API_URL = "https://satvapusti-website.onrender.com";

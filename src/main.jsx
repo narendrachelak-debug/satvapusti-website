@@ -1,12 +1,15 @@
-import { StrictMode, useEffect, useState } from "react";
+import { StrictMode, Suspense, lazy, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.jsx";
-import Admin from "./Admin.jsx";
-import AdminLogin from "./AdminLogin.jsx";
-import TrackOrder from "./TrackOrder.jsx";
 import { adminFetch, getAdminToken } from "./adminApi.js";
 
 const API_URL = "https://satvapusti-website.onrender.com";
+
+// Each page is loaded on demand so it only brings in its own stylesheet:
+// the storefront uses App.css and the admin pages use admin.css.
+const App = lazy(() => import("./App.jsx"));
+const Admin = lazy(() => import("./Admin.jsx"));
+const AdminLogin = lazy(() => import("./AdminLogin.jsx"));
+const TrackOrder = lazy(() => import("./TrackOrder.jsx"));
 
 const path = window.location.pathname;
 const params = new URLSearchParams(window.location.search);
@@ -41,5 +44,7 @@ if (path === "/track-order" || page === "track-order") {
 }
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>{Page}</StrictMode>
+  <StrictMode>
+    <Suspense fallback={null}>{Page}</Suspense>
+  </StrictMode>
 );
