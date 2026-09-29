@@ -739,6 +739,52 @@ button {
   grid-column: 1 / -1;
 }
 
+/* Problem → solution USPs: quiet question, strong answer, one short supporting line. */
+.productUsps {
+  row-gap: var(--sp-4);
+}
+
+.productUsps .icon {
+  margin-top: 22px;
+}
+
+.uspCopy {
+  display: grid;
+  gap: 2px;
+}
+
+.uspProblem {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.uspTitle {
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.uspText {
+  color: var(--body);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* Phones keep the question and the answer only, so the list stays light. */
+@media (max-width: 640px) {
+  .productUsps {
+    row-gap: var(--sp-3);
+  }
+
+  .uspText {
+    display: none;
+  }
+}
+
 .priceBlock {
   margin-top: var(--sp-5);
 }

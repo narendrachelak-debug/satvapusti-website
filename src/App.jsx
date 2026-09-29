@@ -50,7 +50,7 @@ const readRoute = () => {
 const PRODUCT_CATEGORIES = {
   family: "Family Nutrition",
   kids: "Kids Nutrition",
-  active: "Fitness & Recovery",
+  active: "Fitness Nutrition",
 };
 const categoryOf = (product) => PRODUCT_CATEGORIES[product.id] || product.theme || "Nutrition";
 
@@ -59,9 +59,9 @@ const defaultProducts = [
     id: "family",
     name: "SatvaPusti Family Nutrition Formula",
     theme: "Family Wellness",
-    subtitle: "Complete Daily Nutrition For The Whole Family",
-    desc: "A family wellness blend made for everyday routines, with real dry fruits and seeds to support energy, focus and immunity for all ages.",
-    bestFor: ["Family Wellness", "Daily Energy", "Immunity Support"],
+    subtitle: "Everyday Nutrition Powder with Nuts & Seeds",
+    desc: "An everyday family blend of 12 recognisable ingredients, including badam, kaju, akhrot, makhana, seeds and banana powder, sweetened with traditional mishri.",
+    bestFor: ["Real Nuts & Seeds", "12 Recognisable Ingredients", "Everyday Family Routine"],
     accent: {
       primary: "#178a52",
       secondary: "#0f6f45",
@@ -70,8 +70,8 @@ const defaultProducts = [
       text: "#06411f",
     },
     badges: [
-      { label: "Family Favourite", color: "#178a52" },
-      { label: "Quality Tested", color: "#0f6f45" },
+      { label: "No Artificial Colours", color: "#178a52" },
+      { label: "No Preservatives", color: "#0f6f45" },
     ],
     benefits: [
       "Family Wellness Support",
@@ -128,9 +128,9 @@ const defaultProducts = [
     id: "kids",
     name: "SatvaPusti+ Active Kids",
     theme: "Growing Champions",
-    subtitle: "Nutrition For Growing Champions",
-    desc: "A kid-focused nutrition formula with real banana goodness, crafted to support growth, brain development, school energy and daily immunity.",
-    bestFor: ["Growing Champions", "Brain Support", "Growth Support"],
+    subtitle: "Cocoa, Nuts & Seeds Blend for Kids",
+    desc: "A kids' blend of badam, kaju, akhrot, makhana and seeds with cocoa powder, banana powder, ragi and roasted chana, sweetened with dates powder.",
+    bestFor: ["Cocoa + Nuts & Seeds", "With Ragi & Roasted Chana", "Adjustable Serve"],
     accent: {
       primary: "#e0a713",
       secondary: "#f28c18",
@@ -139,8 +139,7 @@ const defaultProducts = [
       text: "#7a3f00",
     },
     badges: [
-      { label: "Growing Champions Formula", color: "#f28c18" },
-      { label: "0g Added Sugar", color: "#e0a713" },
+      { label: "Sweetened with Dates Powder", color: "#e0a713" },
     ],
     benefits: [
       "Brain Development Support",
@@ -195,9 +194,9 @@ const defaultProducts = [
     id: "active",
     name: "SatvaPusti+ Active",
     theme: "Fitness & Recovery",
-    subtitle: "Natural Strength & Recovery Formula",
-    desc: "A fitness and recovery blend for active lifestyles, built around protein-rich natural ingredients to support strength, performance and post-workout recovery.",
-    bestFor: ["Fitness & Recovery", "Strength Support", "Protein Rich"],
+    subtitle: "Soy Protein, Nuts & Seeds Blend",
+    desc: "A soy protein blend with badam, kaju, akhrot, peanut, makhana and seeds, sweetened with dates powder, listed at 30 g protein per 100 g.",
+    bestFor: ["Soy Protein Blend", "Nuts & Seeds", "30 g Protein / 100 g"],
     accent: {
       primary: "#0f4f3f",
       secondary: "#c99a2e",
@@ -206,8 +205,7 @@ const defaultProducts = [
       text: "#07372d",
     },
     badges: [
-      { label: "Performance Formula", color: "#0f4f3f" },
-      { label: "0g Added Sugar", color: "#c99a2e" },
+      { label: "No Refined Sugar", color: "#c99a2e" },
     ],
     benefits: [
       "Protein Rich Blend",
@@ -260,6 +258,37 @@ const defaultProducts = [
     },
   },
 ];
+
+// Product-page USPs: a relatable customer problem, then the SatvaPusti answer. Every line
+// restates a fact from that product's own ingredients, usage, nutrition or pack claims above.
+const PRODUCT_USPS = {
+  family: [
+    { problem: "Dry fruits often get skipped?", title: "Dry Fruits & Seeds, Made Easier", text: "Badam, kaju, akhrot, makhana, pumpkin and watermelon seeds in one blend." },
+    { problem: "Hard-to-read labels?", title: "12 Ingredients You Can Recognise", text: "From roasted chana and peanut to banana powder, saunf and elaichi." },
+    { problem: "Wary of additives?", title: "No Artificial Colours or Preservatives", text: "As stated on the pack, sweetened with traditional mishri." },
+    { problem: "Short on time?", title: "Two Spoons, One Glass", text: "Mix into 200\u00a0ml milk or warm water and enjoy daily." },
+    { problem: "Separate products for everyone?", title: "One Family Formula to Share", text: "Made for the whole family's routine, alongside regular meals." },
+    { problem: "Want to know what's inside?", title: "Every Nutrition Value Listed", text: "Including 17.75\u00a0g protein and 8.27\u00a0g fibre per 100\u00a0g." },
+  ],
+  kids: [
+    { problem: "Kids skip nuts and seeds?", title: "Nuts & Seeds in a Cocoa Blend", text: "Badam, kaju, akhrot and seeds with cocoa and banana powder." },
+    { problem: "Watching the sweetness?", title: "Sweetened with Dates Powder", text: "Dates powder is the listed sweetener in this formula." },
+    { problem: "Every child eats differently?", title: "A Serve You Can Adjust", text: "Mix 1–2 spoons with milk, adjusted to age and appetite." },
+    { problem: "Prefer traditional staples?", title: "With Ragi & Roasted Chana", text: "Ragi and roasted chana, blended in alongside the nuts and seeds." },
+  ],
+  active: [
+    { problem: "Want protein from familiar foods?", title: "Soy Protein with Nuts & Seeds", text: "Blended with badam, kaju, akhrot, peanut and makhana." },
+    { problem: "Counting your protein?", title: "30\u00a0g Protein per 100\u00a0g", text: "As listed in this formula's nutrition facts." },
+    { problem: "Avoiding refined sugar?", title: "Sweetened with Dates Powder", text: "No refined sugar; dates powder is the listed sweetener." },
+    { problem: "Fitting it into training days?", title: "Post-Workout or Morning Routine", text: "Mix 2 spoons into 200\u00a0ml milk or water." },
+  ],
+};
+
+// Label facts that conflict with the pack artwork stay in the data but are not shown until
+// confirmed: the Active Kids pack panel prints "Added Sugars 4.00 g" against 0 g here.
+const UNCONFIRMED_NUTRITION_ROWS = { kids: ["Added Sugar"] };
+// A sugar claim, not an ingredient, so it is not listed as one.
+const isIngredient = (item) => !/^no added sugar$/i.test(String(item).trim());
 
 const defaultProductById = Object.fromEntries(
   defaultProducts.map((product) => [product.id, product])
@@ -389,12 +418,15 @@ const trustCards = [
   ["noColour", "No Artificial Colours", "Clean and simple nutrition"],
 ];
 
+// Shown on every product page, so each point holds for all three formulas: dry fruits and
+// seeds, banana powder, plain-named ingredients, a mix-with-milk-or-water serve and a
+// Nutrition Facts table are common to all of them.
 const goodnessPoints = [
   ["seed", "Real Dry Fruits & Seeds"],
-  ["noColour", "No Artificial Colours"],
-  ["noPreservative", "No Added Preservatives"],
-  ["heart", "Made for Families"],
-  ["flask", "Quality Tested"],
+  ["search", "Recognisable Ingredients"],
+  ["leaf", "Real Banana Powder"],
+  ["check", "Simple Everyday Preparation"],
+  ["menu", "Nutrition Facts Listed"],
   ["award", "FSSAI Registered"],
 ];
 
@@ -516,15 +548,17 @@ export default function App() {
         id: productId,
         name: product.name || ownDefaults.name || "",
         theme: product.theme || ownDefaults.theme || "",
-        subtitle: product.subtitle || ownDefaults.subtitle || "",
+        // Marketing copy (subtitle, description, chips, badges, benefits) comes from the
+        // reviewed storefront defaults first, so every claim on a page matches its USPs.
+        subtitle: ownDefaults.subtitle || product.subtitle || "",
         desc: ownDefaults.desc || product.desc || "",
-        bestFor: Array.isArray(product.bestFor) && product.bestFor.length > 0
-          ? product.bestFor
-          : ownDefaults.bestFor || [],
+        bestFor: ownDefaults.bestFor?.length
+          ? ownDefaults.bestFor
+          : Array.isArray(product.bestFor) ? product.bestFor : [],
         accent: product.accent || ownDefaults.accent,
-        badges: Array.isArray(product.badges) && product.badges.length > 0
-          ? product.badges
-          : ownDefaults.badges || [],
+        badges: ownDefaults.badges?.length
+          ? ownDefaults.badges
+          : Array.isArray(product.badges) ? product.badges : [],
         benefits: ownDefaults.benefits || (Array.isArray(product.benefits) ? product.benefits : []),
         ingredients: Array.isArray(product.ingredients) && product.ingredients.length > 0
           ? product.ingredients
@@ -1314,6 +1348,7 @@ export default function App() {
       ["safetyInfo", "Product & Safety Info"],
     ];
     const productBenefits = product.benefits?.length ? product.benefits : [];
+    const productUsps = PRODUCT_USPS[product.id];
     const productBadges = product.badges?.length ? product.badges : [];
     const benefitChips = (product.bestFor || []).filter((tag) => tag !== product.theme);
 
@@ -1373,7 +1408,20 @@ export default function App() {
             <p className="productSubtitle">{product.subtitle || "Premium Nutrition Powder"}</p>
             <p className="productLead">{product.desc}</p>
 
-            {productBenefits.length > 0 && (
+            {productUsps ? (
+              <ul className={`productBenefits productUsps${productUsps.length % 2 ? " isOdd" : ""}`}>
+                {productUsps.map((usp) => (
+                  <li key={usp.title}>
+                    <Icon name="check" />
+                    <span className="uspCopy">
+                      <span className="uspProblem">{usp.problem}</span>
+                      <strong className="uspTitle">{usp.title}</strong>
+                      <span className="uspText">{usp.text}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : productBenefits.length > 0 && (
               <ul className={`productBenefits${productBenefits.length % 2 ? " isOdd" : ""}`}>
                 {productBenefits.map((benefit) => (
                   <li key={benefit}>
@@ -1505,21 +1553,23 @@ export default function App() {
             )}
             {activeTab === "ingredients" && (
               <ul className="ingredientTags">
-                {(product.ingredients || []).map((item) => (
+                {(product.ingredients || []).filter(isIngredient).map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
             )}
             {activeTab === "howToUse" && (
               <ol className="usageSteps">
-                <li>Add 2 spoons to warm milk or water.</li>
+                <li>{product.usage}</li>
                 <li>Stir well until smooth.</li>
                 <li>Use daily as part of a balanced routine.</li>
               </ol>
             )}
             {activeTab === "nutrition" && (
               <dl className="factTable">
-                {(product.nutrition || []).map(([label, value]) => (
+                {(product.nutrition || [])
+                  .filter(([label]) => !UNCONFIRMED_NUTRITION_ROWS[product.id]?.includes(label))
+                  .map(([label, value]) => (
                   <div key={label}>
                     <dt>{label}</dt>
                     <dd>{value}</dd>
@@ -1893,8 +1943,8 @@ export default function App() {
               <li>
                 <Icon name="flask" />
                 <div>
-                  <h3>0g Added Sugar Options</h3>
-                  <p>Kids and Active formulas use dates powder as the sweetener.</p>
+                  <h3>Different Formulas, Clearly Explained</h3>
+                  <p>Each formula lists its own ingredients, nutrition facts and preparation guidance.</p>
                 </div>
               </li>
               <li>
