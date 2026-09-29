@@ -2260,13 +2260,135 @@ button {
   margin-top: auto;
 }
 
+/* A filter with one match shows it as a wide featured card instead of one narrow column. */
+.productGrid.productGridSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.productCardFeatured {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+}
+
+.productCardFeatured:hover {
+  transform: none;
+}
+
+/* The image keeps its 3:2 frame; at most ~760px wide, within the 1536px source at 2x. */
+.productCardFeatured .productCardMedia {
+  align-self: center;
+}
+
+.productCardFeatured .productCardBody {
+  justify-content: center;
+  padding: var(--sp-7);
+}
+
+.productCardFeatured .productCardBody h3 {
+  font-size: var(--fs-h2);
+}
+
+.productCardFeatured .productCardDesc {
+  display: block;
+  margin-top: var(--sp-3);
+  font-size: var(--fs-body);
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.productCardFeatured .productCardPrice .offerPrice {
+  font-size: 2rem;
+}
+
+.productCardFeatured .productCardBody .btn {
+  width: auto;
+  min-width: 240px;
+  margin-top: var(--sp-2);
+  align-self: flex-start;
+}
+
+@media (max-width: 900px) {
+  .productCardFeatured {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .productCardFeatured .productCardBody {
+    padding: var(--sp-5);
+  }
+
+  .productCardFeatured .productCardBody .btn {
+    width: 100%;
+    min-width: 0;
+    align-self: stretch;
+  }
+}
+
+/* Two matches keep the regular card width, centred, rather than leaving a gap on the right. */
+@media (min-width: 1101px) {
+  .productGrid.productGridPair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: calc((100% - 2 * var(--sp-5)) * 2 / 3 + var(--sp-5));
+    margin-inline: auto;
+  }
+}
+
+/* The toolbar sticks below the site header only while the product list is on screen. */
 .shopToolbar {
+  position: sticky;
+  top: calc(var(--header-h) + 1px);
+  z-index: 40;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: var(--sp-4);
   margin-bottom: var(--sp-6);
+  padding-block: var(--sp-3);
+}
+
+/* Full-width ivory band behind the toolbar; the edge line and shadow appear once it sticks. */
+.shopToolbar::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(50% - 50vw);
+  z-index: -1;
+  background: var(--ivory);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--ease), box-shadow var(--ease);
+}
+
+.shopToolbar.isStuck::before {
+  border-bottom-color: var(--line);
+  box-shadow: 0 10px 24px -18px rgba(10, 46, 31, 0.35);
+}
+
+/* Below the width where chips and search share one row: search sits above the chips and
+   slides under the site header once stuck, so only the single row of category chips stays
+   pinned with the same spacing as desktop (top = header − padding − search). */
+@media (max-width: 1100px) {
+  .shopToolbar {
+    top: calc(var(--header-h) + 1px - var(--sp-3) - 44px);
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-3);
+  }
+
+  .shopToolbar .searchField {
+    order: -1;
+    flex: none;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Two-column shop grid: an odd last card is centred at the same width instead of leaving
+   half the row empty. */
+@media (min-width: 641px) and (max-width: 1100px) {
+  .shopBrowse .productGrid > li:last-child:nth-child(odd):not(:only-child) {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc((100% - var(--sp-5)) / 2);
+  }
 }
 
 .filterChips {
@@ -2302,6 +2424,8 @@ button {
 .searchField {
   position: relative;
   display: block;
+  flex: 0 1 340px; /* narrows to 240px so chips and search stay on one toolbar row */
+  min-width: 240px;
   width: min(340px, 100%);
 }
 
@@ -2654,15 +2778,6 @@ button {
   .ingredientGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--sp-3);
-  }
-
-  .shopToolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .searchField {
-    width: 100%;
   }
 
   .filterChips {

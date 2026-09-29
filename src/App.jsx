@@ -614,6 +614,48 @@ export default function App() {
       : PAGE_TITLES[route.view] || PAGE_TITLES.home;
   }, [route.view, routeProduct]);
 
+  // Shop toolbar: sticky below the site header while the product list is browsed.
+  const shopBrowseRef = useRef(null);
+  const shopToolbarRef = useRef(null);
+  const [toolbarStuck, setToolbarStuck] = useState(false);
+
+  // Scroll position at which the toolbar sticks, i.e. where the product list starts.
+  const shopBrowseTop = () => {
+    const stickyTop = parseFloat(getComputedStyle(shopToolbarRef.current).top) || 0;
+    return shopBrowseRef.current.getBoundingClientRect().top + window.scrollY - stickyTop;
+  };
+
+  useEffect(() => {
+    if (route.view !== "shop") return undefined;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      if (shopBrowseRef.current && shopToolbarRef.current) setToolbarStuck(window.scrollY >= shopBrowseTop() - 1);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [route.view]);
+
+  // Changing category while scrolled into the list brings the new results to the top of
+  // the list instead of leaving the reader stranded below a shorter page.
+  const selectFilter = (category) => {
+    setProductFilter(category);
+    window.requestAnimationFrame(() => {
+      if (!shopBrowseRef.current || !shopToolbarRef.current) return;
+      const top = shopBrowseTop();
+      if (window.scrollY > top) window.scrollTo({ top });
+    });
+  };
+
   const navigate = (view, productId = "", anchor = "") => {
     const url = viewUrl(view, productId);
     if (`${window.location.pathname}${window.location.search}` !== url || window.location.hash) {
@@ -1191,7 +1233,8 @@ export default function App() {
       .some((text) => String(text || "").toLowerCase().includes(normalizedSearch));
   });
 
-  const renderProductCard = (product) => {
+  // variant "featured" is the wide layout used when a Shop filter matches a single product.
+  const renderProductCard = (product, variant) => {
     const weight = getWeight(product);
     const { mrp, offer, discountLabel } = product.prices[weight];
     const savePercent = mrp > 0 ? Math.round(((mrp - offer) / mrp) * 100) : 0;
@@ -1200,7 +1243,7 @@ export default function App() {
     const comingSoon = isComingSoon(product.id);
 
     return (
-      <li className="productCard" key={product.id}>
+      <li className={variant === "featured" ? "productCard productCardFeatured" : "productCard"} key={product.id}>
         <a className="productCardMedia" {...linkTo("product", product.id)} tabIndex={-1} aria-hidden="true">
           <img
             src={product.images["1KG"]}
@@ -1684,47 +1727,53 @@ export default function App() {
       )}
       <section className="section shopSection">
         <div className="container">
-          <div className="shopToolbar">
-            <div className="filterChips" role="group" aria-label="Filter by category">
-              {["All Products", ...productCategories].map((category) => (
+          <div className="shopBrowse" ref={shopBrowseRef}>
+            <div className={toolbarStuck ? "shopToolbar isStuck" : "shopToolbar"} ref={shopToolbarRef}>
+              <div className="filterChips" role="group" aria-label="Filter by category">
+                {["All Products", ...productCategories].map((category) => (
+                  <button
+                    key={category}
+                    className={productFilter === category ? "activeFilter" : ""}
+                    aria-pressed={productFilter === category}
+                    onClick={() => selectFilter(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+              <label className="searchField">
+                <Icon name="search" />
+                <span className="visuallyHidden">Search products</span>
+                <input
+                  id="productSearch"
+                  type="search"
+                  placeholder="Search products or ingredients"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </label>
+            </div>
+            {visibleProducts.length === 1 ? (
+              <ul className="productGrid productGridSingle">{renderProductCard(visibleProducts[0], "featured")}</ul>
+            ) : visibleProducts.length > 0 ? (
+              <ul className={visibleProducts.length === 2 ? "productGrid productGridPair" : "productGrid"}>
+                {visibleProducts.map((product) => renderProductCard(product))}
+              </ul>
+            ) : (
+              <div className="emptyState">
+                <p>No products match your search.</p>
                 <button
-                  key={category}
-                  className={productFilter === category ? "activeFilter" : ""}
-                  aria-pressed={productFilter === category}
-                  onClick={() => setProductFilter(category)}
+                  className="btn btnTertiary"
+                  onClick={() => {
+                    setSearchTerm("");
+                    selectFilter("All Products");
+                  }}
                 >
-                  {category}
+                  Show All Products
                 </button>
-              ))}
-            </div>
-            <label className="searchField">
-              <Icon name="search" />
-              <span className="visuallyHidden">Search products</span>
-              <input
-                id="productSearch"
-                type="search"
-                placeholder="Search products or ingredients"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </label>
+              </div>
+            )}
           </div>
-          {visibleProducts.length > 0 ? (
-            <ul className="productGrid">{visibleProducts.map(renderProductCard)}</ul>
-          ) : (
-            <div className="emptyState">
-              <p>No products match your search.</p>
-              <button
-                className="btn btnTertiary"
-                onClick={() => {
-                  setSearchTerm("");
-                  setProductFilter("All Products");
-                }}
-              >
-                Show All Products
-              </button>
-            </div>
-          )}
           {renderGoodness()}
         </div>
       </section>
