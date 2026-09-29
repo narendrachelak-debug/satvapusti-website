@@ -19,10 +19,12 @@
   --gold-soft: #e2c56e; /* gold on dark backgrounds */
   --gold-fill: #d4af37;
   --gold-fill-hover: #c79f2c;
-  --gold-ink: #7a5b12; /* gold text on light backgrounds */
+  --gold-ink: #8d6116; /* muted gold: eyebrows, small highlights (4.5:1 on cream) */
   --gold-100: #f7eecd;
-  --ink: #1f2d1f;
-  --muted: #6b665c; /* warm neutral grey */
+  --heading: #123f31; /* serif headings, prices */
+  --ink: #17382f; /* important dark text */
+  --body: #4f554e; /* body copy */
+  --muted: #676a65; /* secondary / metadata (4.5:1 on cream) */
   --on-dark: #f8f3e9;
   --on-dark-muted: rgba(248, 243, 233, 0.74);
   --line: rgba(31, 45, 31, 0.1);
@@ -105,7 +107,7 @@ h2,
 h3,
 h4 {
   margin: 0;
-  color: var(--forest-800);
+  color: var(--heading);
   font-family: var(--font-serif);
   font-weight: 600;
   line-height: 1.12;
@@ -189,7 +191,7 @@ button {
 
 .sectionText {
   margin-top: var(--sp-3);
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-lead);
   text-wrap: balance;
 }
@@ -506,7 +508,7 @@ button {
 .heroLead {
   max-width: 34rem;
   margin: var(--sp-5) 0 var(--sp-6);
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-lead);
 }
 
@@ -530,7 +532,7 @@ button {
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);
-  color: var(--forest-800);
+  color: var(--body);
   font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1.45;
@@ -702,7 +704,7 @@ button {
 .productLead {
   max-width: 60ch;
   margin-top: var(--sp-4);
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-body);
 }
 
@@ -749,7 +751,7 @@ button {
 }
 
 .offerPrice {
-  color: var(--forest-800);
+  color: var(--heading);
   font-size: clamp(1.875rem, 1.6rem + 0.7vw, 2.25rem);
   font-weight: 700;
   line-height: 1;
@@ -1006,7 +1008,7 @@ button {
 .tabText p {
   max-width: 75ch;
   margin-top: var(--sp-3);
-  color: var(--muted);
+  color: var(--body);
 }
 
 .ingredientTags {
@@ -1185,7 +1187,7 @@ button {
 
 .trustCard p {
   margin-top: var(--sp-2);
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-sm);
 }
 
@@ -1199,7 +1201,7 @@ button {
 
 .brandStatement blockquote {
   margin: var(--sp-3) 0 0;
-  color: var(--forest-800);
+  color: var(--heading);
   font-family: var(--font-serif);
   font-size: clamp(1.75rem, 1.3rem + 1.2vw, 2.375rem);
   font-style: italic;
@@ -1221,7 +1223,7 @@ button {
 }
 
 .brandStoryBody p {
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-lead);
   line-height: 1.7;
 }
@@ -1272,7 +1274,7 @@ button {
 
 .featureList p {
   margin-top: var(--sp-1);
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-sm);
 }
 
@@ -1464,7 +1466,7 @@ button {
 
 .faqGrid details p {
   padding: 0 var(--sp-5) var(--sp-5);
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-sm);
 }
 
@@ -1578,7 +1580,7 @@ button {
 
 .checkoutBox > p,
 .checkoutBox .sectionText {
-  color: var(--muted);
+  color: var(--body);
 }
 
 .closeBtn {
@@ -1837,7 +1839,7 @@ button {
 }
 
 .legalPolicyBox > p {
-  color: var(--muted);
+  color: var(--body);
 }
 
 .legalPolicyBox details {
@@ -1857,7 +1859,7 @@ button {
 
 .legalPolicyBox details p {
   margin-top: var(--sp-2);
-  color: var(--muted);
+  color: var(--body);
 }
 
 .myOrdersBox {
@@ -1882,7 +1884,7 @@ button {
 }
 
 .nextStepsBox p {
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-sm);
 }
 
@@ -2229,7 +2231,7 @@ button {
   display: -webkit-box;
   margin-top: var(--sp-2);
   overflow: hidden;
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-sm);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -2338,7 +2340,7 @@ button {
   padding: var(--sp-8) var(--sp-5);
   border: 1px dashed var(--line-strong);
   border-radius: var(--r-lg);
-  color: var(--muted);
+  color: var(--body);
   text-align: center;
 }
 
@@ -2366,7 +2368,7 @@ button {
 .homeStoryText {
   max-width: 34rem;
   margin: var(--sp-5) 0 var(--sp-6);
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-lead);
 }
 
@@ -2399,7 +2401,7 @@ button {
 .aboutHeroCopy p:not(.eyebrow) {
   max-width: 36rem;
   margin-top: var(--sp-4);
-  color: var(--muted);
+  color: var(--body);
   font-size: var(--fs-lead);
   line-height: 1.7;
 }
