@@ -8,12 +8,51 @@ const upiId = "9993265857@ybl";
 const API_URL = "https://satvapusti-website.onrender.com";
 
 const navItems = [
-  { id: "top", label: "Home", href: "#top" },
-  { id: "products", label: "Shop", href: "#products" },
-  { id: "about", label: "About Us", href: "#about" },
-  { id: "ingredients", label: "Ingredients", href: "#ingredients" },
-  { id: "contact", label: "Contact", href: "#contact" },
+  { view: "home", label: "Home" },
+  { view: "shop", label: "Shop" },
+  { view: "about", label: "About Us" },
+  { view: "ingredients", label: "Ingredients" },
+  { view: "contact", label: "Contact" },
 ];
+
+// Storefront pages live inside App (so the cart survives navigation) and are
+// addressed as /?page=<view>. Admin and Track Order stay routed by main.jsx.
+const STOREFRONT_VIEWS = new Set(["home", "shop", "product", "about", "ingredients", "contact"]);
+// Links from the previous one-page layout keep working.
+const LEGACY_HASH_VIEWS = {
+  top: "home",
+  products: "shop",
+  about: "about",
+  ingredients: "ingredients",
+  contact: "contact",
+  faq: "contact",
+};
+const PAGE_TITLES = {
+  home: "SatvaPusti Nutrition | Premium Family Wellness Powder",
+  shop: "Shop | SatvaPusti Nutrition",
+  about: "About Us | SatvaPusti Nutrition",
+  ingredients: "Ingredients | SatvaPusti Nutrition",
+  contact: "Contact | SatvaPusti Nutrition",
+};
+
+const viewUrl = (view, productId = "") => {
+  if (view === "home") return "/";
+  return `/?page=${view}${productId ? `&id=${encodeURIComponent(productId)}` : ""}`;
+};
+
+const readRoute = () => {
+  const params = new URLSearchParams(window.location.search);
+  const page = params.get("page");
+  if (STOREFRONT_VIEWS.has(page)) return { view: page, productId: params.get("id") || "" };
+  return { view: LEGACY_HASH_VIEWS[window.location.hash.replace("#", "")] || "home", productId: "" };
+};
+
+const PRODUCT_CATEGORIES = {
+  family: "Family Nutrition",
+  kids: "Kids Nutrition",
+  active: "Fitness & Recovery",
+};
+const categoryOf = (product) => PRODUCT_CATEGORIES[product.id] || product.theme || "Nutrition";
 
 const defaultProducts = [
   {
@@ -267,13 +306,32 @@ const ingredients = [
   ["watermelon-seed.webp", "Watermelon Seed"],
   ["banana-power.webp", "Banana Powder"],
   ["dhaga-mishri.webp", "Dhaga Mishri"],
-  ["saunf.webp", "Saunf"],
-  ["elaichi.webp", "Elaichi"],
+  ["saunf.webp", "Saunf (Fennel Seeds)"],
+  ["elaichi.webp", "Elaichi (Cardamom)"],
   ["cocoa-powder.webp", "Cocoa Powder"],
   ["date-powder.webp", "Date Powder"],
   ["soy-protein.webp", "Soy Protein"],
   ["ragi.webp", "Ragi"],
 ];
+
+// Ingredient cards use 4:3 crops of the photographed ingredient, cut from the
+// lossless originals (public/ingridients/cards/<name>-<width>.webp). The large
+// size is 720px wide unless the original's photo area is smaller.
+const INGREDIENT_CARD_LARGE_WIDTH = {
+  "cocoa-powder": 685,
+  "date-powder": 699,
+  ragi: 494,
+  "soy-protein": 699,
+};
+const INGREDIENT_CARD_SIZES = "(min-width: 1200px) 170px, (min-width: 769px) 24vw, 48vw";
+const ingredientCardImage = (img) => {
+  const base = img.replace(/\.webp$/, "");
+  const large = INGREDIENT_CARD_LARGE_WIDTH[base] || 720;
+  return {
+    src: `/ingridients/cards/${base}-360.webp`,
+    srcSet: `/ingridients/cards/${base}-360.webp 360w, /ingridients/cards/${base}-${large}.webp ${large}w`,
+  };
+};
 
 // One line-icon set (24px grid, 1.6 stroke) used across the storefront.
 const iconPaths = {
@@ -293,6 +351,10 @@ const iconPaths = {
   lock: <><rect x="5" y="10.5" width="14" height="10" rx="2" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></>,
   cash: <><rect x="3" y="6.5" width="18" height="11" rx="2" /><circle cx="12" cy="12" r="2.5" /></>,
   chat: <path d="M4.5 19.5 5.6 16A7.5 7.5 0 1 1 8.4 18.6Z" />,
+  mail: <><rect x="3" y="5.5" width="18" height="13" rx="2" /><path d="m4 7 8 6 8-6" /></>,
+  pin: <><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z" /><circle cx="12" cy="10" r="2.3" /></>,
+  truck: <><path d="M3 6.5h11v9H3z" /><path d="M14 9.5h3.5L21 13v2.5h-7" /><circle cx="7" cy="17.5" r="1.8" /><circle cx="17" cy="17.5" r="1.8" /></>,
+  arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
 };
 
 function Icon({ name, className = "icon" }) {
@@ -317,6 +379,7 @@ const heroTrustPoints = [
   ["leaf", "100% Natural Ingredients"],
   ["noColour", "No Artificial Colours or Preservatives"],
   ["award", "FSSAI Registered"],
+  ["family", "Made for Families"],
 ];
 
 const trustCards = [
@@ -355,7 +418,10 @@ export default function App() {
   const [checkoutQuote, setCheckoutQuote] = useState(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [showHomeMenu, setShowHomeMenu] = useState(false);
-  const [activeSection, setActiveSection] = useState("top");
+  const [route, setRoute] = useState(readRoute);
+  const [productFilter, setProductFilter] = useState("All Products");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
   const [activeProductTabs, setActiveProductTabs] = useState({});
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyModalSection, setPolicyModalSection] = useState("terms");
@@ -419,12 +485,20 @@ export default function App() {
     const normalizeProduct = (product) => {
       const productId = product.productId || product.id;
       const fallbackProduct = defaultProductById[productId] || defaultProducts[0];
+      // Descriptive content comes only from this product's own record or its
+      // own defaults, so one product can never show another product's text.
+      const ownDefaults = defaultProductById[productId] || {};
       const weights = product.weights || {};
       const images = {};
       const prices = {};
 
       for (const weight of ["1KG", "500G", "250G"]) {
-        images[weight] = weights[weight]?.image || fallbackProduct.images[weight];
+        // The database stores the PNG masters; the same-resolution WebP twin is ~10x lighter.
+        const storedImage = weights[weight]?.image;
+        const webpTwin = ownDefaults.images?.[weight];
+        images[weight] = storedImage && storedImage.replace(/\.png$/i, ".webp") === webpTwin
+          ? webpTwin
+          : storedImage || fallbackProduct.images[weight];
         prices[weight] = {
           mrp: Number(weights[weight]?.mrp || 0),
           offer: Number(weights[weight]?.offer || 0),
@@ -440,23 +514,23 @@ export default function App() {
 
       return {
         id: productId,
-        name: product.name || fallbackProduct.name,
-        theme: product.theme || fallbackProduct.theme,
-        subtitle: product.subtitle || fallbackProduct.subtitle,
-        desc: fallbackProduct.desc || product.desc || "",
+        name: product.name || ownDefaults.name || "",
+        theme: product.theme || ownDefaults.theme || "",
+        subtitle: product.subtitle || ownDefaults.subtitle || "",
+        desc: ownDefaults.desc || product.desc || "",
         bestFor: Array.isArray(product.bestFor) && product.bestFor.length > 0
           ? product.bestFor
-          : fallbackProduct.bestFor,
-        accent: product.accent || fallbackProduct.accent,
+          : ownDefaults.bestFor || [],
+        accent: product.accent || ownDefaults.accent,
         badges: Array.isArray(product.badges) && product.badges.length > 0
           ? product.badges
-          : fallbackProduct.badges,
-        benefits: fallbackProduct.benefits,
+          : ownDefaults.badges || [],
+        benefits: ownDefaults.benefits || (Array.isArray(product.benefits) ? product.benefits : []),
         ingredients: Array.isArray(product.ingredients) && product.ingredients.length > 0
           ? product.ingredients
-          : fallbackProduct.ingredients,
-        usage: product.usage || fallbackProduct.usage,
-        nutrition: fallbackProduct.nutrition,
+          : ownDefaults.ingredients || [],
+        usage: product.usage || ownDefaults.usage || "",
+        nutrition: ownDefaults.nutrition || [],
         images,
         prices,
       };
@@ -520,49 +594,61 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const sectionIds = navItems.map((item) => item.id);
-
-    const scrollToHashSection = () => {
-      const hash = window.location.hash.replace("#", "");
-      if (!hash) return;
-
-      window.setTimeout(() => {
-        document.getElementById(hash)?.scrollIntoView({ block: "start" });
-      }, 120);
-    };
-
-    const updateActiveSection = () => {
-      const headerHeight = document.querySelector(".site-header")?.offsetHeight || 0;
-      const marker = headerHeight + window.innerHeight * 0.28;
-      let current = "top";
-
-      for (const id of sectionIds) {
-        const element = document.getElementById(id);
-        if (!element) continue;
-
-        const rect = element.getBoundingClientRect();
-        if (rect.top <= marker && rect.bottom > headerHeight + 24) {
-          current = id;
-        }
-      }
-
-      if (window.scrollY < 80) {
-        current = "top";
-      }
-
-      setActiveSection(current);
-    };
-
-    updateActiveSection();
-    scrollToHashSection();
-    window.addEventListener("scroll", updateActiveSection, { passive: true });
-    window.addEventListener("resize", updateActiveSection);
-
-    return () => {
-      window.removeEventListener("scroll", updateActiveSection);
-      window.removeEventListener("resize", updateActiveSection);
-    };
+    // An old in-page link such as /#faq still scrolls to its section.
+    const hash = window.location.hash.replace("#", "");
+    if (hash) {
+      window.setTimeout(() => document.getElementById(hash)?.scrollIntoView({ block: "start" }), 120);
+    }
+    const onPopState = () => setRoute(readRoute());
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
+
+  const routeProduct = route.view === "product"
+    ? products.find((product) => product.id === route.productId)
+    : null;
+
+  useEffect(() => {
+    document.title = routeProduct
+      ? `${routeProduct.name} | SatvaPusti Nutrition`
+      : PAGE_TITLES[route.view] || PAGE_TITLES.home;
+  }, [route.view, routeProduct]);
+
+  const navigate = (view, productId = "", anchor = "") => {
+    const url = viewUrl(view, productId);
+    if (`${window.location.pathname}${window.location.search}` !== url || window.location.hash) {
+      window.history.pushState({}, "", url);
+    }
+    setRoute({ view, productId });
+    setShowHomeMenu(false);
+    window.setTimeout(() => {
+      const target = anchor && document.getElementById(anchor);
+      if (target) target.scrollIntoView({ block: "start" });
+      else window.scrollTo({ top: 0 });
+    }, 0);
+  };
+
+  // Real links (open in new tab, copy link) that switch pages in place on a normal click.
+  const linkTo = (view, productId = "", anchor = "") => ({
+    href: viewUrl(view, productId),
+    onClick: (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      navigate(view, productId, anchor);
+    },
+  });
+
+  const openSearch = () => {
+    navigate("shop");
+    window.setTimeout(() => document.getElementById("productSearch")?.focus(), 50);
+  };
+
+  const sendContactMessage = (event) => {
+    event.preventDefault();
+    const subject = `Website enquiry from ${contactForm.name}`;
+    const body = `${contactForm.message}\n\nName: ${contactForm.name}\nEmail: ${contactForm.email}`;
+    window.location.href = `mailto:${businessConfig.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
 
   const changeQty = (product, value) => {
     const nextQty = Math.max(1, getQty(product) + value);
@@ -1095,88 +1181,407 @@ export default function App() {
     </div>
   );
 
-  return (
-    <div className="siteShell">
-      <header className="site-header" id="top">
-        <div className="main-header container">
-          <a className="brandLink" href="#top" aria-label="SatvaPusti Nutrition home">
-            <img
-              src="/banners/logo-banner.webp"
-              alt="Satvapusti Branding"
-              className="brand-ribbon"
-            />
-          </a>
+  const activeNav = route.view === "product" ? "shop" : route.view;
+  const productCategories = [...new Set(products.map(categoryOf))];
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const visibleProducts = products.filter((product) => {
+    if (productFilter !== "All Products" && categoryOf(product) !== productFilter) return false;
+    if (!normalizedSearch) return true;
+    return [product.name, product.subtitle, product.desc, categoryOf(product), ...(product.ingredients || [])]
+      .some((text) => String(text || "").toLowerCase().includes(normalizedSearch));
+  });
 
-          <nav className="nav-links" aria-label="Primary navigation">
-            {navItems.map((item) => (
-              <a
-                key={item.id}
-                href={item.href}
-                className={activeSection === item.id ? "active" : ""}
-                aria-current={activeSection === item.id ? "page" : undefined}
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
+  const renderProductCard = (product) => {
+    const weight = getWeight(product);
+    const { mrp, offer, discountLabel } = product.prices[weight];
+    const savePercent = mrp > 0 ? Math.round(((mrp - offer) / mrp) * 100) : 0;
+    const stock = getStock(product.id, weight);
+    const isOutOfStock = inventoryLoaded && stock !== null && stock <= 0;
+    const comingSoon = isComingSoon(product.id);
 
-          <div className="header-icons">
-            <a className="headerIconBtn" href="#products" aria-label="Search products" title="Search">
-              <Icon name="search" />
+    return (
+      <li className="productCard" key={product.id}>
+        <a className="productCardMedia" {...linkTo("product", product.id)} tabIndex={-1} aria-hidden="true">
+          <img
+            src={product.images["1KG"]}
+            alt=""
+            width="1536"
+            height="1024"
+            loading="lazy"
+            decoding="async"
+          />
+          {comingSoon && <span className="statusBadge">Coming Soon</span>}
+        </a>
+        <div className="productCardBody">
+          <p className="eyebrow">{categoryOf(product)}</p>
+          <h3>
+            <a {...linkTo("product", product.id)}>{product.name}</a>
+          </h3>
+          <p className="productCardDesc">{product.desc}</p>
+          <div className="productCardPrice">
+            <span className="offerPrice">₹{offer}</span>
+            <span className="mrpPrice">MRP <s>₹{mrp}</s></span>
+            <span className="discountBadge">{discountLabel || `${savePercent}% OFF`}</span>
+          </div>
+          <p className="productCardPack">{weight} pack · Inclusive of all taxes</p>
+          {comingSoon ? (
+            <a className="btn btnTertiary btnBlock" {...linkTo("product", product.id)}>
+              View Details
             </a>
-            <button className="headerIconBtn" onClick={() => setShowProfile(true)} aria-label="Open profile" title="Profile">
-              <Icon name="user" />
+          ) : (
+            <button
+              className="btn btnPrimary btnBlock"
+              onClick={() => addToCart(product)}
+              disabled={isOutOfStock}
+            >
+              {isOutOfStock ? "Out of Stock" : "Add to Cart"}
             </button>
-            <button className="headerIconBtn cartHeaderBtn" onClick={() => setShowCart(true)} aria-label={`Open cart with ${cartCount} items`} title="Cart">
-              <Icon name="bag" />
-              <span className="cartCount">{cartCount}</span>
-            </button>
-            <div className="menuDropdown">
-              <button
-                className="headerIconBtn menuToggleBtn"
-                onClick={() => setShowHomeMenu((prev) => !prev)}
-                aria-expanded={showHomeMenu}
-                aria-controls="homeMenuPanel"
-                aria-label="Menu"
-              >
-                <Icon name="menu" />
-              </button>
-              {showHomeMenu && (
-                <nav className="homeMenuPanel" id="homeMenuPanel">
-                  {navItems.map((item) => (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      className={activeSection === item.id ? "active" : ""}
-                      aria-current={activeSection === item.id ? "page" : undefined}
-                      onClick={() => setShowHomeMenu(false)}
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                  <a href="/?page=track-order" onClick={() => setShowHomeMenu(false)}>Track Order</a>
-                  <a href="#faq" onClick={() => setShowHomeMenu(false)}>FAQ</a>
+          )}
+        </div>
+      </li>
+    );
+  };
+
+  const renderProductDetail = (product) => {
+    const weight = getWeight(product);
+    const quantity = getQty(product);
+    const mrp = product.prices[weight].mrp;
+    const offer = product.prices[weight].offer;
+    const priceMeta = product.prices[weight];
+    const save = (mrp - offer) * quantity;
+    const total = offer * quantity;
+    const savePercent = mrp > 0 ? Math.round(((mrp - offer) / mrp) * 100) : 0;
+    const stock = getStock(product.id, weight);
+    const hasKnownStock = inventoryLoaded && stock !== null;
+    const isOutOfStock = hasKnownStock && stock <= 0;
+    const isLowStock = hasKnownStock && stock > 0 && stock < 10;
+    const comingSoon = isComingSoon(product.id);
+    const activeTab = activeProductTabs[product.id] || "description";
+    const whatsappText = encodeURIComponent(
+      `Hi, I want to buy ${product.name} ${weight}. Quantity: ${quantity}.`
+    );
+    const notifyText = encodeURIComponent(
+      `Hi, please notify me when ${product.name} is available.`
+    );
+    const tabs = [
+      ["description", "Description"],
+      ["ingredients", "Ingredients"],
+      ["howToUse", "How To Use"],
+      ["nutrition", "Nutrition Facts"],
+      ["safetyInfo", "Product & Safety Info"],
+    ];
+    const productBenefits = product.benefits?.length ? product.benefits : [];
+    const productBadges = product.badges?.length ? product.badges : [];
+    const benefitChips = (product.bestFor || []).filter((tag) => tag !== product.theme);
+
+    return (
+      <article className="productDetail" aria-labelledby={`product-${product.id}`}>
+        <div className="productTop">
+          <div className="productGallery">
+            <div className="productImageStage">
+              <img
+                src={product.images[weight]}
+                alt={`${product.name} ${weight} pack`}
+                width="1536"
+                height="1024"
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+              />
+            </div>
+            <div className="productThumbs" aria-label="Pack images">
+              {["1KG", "500G", "250G"].map((w) => (
+                <button
+                  key={w}
+                  className={weight === w ? "activeThumb" : ""}
+                  onClick={() => setSelected({ ...selected, [product.id]: w })}
+                  aria-pressed={weight === w}
+                  aria-label={`Show ${w} pack`}
+                >
+                  <img
+                    src={product.images[w]}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span>{w}</span>
+                </button>
+              ))}
+            </div>
+            {benefitChips.length > 0 && (
+              <ul className="productChips" aria-label="Best for">
+                {benefitChips.map((tag) => (
+                  <li key={tag}>{tag}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="productInfo">
+            <div className="productStatusRow">
+              <span className="eyebrow">{categoryOf(product)}</span>
+              {comingSoon && <span className="statusBadge">Coming Soon</span>}
+              {productBadges.slice(0, 2).map((badge) => (
+                <span className="productBadge" key={badge.label}>{badge.label}</span>
+              ))}
+            </div>
+
+            <h1 id={`product-${product.id}`}>{product.name}</h1>
+            <p className="productSubtitle">{product.subtitle || "Premium Nutrition Powder"}</p>
+            <p className="productLead">{product.desc}</p>
+
+            {productBenefits.length > 0 && (
+              <ul className={`productBenefits${productBenefits.length % 2 ? " isOdd" : ""}`}>
+                {productBenefits.map((benefit) => (
+                  <li key={benefit}>
+                    <Icon name="check" />
+                    {benefit}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="priceBlock">
+              <div className="priceMain">
+                <span className="offerPrice">₹{offer}</span>
+                <span className="mrpPrice">
+                  MRP <s>₹{mrp}</s>
+                </span>
+                <span className="discountBadge">{priceMeta.discountLabel || `${savePercent}% OFF`}</span>
+              </div>
+              <p className="priceNote">
+                You save <b>₹{save}</b>
+                {priceMeta.taxInclusive && <> · Inclusive of all taxes</>}
+              </p>
+            </div>
+
+            <div className="optionGroup">
+              <span className="optionLabel" id={`pack-${product.id}`}>Pack Size</span>
+              <div className="packButtons" role="group" aria-labelledby={`pack-${product.id}`}>
+                {["1KG", "500G", "250G"].map((w) => (
                   <button
-                    className="profileNavBtn"
-                    onClick={() => {
-                      setShowProfile(true);
-                      setShowHomeMenu(false);
-                    }}
+                    key={w}
+                    className={weight === w ? "activeWeight" : ""}
+                    onClick={() => setSelected({ ...selected, [product.id]: w })}
+                    aria-pressed={weight === w}
                   >
-                    Profile
+                    <span>{w}</span>
+                    <small>₹{product.prices[w].offer}</small>
                   </button>
-                </nav>
+                ))}
+              </div>
+            </div>
+
+            <div className="purchaseRow">
+              {!comingSoon && (
+                <div className="qtyControl">
+                  <button onClick={() => changeQty(product, -1)} aria-label="Decrease quantity">−</button>
+                  <span aria-live="polite" aria-label={`Quantity ${quantity}`}>{quantity}</span>
+                  <button onClick={() => changeQty(product, 1)} aria-label="Increase quantity">+</button>
+                </div>
+              )}
+              {comingSoon ? (
+                <p className="stockStatus stockSoon">Not yet available to order</p>
+              ) : (
+                <p className={`stockStatus ${isOutOfStock ? "stockOut" : isLowStock ? "stockLow" : "stockOk"}`}>
+                  {isOutOfStock ? "Out of stock" : isLowStock ? `Only ${stock} left` : "In Stock"}
+                </p>
               )}
             </div>
+
+            <div className="ctaGroup">
+              {comingSoon ? (
+                <a
+                  className="btn btnPrimary btnBlock"
+                  href={`https://wa.me/${phone}?text=${notifyText}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Notify Me When Available
+                </a>
+              ) : (
+                <>
+                  <button
+                    className="btn btnPrimary btnBlock"
+                    onClick={() => addToCart(product)}
+                    disabled={isOutOfStock}
+                  >
+                    {isOutOfStock ? "Out of Stock" : `Add To Cart — ₹${total}`}
+                  </button>
+
+                  <a
+                    className="btn btnTertiary btnBlock"
+                    href={`https://wa.me/${phone}?text=${whatsappText}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Icon name="chat" />
+                    Buy on WhatsApp
+                  </a>
+                </>
+              )}
+            </div>
+
+            <ul className="assuranceRow" aria-label="Checkout assurances">
+              <li><Icon name="award" />FSSAI Registered</li>
+              <li><Icon name="cash" />Cash on Delivery</li>
+              <li><Icon name="lock" />Secure Checkout</li>
+            </ul>
           </div>
         </div>
-      </header>
 
-      <button className="cartFloatBtn" onClick={() => setShowCart(true)}>
-        <Icon name="bag" />
-        Cart ({cartCount})
-      </button>
+        <div className="productTabs">
+          <div className="tabList" role="tablist" aria-label={`${product.name} details`}>
+            {tabs.map(([id, label]) => (
+              <button
+                key={id}
+                id={`tab-${product.id}-${id}`}
+                role="tab"
+                aria-selected={activeTab === id}
+                aria-controls={`panel-${product.id}`}
+                className={activeTab === id ? "activeProductTab" : ""}
+                onClick={() => setActiveProductTabs({ ...activeProductTabs, [product.id]: id })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div
+            className="tabPanel"
+            role="tabpanel"
+            id={`panel-${product.id}`}
+            aria-labelledby={`tab-${product.id}-${activeTab}`}
+            key={activeTab}
+          >
+            {activeTab === "description" && (
+              <div className="tabText">
+                <h2>Premium daily nutrition</h2>
+                <p>{product.desc}</p>
+                <p>{product.usage}</p>
+              </div>
+            )}
+            {activeTab === "ingredients" && (
+              <ul className="ingredientTags">
+                {(product.ingredients || []).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            )}
+            {activeTab === "howToUse" && (
+              <ol className="usageSteps">
+                <li>Add 2 spoons to warm milk or water.</li>
+                <li>Stir well until smooth.</li>
+                <li>Use daily as part of a balanced routine.</li>
+              </ol>
+            )}
+            {activeTab === "nutrition" && (
+              <dl className="factTable">
+                {(product.nutrition || []).map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {activeTab === "safetyInfo" && (
+              <div className="safetyInfo">
+                <dl className="factTable">
+                  <div><dt>Net Quantity</dt><dd>{priceMeta.packSize}</dd></div>
+                  <div><dt>FSSAI Registration No</dt><dd>20526034000204</dd></div>
+                  <div><dt>HSN Code</dt><dd>{priceMeta.hsnCode}</dd></div>
+                  {product.compliance?.vegetarian !== undefined && (
+                    <div><dt>Vegetarian</dt><dd>{product.compliance.vegetarian ? "Yes" : "No"}</dd></div>
+                  )}
+                  {product.compliance?.allergens && (
+                    <div><dt>Allergen Information</dt><dd>{product.compliance.allergens}</dd></div>
+                  )}
+                  {product.compliance?.shelfLife && (
+                    <div><dt>Best Before / Shelf Life</dt><dd>{product.compliance.shelfLife}</dd></div>
+                  )}
+                  {product.compliance?.storageInstructions && (
+                    <div><dt>Storage Instructions</dt><dd>{product.compliance.storageInstructions}</dd></div>
+                  )}
+                  {product.compliance?.manufacturedBy && (
+                    <div><dt>Manufactured By</dt><dd>{product.compliance.manufacturedBy}</dd></div>
+                  )}
+                </dl>
+                {(product.compliance?.vegetarian === undefined ||
+                  !product.compliance?.allergens ||
+                  !product.compliance?.shelfLife ||
+                  !product.compliance?.storageInstructions ||
+                  !product.compliance?.manufacturedBy) && (
+                  <p className="safetyInfoPending">
+                    Vegetarian mark, allergen declaration, best-before/shelf-life and storage
+                    instructions for this pack will be published here once confirmed by
+                    SatvaPusti Nutrition.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </article>
+    );
+  };
 
+  const renderGoodness = () => (
+    <div className="goodnessStrip">
+      <p className="eyebrow">Goodness in Every Scoop</p>
+      <ul>
+        {goodnessPoints.map(([icon, label]) => (
+          <li key={label}>
+            <span className="iconMedallion"><Icon name={icon} /></span>
+            {label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  const renderTrustCards = () => (
+    <ul className="trustCards">
+      {trustCards.map(([icon, title, text]) => (
+        <li className="trustCard" key={title}>
+          <span className="iconMedallion"><Icon name={icon} /></span>
+          <h3>{title}</h3>
+          <p>{text}</p>
+        </li>
+      ))}
+    </ul>
+  );
+
+  const renderIngredientGrid = (list) => (
+    <ul className="ingredientGrid">
+      {list.map(([img, name]) => (
+        <li className="ingredientCard" key={img}>
+          <img
+            {...ingredientCardImage(img)}
+            sizes={INGREDIENT_CARD_SIZES}
+            alt={name}
+            width="360"
+            height="270"
+            loading="lazy"
+            decoding="async"
+          />
+          <span>{name}</span>
+        </li>
+      ))}
+    </ul>
+  );
+
+  const renderPageIntro = (eyebrow, title, text) => (
+    <section className="pageIntro">
+      <div className="container">
+        <p className="eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+        {text && <p className="sectionText">{text}</p>}
+      </div>
+    </section>
+  );
+
+  const renderHome = () => (
+    <>
       <section className="hero" aria-labelledby="heroTitle">
         <div className="container heroGrid">
           <div className="heroCopy">
@@ -1186,7 +1591,10 @@ export default function App() {
               Wholesome nutrition powders made with real dry fruits, seeds and traditional
               ingredients, crafted for children, parents and grandparents alike.
             </p>
-            <a className="btn btnPrimary" href="#products">Shop Best Sellers</a>
+            <a className="btn btnPrimary btnLarge" {...linkTo("shop")}>
+              Shop Best Sellers
+              <Icon name="arrow" />
+            </a>
             <ul className="heroTrust">
               {heroTrustPoints.map(([icon, label]) => (
                 <li key={label}>
@@ -1210,307 +1618,573 @@ export default function App() {
         </div>
       </section>
 
-      <section id="products" className="section productsSection">
+      <section className="section" aria-labelledby="rangeTitle">
         <div className="container">
           <header className="sectionHead">
-            <p className="eyebrow">Shop</p>
-            <h2>Shop SatvaPusti Nutrition</h2>
-            <p className="sectionText">Premium nutrition powders with real ingredients, family-friendly formulas, and fast checkout.</p>
+            <p className="eyebrow">Our Range</p>
+            <h2 id="rangeTitle">Nutrition for the Whole Family</h2>
+            <p className="sectionText">
+              Premium nutrition powders with real ingredients, family-friendly formulas, and fast checkout.
+            </p>
           </header>
-
-          <div className="productStack">
-            {products.map((product, productIndex) => {
-              const weight = getWeight(product);
-              const quantity = getQty(product);
-              const mrp = product.prices[weight].mrp;
-              const offer = product.prices[weight].offer;
-              const priceMeta = product.prices[weight];
-              const save = (mrp - offer) * quantity;
-              const total = offer * quantity;
-              const savePercent = mrp > 0 ? Math.round(((mrp - offer) / mrp) * 100) : 0;
-              const stock = getStock(product.id, weight);
-              const hasKnownStock = inventoryLoaded && stock !== null;
-              const isOutOfStock = hasKnownStock && stock <= 0;
-              const isLowStock = hasKnownStock && stock > 0 && stock < 10;
-              const comingSoon = isComingSoon(product.id);
-              const activeTab = activeProductTabs[product.id] || "description";
-              const whatsappText = encodeURIComponent(
-                `Hi, I want to buy ${product.name} ${weight}. Quantity: ${quantity}.`
-              );
-              const notifyText = encodeURIComponent(
-                `Hi, please notify me when ${product.name} is available.`
-              );
-              const tabs = [
-                ["description", "Description"],
-                ["ingredients", "Ingredients"],
-                ["howToUse", "How To Use"],
-                ["nutrition", "Nutrition Facts"],
-                ["safetyInfo", "Product & Safety Info"],
-              ];
-              const productBenefits = product.benefits?.length
-                ? product.benefits
-                : ["Real Ingredients", "Daily Nutrition Support", "No Artificial Colours", "Family Wellness"];
-              const productBadges = product.badges?.length
-                ? product.badges
-                : [{ label: "Real Ingredients" }, { label: "Daily Nutrition" }];
-              const benefitChips = (product.bestFor || []).filter((tag) => tag !== product.theme);
-
-              return (
-                <article className="productDetail" key={product.id} aria-labelledby={`product-${product.id}`}>
-                  <div className="productTop">
-                    <div className="productGallery">
-                      <div className="productImageStage">
-                        <div className="productImageBadges">
-                          {productBadges.slice(0, 2).map((badge) => (
-                            <span key={badge.label}>{badge.label}</span>
-                          ))}
-                        </div>
-                        <img
-                          src={product.images[weight]}
-                          alt={product.name}
-                          width="1536"
-                          height="1024"
-                          loading={productIndex === 0 ? "eager" : "lazy"}
-                          decoding="async"
-                          fetchPriority={productIndex === 0 ? "high" : "auto"}
-                        />
-                      </div>
-                      <div className="productThumbs">
-                        {["1KG", "500G", "250G"].map((w) => (
-                          <button
-                            key={w}
-                            className={weight === w ? "activeThumb" : ""}
-                            onClick={() => setSelected({ ...selected, [product.id]: w })}
-                            aria-pressed={weight === w}
-                          >
-                            <img
-                              src={product.images[w]}
-                              alt={`${product.name} ${w}`}
-                              loading="lazy"
-                              decoding="async"
-                            />
-                            <span>{w}</span>
-                          </button>
-                        ))}
-                      </div>
-                      {benefitChips.length > 0 && (
-                        <ul className="productChips" aria-label="Best for">
-                          {benefitChips.map((tag) => (
-                            <li key={tag}>{tag}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-
-                    <div className="productInfo">
-                      <div className="productStatusRow">
-                        {product.theme && <span className="eyebrow">{product.theme}</span>}
-                        {comingSoon && <span className="statusBadge">Coming Soon</span>}
-                      </div>
-
-                      <h3 id={`product-${product.id}`}>{product.name}</h3>
-                      <p className="productSubtitle">{product.subtitle || "Premium Nutrition Powder"}</p>
-                      <p className="productLead">{product.desc}</p>
-
-                      <ul className={`productBenefits${productBenefits.length % 2 ? " isOdd" : ""}`}>
-                        {productBenefits.map((benefit) => (
-                          <li key={benefit}>
-                            <Icon name="check" />
-                            {benefit}
-                          </li>
-                        ))}
-                      </ul>
-
-                      <div className="priceBlock">
-                        <div className="priceMain">
-                          <span className="offerPrice">₹{offer}</span>
-                          <span className="mrpPrice">
-                            MRP <s>₹{mrp}</s>
-                          </span>
-                          <span className="discountBadge">{priceMeta.discountLabel || `Save ${savePercent}%`}</span>
-                        </div>
-                        <p className="priceNote">
-                          You save <b>₹{save}</b>
-                          {priceMeta.taxInclusive && <> · Inclusive of all taxes</>}
-                        </p>
-                      </div>
-
-                      <div className="optionGroup">
-                        <span className="optionLabel">Pack Size</span>
-                        <div className="packButtons">
-                          {["1KG", "500G", "250G"].map((w) => (
-                            <button
-                              key={w}
-                              className={weight === w ? "activeWeight" : ""}
-                              onClick={() => setSelected({ ...selected, [product.id]: w })}
-                              aria-pressed={weight === w}
-                            >
-                              <span>{w}</span>
-                              <small>₹{product.prices[w].offer}</small>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="purchaseRow">
-                        {!comingSoon && (
-                          <div className="qtyControl">
-                            <button onClick={() => changeQty(product, -1)} aria-label="Decrease quantity">−</button>
-                            <span aria-label="Quantity">{quantity}</span>
-                            <button onClick={() => changeQty(product, 1)} aria-label="Increase quantity">+</button>
-                          </div>
-                        )}
-                        {comingSoon ? (
-                          <p className="stockStatus stockSoon">Not yet available to order</p>
-                        ) : (
-                          <p className={`stockStatus ${isOutOfStock ? "stockOut" : isLowStock ? "stockLow" : "stockOk"}`}>
-                            {isOutOfStock ? "Out of stock" : isLowStock ? `Only ${stock} left` : "In Stock"}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="ctaGroup">
-                        {comingSoon ? (
-                          <a
-                            className="btn btnPrimary btnBlock"
-                            href={`https://wa.me/${phone}?text=${notifyText}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Notify Me When Available
-                          </a>
-                        ) : (
-                          <>
-                            <button
-                              className="btn btnPrimary btnBlock"
-                              onClick={() => addToCart(product)}
-                              disabled={isOutOfStock}
-                            >
-                              {isOutOfStock ? "Out of Stock" : `Add To Cart — ₹${total}`}
-                            </button>
-
-                            <a
-                              className="btn btnTertiary btnBlock"
-                              href={`https://wa.me/${phone}?text=${whatsappText}`}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <Icon name="chat" />
-                              Buy on WhatsApp
-                            </a>
-                          </>
-                        )}
-                      </div>
-
-                      <ul className="assuranceRow" aria-label="Checkout assurances">
-                        <li><Icon name="award" />FSSAI Registered</li>
-                        <li><Icon name="cash" />Cash on Delivery</li>
-                        <li><Icon name="lock" />Secure Checkout</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="productTabs">
-                    <div className="tabList" role="tablist" aria-label={`${product.name} details`}>
-                      {tabs.map(([id, label]) => (
-                        <button
-                          key={id}
-                          role="tab"
-                          aria-selected={activeTab === id}
-                          className={activeTab === id ? "activeProductTab" : ""}
-                          onClick={() => setActiveProductTabs({ ...activeProductTabs, [product.id]: id })}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="tabPanel" role="tabpanel">
-                      {activeTab === "description" && (
-                        <div className="tabText">
-                          <h4>Premium daily nutrition</h4>
-                          <p>{product.desc}</p>
-                          <p>{product.usage}</p>
-                        </div>
-                      )}
-                      {activeTab === "ingredients" && (
-                        <ul className="ingredientTags">
-                          {(product.ingredients || []).map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      )}
-                      {activeTab === "howToUse" && (
-                        <ol className="usageSteps">
-                          <li>Add 2 spoons to warm milk or water.</li>
-                          <li>Stir well until smooth.</li>
-                          <li>Use daily as part of a balanced routine.</li>
-                        </ol>
-                      )}
-                      {activeTab === "nutrition" && (
-                        <dl className="factTable">
-                          {(product.nutrition || []).map(([label, value]) => (
-                            <div key={label}>
-                              <dt>{label}</dt>
-                              <dd>{value}</dd>
-                            </div>
-                          ))}
-                        </dl>
-                      )}
-                      {activeTab === "safetyInfo" && (
-                        <div className="safetyInfo">
-                          <dl className="factTable">
-                            <div><dt>Net Quantity</dt><dd>{priceMeta.packSize}</dd></div>
-                            <div><dt>FSSAI Registration No</dt><dd>20526034000204</dd></div>
-                            <div><dt>HSN Code</dt><dd>{priceMeta.hsnCode}</dd></div>
-                            {product.compliance?.vegetarian !== undefined && (
-                              <div><dt>Vegetarian</dt><dd>{product.compliance.vegetarian ? "Yes" : "No"}</dd></div>
-                            )}
-                            {product.compliance?.allergens && (
-                              <div><dt>Allergen Information</dt><dd>{product.compliance.allergens}</dd></div>
-                            )}
-                            {product.compliance?.shelfLife && (
-                              <div><dt>Best Before / Shelf Life</dt><dd>{product.compliance.shelfLife}</dd></div>
-                            )}
-                            {product.compliance?.storageInstructions && (
-                              <div><dt>Storage Instructions</dt><dd>{product.compliance.storageInstructions}</dd></div>
-                            )}
-                            {product.compliance?.manufacturedBy && (
-                              <div><dt>Manufactured By</dt><dd>{product.compliance.manufacturedBy}</dd></div>
-                            )}
-                          </dl>
-                          {(product.compliance?.vegetarian === undefined ||
-                            !product.compliance?.allergens ||
-                            !product.compliance?.shelfLife ||
-                            !product.compliance?.storageInstructions ||
-                            !product.compliance?.manufacturedBy) && (
-                            <p className="safetyInfoPending">
-                              Vegetarian mark, allergen declaration, best-before/shelf-life and storage
-                              instructions for this pack will be published here once confirmed by
-                              SatvaPusti Nutrition.
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+          <ul className="productGrid">{products.map(renderProductCard)}</ul>
+          <div className="sectionAction">
+            <a className="btn btnTertiary" {...linkTo("shop")}>
+              View All Products
+              <Icon name="arrow" />
+            </a>
           </div>
+          {renderGoodness()}
+        </div>
+      </section>
 
-          <div className="goodnessStrip">
-            <p className="eyebrow">Goodness in Every Scoop</p>
-            <ul>
-              {goodnessPoints.map(([icon, label]) => (
-                <li key={label}>
-                  <span className="iconMedallion"><Icon name={icon} /></span>
-                  {label}
-                </li>
-              ))}
-            </ul>
+      <section className="section homeStory" aria-labelledby="storyTitle">
+        <div className="container homeStoryGrid">
+          <div className="brandStatement">
+            <p className="eyebrow">Our Story</p>
+            <h2 id="storyTitle">Daily nutrition should come from real ingredients, not artificial formulas.</h2>
+            <span className="goldRule" aria-hidden="true" />
+            <p className="homeStoryText">
+              Our products are prepared using carefully selected dry fruits, seeds, banana powder and
+              dates powder to support families, children and active lifestyles.
+            </p>
+            <a className="btn btnTertiary" {...linkTo("about")}>
+              Read Our Story
+              <Icon name="arrow" />
+            </a>
+          </div>
+          {renderTrustCards()}
+        </div>
+      </section>
+
+      <section className="section" aria-labelledby="homeIngredientsTitle">
+        <div className="container">
+          <header className="sectionHead">
+            <p className="eyebrow">Our Ingredients</p>
+            <h2 id="homeIngredientsTitle">Real Ingredients We Use</h2>
+          </header>
+          {renderIngredientGrid(ingredients.slice(0, 8))}
+          <div className="sectionAction">
+            <a className="btn btnTertiary" {...linkTo("ingredients")}>
+              See All Ingredients
+              <Icon name="arrow" />
+            </a>
           </div>
         </div>
       </section>
+    </>
+  );
+
+  const renderShop = () => (
+    <>
+      {renderPageIntro(
+        "Shop",
+        "Shop SatvaPusti Nutrition",
+        "Premium nutrition powders with real ingredients, family-friendly formulas, and fast checkout."
+      )}
+      <section className="section shopSection">
+        <div className="container">
+          <div className="shopToolbar">
+            <div className="filterChips" role="group" aria-label="Filter by category">
+              {["All Products", ...productCategories].map((category) => (
+                <button
+                  key={category}
+                  className={productFilter === category ? "activeFilter" : ""}
+                  aria-pressed={productFilter === category}
+                  onClick={() => setProductFilter(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            <label className="searchField">
+              <Icon name="search" />
+              <span className="visuallyHidden">Search products</span>
+              <input
+                id="productSearch"
+                type="search"
+                placeholder="Search products or ingredients"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </label>
+          </div>
+          {visibleProducts.length > 0 ? (
+            <ul className="productGrid">{visibleProducts.map(renderProductCard)}</ul>
+          ) : (
+            <div className="emptyState">
+              <p>No products match your search.</p>
+              <button
+                className="btn btnTertiary"
+                onClick={() => {
+                  setSearchTerm("");
+                  setProductFilter("All Products");
+                }}
+              >
+                Show All Products
+              </button>
+            </div>
+          )}
+          {renderGoodness()}
+        </div>
+      </section>
+    </>
+  );
+
+  const renderProductPage = () => {
+    if (!routeProduct) {
+      return (
+        <>
+          {renderPageIntro("Shop", "Product not found", "This product is not available. Browse our full range instead.")}
+          <section className="section">
+            <div className="container sectionAction">
+              <a className="btn btnPrimary" {...linkTo("shop")}>Go to Shop</a>
+            </div>
+          </section>
+        </>
+      );
+    }
+    const otherProducts = products.filter((product) => product.id !== routeProduct.id);
+
+    return (
+      <section className="section productPage">
+        <div className="container">
+          <nav className="breadcrumb" aria-label="Breadcrumb">
+            <a {...linkTo("home")}>Home</a>
+            <span aria-hidden="true">/</span>
+            <a {...linkTo("shop")}>Shop</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">{routeProduct.name}</span>
+          </nav>
+          {renderProductDetail(routeProduct)}
+          {renderGoodness()}
+          {otherProducts.length > 0 && (
+            <section className="relatedProducts" aria-labelledby="relatedTitle">
+              <h2 id="relatedTitle">More from SatvaPusti</h2>
+              <ul className="productGrid">{otherProducts.map(renderProductCard)}</ul>
+            </section>
+          )}
+        </div>
+      </section>
+    );
+  };
+
+  const renderAbout = () => (
+    <>
+      <section className="aboutHero" aria-labelledby="aboutTitle">
+        <div className="container aboutHeroGrid">
+          <div className="aboutHeroCopy">
+            <p className="eyebrow">Our Story</p>
+            <h1 id="aboutTitle">Daily nutrition should come from real ingredients, not artificial formulas.</h1>
+            <span className="goldRule" aria-hidden="true" />
+            <p>
+              At SatvaPusti, we believe everyday nutrition should feel familiar, wholesome and trustworthy.
+              Our products are prepared using carefully selected dry fruits, seeds, banana powder and dates
+              powder to support families, children and active lifestyles.
+            </p>
+            <p>
+              Every batch is produced with a focus on quality, purity and traditional nutrition values.
+            </p>
+          </div>
+          <img
+            className="aboutMedia"
+            src="/banners/about-family-600.webp"
+            srcSet="/banners/about-family-600.webp 600w, /banners/about-family-883.webp 883w"
+            sizes="(min-width: 900px) 46vw, 100vw"
+            alt="Three generations of a family enjoying SatvaPusti nutrition drinks together"
+            width="883"
+            height="662"
+            decoding="async"
+          />
+        </div>
+      </section>
+
+      <section className="section aboutSection" aria-labelledby="trustTitle">
+        <div className="container">
+          <header className="sectionHead">
+            <p className="eyebrow">Premium Nutrition, Built On Trust</p>
+            <h2 id="trustTitle">Why Families Trust SatvaPusti</h2>
+            <p className="sectionText">
+              Made with carefully selected dry fruits, seeds and real ingredients for daily family nutrition.
+            </p>
+          </header>
+
+          {renderTrustCards()}
+
+          <div className="aboutDetails">
+            <ul className="featureList">
+              <li>
+                <Icon name="leaf" />
+                <div>
+                  <h3>Real Ingredients</h3>
+                  <p>Only carefully selected dry fruits, seeds and natural ingredients.</p>
+                </div>
+              </li>
+              <li>
+                <Icon name="heart" />
+                <div>
+                  <h3>Real Banana Powder</h3>
+                  <p>Made with real banana powder, not artificial flavours.</p>
+                </div>
+              </li>
+              <li>
+                <Icon name="seed" />
+                <div>
+                  <h3>Dry Fruits &amp; Seeds</h3>
+                  <p>Rich blend of nuts, seeds and wholesome ingredients.</p>
+                </div>
+              </li>
+              <li>
+                <Icon name="noColour" />
+                <div>
+                  <h3>No Artificial Colours</h3>
+                  <p>No synthetic colours added.</p>
+                </div>
+              </li>
+              <li>
+                <Icon name="flask" />
+                <div>
+                  <h3>0g Added Sugar Options</h3>
+                  <p>Kids and Active formulas use dates powder as the sweetener.</p>
+                </div>
+              </li>
+              <li>
+                <Icon name="family" />
+                <div>
+                  <h3>Daily Nutrition Support</h3>
+                  <p>Designed for everyday family wellness.</p>
+                </div>
+              </li>
+            </ul>
+
+            <aside className="fssaiPanel" aria-label="FSSAI registration">
+              <div className="fssaiPanelInner">
+                <span className="iconMedallion"><Icon name="award" /></span>
+                <p className="eyebrow">FSSAI</p>
+                <h3>Registered Food Business</h3>
+                <p className="fssaiNumber">Registration No. {businessConfig.fssai}</p>
+                <dl>
+                  <div><dt>FBO Name</dt><dd>Satvapusti Nutrition</dd></div>
+                  <div><dt>Business Type</dt><dd>General Manufacturing</dd></div>
+                </dl>
+                <small>Issued under the Food Safety and Standards Act, 2006.</small>
+              </div>
+            </aside>
+          </div>
+
+          <p className="trustBanner">
+            Made for Families <span aria-hidden="true">·</span> Designed for Kids <span aria-hidden="true">·</span> Trusted by Active Lifestyles
+          </p>
+        </div>
+      </section>
+    </>
+  );
+
+  const renderIngredients = () => (
+    <>
+      {renderPageIntro(
+        "Our Ingredients",
+        "Real Ingredients We Use",
+        "See the dry fruits, seeds and natural ingredients that make SatvaPusti feel honest and wholesome."
+      )}
+      <section className="section ingredientsSection">
+        <div className="container">
+          {renderIngredientGrid(ingredients)}
+          {renderGoodness()}
+        </div>
+      </section>
+    </>
+  );
+
+  const renderFaq = () => (
+    <section id="faq" className="section faqSection" aria-labelledby="faqTitle">
+      <div className="container">
+        <header className="sectionHead">
+          <p className="eyebrow">Help</p>
+          <h2 id="faqTitle">Frequently Asked Questions</h2>
+          <p className="sectionText">
+            Find common answers about ordering, payment, and product usage here.
+          </p>
+        </header>
+
+        <div className="faqGrid">
+          <details>
+            <summary>How should I use SatvaPusti products?</summary>
+            <p>
+              Use the product with milk or warm water as part of your daily routine.
+              Children, elderly customers, pregnant women, or customers with medical
+              conditions should consult a doctor before use.
+            </p>
+          </details>
+
+          <details>
+            <summary>Is COD available?</summary>
+            <p>
+              Yes, COD is available. Payment for COD orders is collected at the time of delivery.
+            </p>
+          </details>
+
+          <details>
+            <summary>What is the benefit of UPI prepaid?</summary>
+            <p>
+              UPI prepaid orders get free shipping. After payment, send WhatsApp
+              confirmation. The order will be processed after admin verification.
+            </p>
+          </details>
+
+          <details>
+            <summary>How can I track my order?</summary>
+            <p>
+              Click Track Order in the header and enter your Order ID and mobile number
+              to view the latest order status.
+            </p>
+          </details>
+
+          <details>
+            <summary>Do you have FSSAI registration?</summary>
+            <p>
+              Yes. SatvaPusti Nutrition's FSSAI Registration No. is 20526034000204.
+            </p>
+          </details>
+
+          <details>
+            <summary>When can I get a return or replacement?</summary>
+            <p>
+              Due to food safety reasons, opened products are not returnable. For wrong,
+              damaged, expired, or manufacturing defect products, report within 48 hours
+              with clear photo/video proof.
+            </p>
+          </details>
+        </div>
+      </div>
+    </section>
+  );
+
+  const renderContact = () => (
+    <>
+      {renderPageIntro(
+        "Contact",
+        "Get in Touch",
+        "We are here to help you with your orders, products and any questions."
+      )}
+      <section className="section contactSection">
+        <div className="container contactGrid">
+          <ul className="contactList">
+            <li>
+              <span className="iconMedallion"><Icon name="chat" /></span>
+              <div>
+                <h2>WhatsApp</h2>
+                <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">{businessConfig.phone}</a>
+              </div>
+            </li>
+            <li>
+              <span className="iconMedallion"><Icon name="mail" /></span>
+              <div>
+                <h2>Email</h2>
+                <a href={`mailto:${businessConfig.email}`}>{businessConfig.email}</a>
+              </div>
+            </li>
+            <li>
+              <span className="iconMedallion"><Icon name="pin" /></span>
+              <div>
+                <h2>Address</h2>
+                <p>H No 59, Pendri, Pandri, Berla, Bemetara, Chhattisgarh - 491335</p>
+              </div>
+            </li>
+            <li>
+              <span className="iconMedallion"><Icon name="truck" /></span>
+              <div>
+                <h2>Order Status</h2>
+                <a href="/?page=track-order">Track your order</a>
+              </div>
+            </li>
+          </ul>
+
+          <form className="contactForm" onSubmit={sendContactMessage}>
+            <h2>Send us a message</h2>
+            <label>
+              <span>Name</span>
+              <input
+                name="name"
+                autoComplete="name"
+                required
+                value={contactForm.name}
+                onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+              />
+            </label>
+            <label>
+              <span>Email</span>
+              <input
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={contactForm.email}
+                onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+              />
+            </label>
+            <label>
+              <span>Message</span>
+              <textarea
+                name="message"
+                rows="5"
+                required
+                value={contactForm.message}
+                onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+              />
+            </label>
+            <button type="submit" className="btn btnPrimary btnBlock">Send Message</button>
+            <p className="formNote">This opens your email app with your message addressed to {businessConfig.email}.</p>
+          </form>
+        </div>
+      </section>
+      {renderFaq()}
+    </>
+  );
+
+  const pageViews = {
+    home: renderHome,
+    shop: renderShop,
+    product: renderProductPage,
+    about: renderAbout,
+    ingredients: renderIngredients,
+    contact: renderContact,
+  };
+
+  return (
+    <div className="siteShell">
+      <a className="skipLink" href="#main">Skip to content</a>
+      <header className="site-header">
+        <div className="main-header container">
+          <a className="brandLink" {...linkTo("home")} aria-label="SatvaPusti Nutrition home">
+            <img
+              src="/banners/logo-banner.webp"
+              alt="Satvapusti Branding"
+              className="brand-ribbon"
+              width="1780"
+              height="560"
+            />
+          </a>
+
+          <nav className="nav-links" aria-label="Primary navigation">
+            {navItems.map((item) => (
+              <a
+                key={item.view}
+                {...linkTo(item.view)}
+                className={activeNav === item.view ? "active" : ""}
+                aria-current={activeNav === item.view ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="header-icons">
+            <button className="headerIconBtn" onClick={openSearch} aria-label="Search products" title="Search">
+              <Icon name="search" />
+            </button>
+            <button className="headerIconBtn" onClick={() => setShowProfile(true)} aria-label="Open profile" title="Profile">
+              <Icon name="user" />
+            </button>
+            <button className="headerIconBtn cartHeaderBtn" onClick={() => setShowCart(true)} aria-label={`Open cart with ${cartCount} items`} title="Cart">
+              <Icon name="bag" />
+              <span className="cartCount">{cartCount}</span>
+            </button>
+            <div className="menuDropdown">
+              <button
+                className="headerIconBtn menuToggleBtn"
+                onClick={() => setShowHomeMenu((prev) => !prev)}
+                aria-expanded={showHomeMenu}
+                aria-controls="homeMenuPanel"
+                aria-label="Menu"
+              >
+                <Icon name="menu" />
+              </button>
+              {showHomeMenu && (
+                <nav className="homeMenuPanel" id="homeMenuPanel" aria-label="Mobile navigation">
+                  {navItems.map((item) => (
+                    <a
+                      key={item.view}
+                      {...linkTo(item.view)}
+                      className={activeNav === item.view ? "active" : ""}
+                      aria-current={activeNav === item.view ? "page" : undefined}
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                  <a href="/?page=track-order" onClick={() => setShowHomeMenu(false)}>Track Order</a>
+                  <a {...linkTo("contact", "", "faq")}>FAQ</a>
+                  <button
+                    className="profileNavBtn"
+                    onClick={() => {
+                      setShowProfile(true);
+                      setShowHomeMenu(false);
+                    }}
+                  >
+                    Profile
+                  </button>
+                </nav>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <button className="cartFloatBtn" onClick={() => setShowCart(true)}>
+        <Icon name="bag" />
+        Cart ({cartCount})
+      </button>
+
+      <main id="main">{(pageViews[route.view] || renderHome)()}</main>
+
+      <footer className="contact">
+        <div className="container footerGrid">
+          <div className="footerBrand">
+            <img src="/banners/logo-banner.webp" alt="SatvaPusti Nutrition" width="1780" height="560" loading="lazy" />
+            <p>
+              Premium family nutrition made with real dry fruits, seeds, banana powder and clean everyday ingredients.
+            </p>
+            <a className="btn btnPrimary" href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
+              <Icon name="chat" />
+              Contact on WhatsApp
+            </a>
+          </div>
+
+          <nav className="footerColumn" aria-label="Helpful links">
+            <h2>Helpful Links</h2>
+            <a {...linkTo("shop")}>Shop Products</a>
+            <a {...linkTo("about")}>About Us</a>
+            <a {...linkTo("ingredients")}>Ingredients</a>
+            <a {...linkTo("contact", "", "faq")}>FAQ</a>
+            <a href="/?page=track-order">Track Order</a>
+          </nav>
+
+          <nav className="footerColumn" aria-label="Policies">
+            <h2>Policies</h2>
+            <a href="#privacy" onClick={(e) => { e.preventDefault(); openPolicy("privacy"); }}>Privacy Policy</a>
+            <a href="#terms" onClick={(e) => { e.preventDefault(); openPolicy("terms"); }}>Terms of Service</a>
+            <a href="#shipping" onClick={(e) => { e.preventDefault(); openPolicy("shipping"); }}>Shipping Policy</a>
+            <a href="#refund" onClick={(e) => { e.preventDefault(); openPolicy("refund"); }}>Refund Policy</a>
+          </nav>
+
+          <div className="footerColumn contactDetails">
+            <h2>Contact Us</h2>
+            <p><strong>Brand:</strong> SatvaPusti Nutrition</p>
+            <p><strong>Phone:</strong> {businessConfig.phone}</p>
+            <p><strong>Email:</strong> {businessConfig.email}</p>
+            <p><strong>Website:</strong> {businessConfig.website}</p>
+            <p><strong>FSSAI No:</strong> {businessConfig.fssai}</p>
+            <p><strong>FBO Name:</strong> Satvapusti Nutrition</p>
+            <p><strong>Business Type:</strong> General Manufacturing</p>
+            <p><strong>Address:</strong> H No 59, Pendri, Pandri, Berla, Bemetara, Chhattisgarh - 491335</p>
+            <p><strong>UPI ID:</strong> {upiId}</p>
+          </div>
+        </div>
+
+        <div className="footerBottom">
+          <p className="container footerText">© 2026 SatvaPusti Nutrition. All Rights Reserved.</p>
+        </div>
+      </footer>
 
       {showProfile && (
         <div className="modalBg">
@@ -1997,238 +2671,6 @@ export default function App() {
         </div>
       )}
 
-      <section id="about" className="section aboutSection">
-        <div className="container">
-          <header className="sectionHead">
-            <p className="eyebrow">Premium Nutrition, Built On Trust</p>
-            <h2>Why Families Trust SatvaPusti</h2>
-            <p className="sectionText">
-              Made with carefully selected dry fruits, seeds and real ingredients for daily family nutrition.
-            </p>
-          </header>
-
-          <ul className="trustCards">
-            {trustCards.map(([icon, title, text]) => (
-              <li className="trustCard" key={title}>
-                <span className="iconMedallion"><Icon name={icon} /></span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </li>
-            ))}
-          </ul>
-
-          <div className="brandStory">
-            <div className="brandStatement">
-              <p className="eyebrow">Our Story</p>
-              <blockquote>
-                Daily nutrition should come from real ingredients, not artificial formulas.
-              </blockquote>
-              <span className="goldRule" aria-hidden="true" />
-            </div>
-            <div className="brandStoryBody">
-              <p>
-                At SatvaPusti, we believe everyday nutrition should feel familiar, wholesome and trustworthy.
-                Our products are prepared using carefully selected dry fruits, seeds, banana powder and dates
-                powder to support families, children and active lifestyles.
-              </p>
-              <p>
-                Every batch is produced with a focus on quality, purity and traditional nutrition values.
-              </p>
-            </div>
-          </div>
-
-          <div className="aboutDetails">
-            <ul className="featureList">
-              <li>
-                <Icon name="leaf" />
-                <div>
-                  <h3>Real Ingredients</h3>
-                  <p>Only carefully selected dry fruits, seeds and natural ingredients.</p>
-                </div>
-              </li>
-              <li>
-                <Icon name="heart" />
-                <div>
-                  <h3>Real Banana Powder</h3>
-                  <p>Made with real banana powder, not artificial flavours.</p>
-                </div>
-              </li>
-              <li>
-                <Icon name="seed" />
-                <div>
-                  <h3>Dry Fruits &amp; Seeds</h3>
-                  <p>Rich blend of nuts, seeds and wholesome ingredients.</p>
-                </div>
-              </li>
-              <li>
-                <Icon name="noColour" />
-                <div>
-                  <h3>No Artificial Colours</h3>
-                  <p>No synthetic colours added.</p>
-                </div>
-              </li>
-              <li>
-                <Icon name="flask" />
-                <div>
-                  <h3>0g Added Sugar Options</h3>
-                  <p>Kids and Active formulas use dates powder as the sweetener.</p>
-                </div>
-              </li>
-              <li>
-                <Icon name="family" />
-                <div>
-                  <h3>Daily Nutrition Support</h3>
-                  <p>Designed for everyday family wellness.</p>
-                </div>
-              </li>
-            </ul>
-
-            <aside className="fssaiPanel" aria-label="FSSAI registration">
-              <span className="iconMedallion"><Icon name="award" /></span>
-              <p className="eyebrow">FSSAI</p>
-              <h3>Registered Food Business</h3>
-              <p>Registration No. 20526034000204</p>
-              <small>Issued under the Food Safety and Standards Act, 2006.</small>
-            </aside>
-          </div>
-
-          <p className="trustBanner">
-            Made for Families <span aria-hidden="true">·</span> Designed for Kids <span aria-hidden="true">·</span> Trusted by Active Lifestyles
-          </p>
-        </div>
-      </section>
-
-      <section id="ingredients" className="section ingredientsSection">
-        <div className="container">
-          <header className="sectionHead">
-            <p className="eyebrow">Our Ingredients</p>
-            <h2>Real Ingredients We Use</h2>
-            <p className="sectionText">
-              See the dry fruits, seeds and natural ingredients that make SatvaPusti feel honest and wholesome.
-            </p>
-          </header>
-
-          <ul className="ingredientGrid">
-            {ingredients.map(([img, name]) => (
-              <li className="ingredientCard" key={img}>
-                <img src={`/ingridients/${img}`} alt={name} loading="lazy" decoding="async" />
-                <span>{name}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section id="faq" className="section faqSection">
-        <div className="container">
-          <header className="sectionHead">
-            <p className="eyebrow">Help</p>
-            <h2>Frequently Asked Questions</h2>
-            <p className="sectionText">
-              Find common answers about ordering, payment, and product usage here.
-            </p>
-          </header>
-
-          <div className="faqGrid">
-            <details>
-              <summary>How should I use SatvaPusti products?</summary>
-              <p>
-                Use the product with milk or warm water as part of your daily routine.
-                Children, elderly customers, pregnant women, or customers with medical
-                conditions should consult a doctor before use.
-              </p>
-            </details>
-
-            <details>
-              <summary>Is COD available?</summary>
-              <p>
-                Yes, COD is available. Payment for COD orders is collected at the time of delivery.
-              </p>
-            </details>
-
-            <details>
-              <summary>What is the benefit of UPI prepaid?</summary>
-              <p>
-                UPI prepaid orders get free shipping. After payment, send WhatsApp
-                confirmation. The order will be processed after admin verification.
-              </p>
-            </details>
-
-            <details>
-              <summary>How can I track my order?</summary>
-              <p>
-                Click Track Order in the header and enter your Order ID and mobile number
-                to view the latest order status.
-              </p>
-            </details>
-
-            <details>
-              <summary>Do you have FSSAI registration?</summary>
-              <p>
-                Yes. SatvaPusti Nutrition's FSSAI Registration No. is 20526034000204.
-              </p>
-            </details>
-
-            <details>
-              <summary>When can I get a return or replacement?</summary>
-              <p>
-                Due to food safety reasons, opened products are not returnable. For wrong,
-                damaged, expired, or manufacturing defect products, report within 48 hours
-                with clear photo/video proof.
-              </p>
-            </details>
-          </div>
-        </div>
-      </section>
-
-      <footer id="contact" className="contact">
-        <div className="container footerGrid">
-          <div className="footerBrand">
-            <img src="/banners/logo-banner.webp" alt="SatvaPusti Nutrition" loading="lazy" />
-            <p>
-              Premium family nutrition made with real dry fruits, seeds, banana powder and clean everyday ingredients.
-            </p>
-            <a className="btn btnPrimary" href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
-              <Icon name="chat" />
-              Contact on WhatsApp
-            </a>
-          </div>
-
-          <nav className="footerColumn" aria-label="Helpful links">
-            <h2>Helpful Links</h2>
-            <a href="#products">Shop Products</a>
-            <a href="#about">About Us</a>
-            <a href="#ingredients">Ingredients</a>
-            <a href="#faq">FAQ</a>
-            <a href="/?page=track-order">Track Order</a>
-          </nav>
-
-          <nav className="footerColumn" aria-label="Policies">
-            <h2>Policies</h2>
-            <a href="#faq" onClick={(e) => { e.preventDefault(); openPolicy("privacy"); }}>Privacy Policy</a>
-            <a href="#faq" onClick={(e) => { e.preventDefault(); openPolicy("terms"); }}>Terms of Service</a>
-            <a href="#faq" onClick={(e) => { e.preventDefault(); openPolicy("shipping"); }}>Shipping Policy</a>
-            <a href="#faq" onClick={(e) => { e.preventDefault(); openPolicy("refund"); }}>Refund Policy</a>
-          </nav>
-
-          <div className="footerColumn contactDetails">
-            <h2>Contact Us</h2>
-            <p><strong>Brand:</strong> SatvaPusti Nutrition</p>
-            <p><strong>Phone:</strong> {businessConfig.phone}</p>
-            <p><strong>Email:</strong> {businessConfig.email}</p>
-            <p><strong>Website:</strong> {businessConfig.website}</p>
-            <p><strong>FSSAI No:</strong> {businessConfig.fssai}</p>
-            <p><strong>FBO Name:</strong> Satvapusti Nutrition</p>
-            <p><strong>Business Type:</strong> General Manufacturing</p>
-            <p><strong>Address:</strong> H No 59, Pendri, Pandri, Berla, Bemetara, Chhattisgarh - 491335</p>
-            <p><strong>UPI ID:</strong> {upiId}</p>
-          </div>
-        </div>
-
-        <div className="footerBottom">
-          <p className="container footerText">© 2026 SatvaPusti Nutrition. All Rights Reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -50,11 +50,16 @@ export default function TrackOrder() {
   return (
     <div className="trackPage">
       <header className="header">
-        <div className="logo">SatvaPusti Nutrition</div>
-        <nav>
+        <a className="logo" href="/" aria-label="SatvaPusti Nutrition home">
+          <img src="/banners/logo-banner.webp" alt="Satvapusti Branding" width="1780" height="560" />
+        </a>
+        <nav aria-label="Primary navigation">
           <a href="/">Home</a>
-          <a href="/?page=track-order">Track Order</a>
-          <a href="/#contact">Contact</a>
+          <a href="/?page=shop">Shop</a>
+          <a href="/?page=about">About Us</a>
+          <a href="/?page=ingredients">Ingredients</a>
+          <a href="/?page=contact">Contact</a>
+          <a href="/?page=track-order" className="active" aria-current="page">Track Order</a>
         </nav>
       </header>
 
