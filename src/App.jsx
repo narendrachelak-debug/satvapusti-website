@@ -71,7 +71,7 @@ const defaultProducts = [
     },
     badges: [
       { label: "No Artificial Colours", color: "#178a52" },
-      { label: "No Preservatives", color: "#0f6f45" },
+      { label: "No Added Preservatives", color: "#0f6f45" },
     ],
     benefits: [
       "Family Wellness Support",
@@ -205,7 +205,7 @@ const defaultProducts = [
       text: "#07372d",
     },
     badges: [
-      { label: "No Refined Sugar", color: "#c99a2e" },
+      { label: "Sweetened with Dates Powder", color: "#c99a2e" },
     ],
     benefits: [
       "Protein Rich Blend",
@@ -265,7 +265,7 @@ const PRODUCT_USPS = {
   family: [
     { problem: "Dry fruits often get skipped?", title: "Dry Fruits & Seeds, Made Easier", text: "Badam, kaju, akhrot, makhana, pumpkin and watermelon seeds in one blend." },
     { problem: "Hard-to-read labels?", title: "12 Ingredients You Can Recognise", text: "From roasted chana and peanut to banana powder, saunf and elaichi." },
-    { problem: "Wary of additives?", title: "No Artificial Colours or Preservatives", text: "As stated on the pack, sweetened with traditional mishri." },
+    { problem: "Wary of additives?", title: "No Artificial Colours or Added Preservatives", text: "Sweetened with traditional mishri, listed in the ingredients." },
     { problem: "Short on time?", title: "Two Spoons, One Glass", text: "Mix into 200\u00a0ml milk or warm water and enjoy daily." },
     { problem: "Separate products for everyone?", title: "One Family Formula to Share", text: "Made for the whole family's routine, alongside regular meals." },
     { problem: "Want to know what's inside?", title: "Every Nutrition Value Listed", text: "Including 17.75\u00a0g protein and 8.27\u00a0g fibre per 100\u00a0g." },
@@ -279,7 +279,7 @@ const PRODUCT_USPS = {
   active: [
     { problem: "Want protein from familiar foods?", title: "Soy Protein with Nuts & Seeds", text: "Blended with badam, kaju, akhrot, peanut and makhana." },
     { problem: "Counting your protein?", title: "30\u00a0g Protein per 100\u00a0g", text: "As listed in this formula's nutrition facts." },
-    { problem: "Avoiding refined sugar?", title: "Sweetened with Dates Powder", text: "No refined sugar; dates powder is the listed sweetener." },
+    { problem: "Watching the sweetness?", title: "Sweetened with Dates Powder", text: "Dates powder is the listed sweetener in this formula." },
     { problem: "Fitting it into training days?", title: "Post-Workout or Morning Routine", text: "Mix 2 spoons into 200\u00a0ml milk or water." },
   ],
 };
@@ -405,15 +405,15 @@ function Icon({ name, className = "icon" }) {
 }
 
 const heroTrustPoints = [
-  ["leaf", "100% Natural Ingredients"],
-  ["noColour", "No Artificial Colours or Preservatives"],
+  ["leaf", "Real Ingredients"],
+  ["search", "Recognisable Ingredients"],
   ["award", "FSSAI Registered"],
   ["family", "Made for Families"],
 ];
 
 const trustCards = [
   ["family", "Family Focused", "Made for everyday family wellness"],
-  ["leaf", "12 Real Ingredients", "Carefully selected natural ingredients"],
+  ["leaf", "Real Ingredients", "Carefully selected natural ingredients"],
   ["award", "FSSAI Registered", "Certified food business"],
   ["noColour", "No Artificial Colours", "Clean and simple nutrition"],
 ];
@@ -1699,10 +1699,12 @@ export default function App() {
           </div>
           <div className="heroMedia">
             <img
-              src="/banners/banner-family.webp"
-              alt="A family enjoying SatvaPusti nutrition drinks with real dry fruits and seeds"
-              width="1920"
-              height="1080"
+              src="/banners/about-family-883.webp"
+              srcSet="/banners/about-family-600.webp 600w, /banners/about-family-883.webp 883w"
+              sizes="(max-width: 900px) calc(100vw - 32px), 680px"
+              alt="Three generations of a family smiling, each holding a glass of SatvaPusti nutrition drink"
+              width="883"
+              height="662"
               loading="eager"
               decoding="async"
               fetchPriority="high"

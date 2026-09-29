@@ -554,8 +554,8 @@ button {
   height: auto;
   aspect-ratio: 11 / 9;
   object-fit: cover;
-  /* Keeps the family and product jar; the banner's own headline sits on the far left. */
-  object-position: 100% 50%;
+  /* Text-free family photo (4:3); centred so the 11:9 frame trims only its outer edges. */
+  object-position: 50% 50%;
 }
 
 /* ---------- Products ---------- */
