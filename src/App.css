@@ -1212,6 +1212,12 @@ button {
   list-style: none;
 }
 
+/* Home "Why SatvaPusti": six cards as 3 × 2; the shared .trustCards breakpoints below
+   take over at tablet and phone widths. */
+.whyCards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .trustCard {
   padding: var(--sp-6) var(--sp-5);
   border: 1px solid var(--line);
@@ -2520,11 +2526,137 @@ button {
   background: var(--cream);
 }
 
-.homeStoryGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+.homeStorySolo {
+  max-width: calc(760px + var(--gutter) * 2);
+  text-align: center;
+}
+
+.homeStorySolo .goldRule {
+  margin-inline: auto;
+}
+
+.homeStorySolo .homeStoryText {
+  margin-inline: auto;
+}
+
+/* Alternating cream band between ivory sections. */
+.sectionTint {
+  background: var(--cream);
+}
+
+/* ---------- Home hero actions ---------- */
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: clamp(32px, 5vw, 80px);
+  gap: var(--sp-4) var(--sp-6);
+}
+
+.heroScrollLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  color: var(--forest-800);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: underline;
+  text-decoration-color: var(--gold);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+.heroScrollLink .icon {
+  width: 16px;
+  height: 16px;
+  transform: rotate(90deg);
+}
+
+.heroScrollLink:hover {
+  color: var(--forest-700);
+}
+
+/* ---------- Home closing Family CTA ---------- */
+
+.familyCta {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+  align-items: center;
+  gap: clamp(24px, 5vw, 80px);
+  padding: clamp(32px, 5vw, 64px);
+  border-radius: var(--r-lg);
+  background: var(--forest-900);
+  box-shadow: var(--shadow-md);
+  color: var(--on-dark);
+}
+
+.familyCta .eyebrow {
+  color: var(--gold-soft);
+}
+
+.familyCta h2 {
+  margin-top: var(--sp-3);
+  color: var(--on-dark);
+  font-size: var(--fs-h2);
+}
+
+.familyCtaCopy p:not(.eyebrow) {
+  max-width: 34rem;
+  margin-top: var(--sp-4);
+  color: var(--on-dark-muted);
+  font-size: var(--fs-lead);
+}
+
+.familyCtaBuy {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.familyCtaPrice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-2);
+  color: var(--on-dark-muted);
+  font-size: var(--fs-sm);
+}
+
+.familyCtaPrice .offerPrice {
+  color: var(--on-dark);
+  font-size: 2rem;
+}
+
+.btnOnDark {
+  border-color: rgba(248, 243, 233, 0.4);
+  background: transparent;
+  color: var(--on-dark);
+}
+
+.btnOnDark:hover {
+  border-color: var(--gold-soft);
+  background: rgba(248, 243, 233, 0.06);
+  color: var(--on-dark);
+}
+
+@media (max-width: 900px) {
+  .familyCta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .heroActions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-2);
+  }
+
+  .heroScrollLink {
+    justify-content: center;
+  }
 }
 
 .brandStatement h2 {
@@ -2540,10 +2672,6 @@ button {
   margin: var(--sp-5) 0 var(--sp-6);
   color: var(--body);
   font-size: var(--fs-lead);
-}
-
-.homeStory .trustCards {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 /* ---------- About ---------- */
@@ -2788,7 +2916,6 @@ button {
   .heroGrid,
   .productTop,
   .brandStory,
-  .homeStoryGrid,
   .aboutHeroGrid,
   .contactGrid {
     grid-template-columns: minmax(0, 1fr);
@@ -3052,10 +3179,6 @@ button {
 
   .contactForm {
     padding: var(--sp-5);
-  }
-
-  .homeStory .trustCards {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 

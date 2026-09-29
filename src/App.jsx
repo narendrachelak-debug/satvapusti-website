@@ -406,9 +406,9 @@ function Icon({ name, className = "icon" }) {
 
 const heroTrustPoints = [
   ["leaf", "Real Ingredients"],
-  ["search", "Recognisable Ingredients"],
   ["award", "FSSAI Registered"],
-  ["family", "Made for Families"],
+  ["cash", "Cash on Delivery"],
+  ["lock", "Secure Checkout"],
 ];
 
 const trustCards = [
@@ -420,14 +420,15 @@ const trustCards = [
 
 // Shown on every product page, so each point holds for all three formulas: dry fruits and
 // seeds, banana powder, plain-named ingredients, a mix-with-milk-or-water serve and a
-// Nutrition Facts table are common to all of them.
+// Nutrition Facts table are common to all of them. The third field is the supporting line
+// used by the Home "Why SatvaPusti" cards; the compact strip shows the label only.
 const goodnessPoints = [
-  ["seed", "Real Dry Fruits & Seeds"],
-  ["search", "Recognisable Ingredients"],
-  ["leaf", "Real Banana Powder"],
-  ["check", "Simple Everyday Preparation"],
-  ["menu", "Nutrition Facts Listed"],
-  ["award", "FSSAI Registered"],
+  ["seed", "Real Dry Fruits & Seeds", "Badam, kaju, akhrot, makhana and seeds in all three formulas."],
+  ["search", "Recognisable Ingredients", "Every ingredient listed by its everyday name."],
+  ["leaf", "Real Banana Powder", "Part of every SatvaPusti formula."],
+  ["check", "Simple Everyday Preparation", "Mix the stated spoons into milk or water, as directed for each formula."],
+  ["menu", "Nutrition Facts Listed", "Each product page shows its nutrition facts."],
+  ["award", "FSSAI Registered", "Registered with the Food Safety and Standards Authority of India."],
 ];
 
 export default function App() {
@@ -1679,15 +1680,21 @@ export default function App() {
         <div className="container heroGrid">
           <div className="heroCopy">
             <p className="eyebrow">Natural Family Nutrition</p>
-            <h1 id="heroTitle">Real Nutrition for Stronger Families</h1>
+            <h1 id="heroTitle">Real Ingredients for Everyday Family Nutrition</h1>
             <p className="heroLead">
               Wholesome nutrition powders made with real dry fruits, seeds and traditional
               ingredients, crafted for children, parents and grandparents alike.
             </p>
-            <a className="btn btnPrimary btnLarge" {...linkTo("shop")}>
-              Shop Best Sellers
-              <Icon name="arrow" />
-            </a>
+            <div className="heroActions">
+              <a className="btn btnPrimary btnLarge" {...linkTo("product", "family")}>
+                Shop Family Nutrition
+                <Icon name="arrow" />
+              </a>
+              <a className="heroScrollLink" href="#homeProducts">
+                See All 3 Formulas
+                <Icon name="arrow" />
+              </a>
+            </div>
             <ul className="heroTrust">
               {heroTrustPoints.map(([icon, label]) => (
                 <li key={label}>
@@ -1713,42 +1720,37 @@ export default function App() {
         </div>
       </section>
 
-      <section className="section" aria-labelledby="rangeTitle">
+      <section className="section" id="homeProducts" aria-labelledby="rangeTitle">
         <div className="container">
           <header className="sectionHead">
             <p className="eyebrow">Our Range</p>
-            <h2 id="rangeTitle">Nutrition for the Whole Family</h2>
+            <h2 id="rangeTitle">Three Formulas, One Simple Routine</h2>
             <p className="sectionText">
-              Premium nutrition powders with real ingredients, family-friendly formulas, and fast checkout.
+              Family Nutrition is available now. Active Kids and Active are coming soon.
             </p>
           </header>
-          <ul className="productGrid">{products.map(renderProductCard)}</ul>
-          <div className="sectionAction">
-            <a className="btn btnTertiary" {...linkTo("shop")}>
-              View All Products
-              <Icon name="arrow" />
-            </a>
-          </div>
-          {renderGoodness()}
+          <ul className="productGrid">{products.map((product) => renderProductCard(product))}</ul>
         </div>
       </section>
 
-      <section className="section homeStory" aria-labelledby="storyTitle">
-        <div className="container homeStoryGrid">
-          <div className="brandStatement">
-            <p className="eyebrow">Our Story</p>
-            <h2 id="storyTitle">Daily nutrition should come from real ingredients, not artificial formulas.</h2>
-            <span className="goldRule" aria-hidden="true" />
-            <p className="homeStoryText">
-              Our products are prepared using carefully selected dry fruits, seeds, banana powder and
-              dates powder to support families, children and active lifestyles.
+      <section className="section sectionTint" aria-labelledby="whyTitle">
+        <div className="container">
+          <header className="sectionHead">
+            <p className="eyebrow">Why SatvaPusti</p>
+            <h2 id="whyTitle">What Goes Into Every Formula</h2>
+            <p className="sectionText">
+              Each formula lists its own ingredients, nutrition facts and preparation guidance.
             </p>
-            <a className="btn btnTertiary" {...linkTo("about")}>
-              Read Our Story
-              <Icon name="arrow" />
-            </a>
-          </div>
-          {renderTrustCards()}
+          </header>
+          <ul className="trustCards whyCards">
+            {goodnessPoints.map(([icon, title, text]) => (
+              <li className="trustCard" key={title}>
+                <span className="iconMedallion"><Icon name={icon} /></span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -1757,6 +1759,7 @@ export default function App() {
           <header className="sectionHead">
             <p className="eyebrow">Our Ingredients</p>
             <h2 id="homeIngredientsTitle">Real Ingredients We Use</h2>
+            <p className="sectionText">A few of the everyday ingredients used across our formulas.</p>
           </header>
           {renderIngredientGrid(ingredients.slice(0, 8))}
           <div className="sectionAction">
@@ -1767,8 +1770,73 @@ export default function App() {
           </div>
         </div>
       </section>
+
+      <section className="section homeStory" aria-labelledby="storyTitle">
+        <div className="container homeStorySolo">
+          <div className="brandStatement">
+            <p className="eyebrow">Our Story</p>
+            <h2 id="storyTitle">Made with Ingredients You Know</h2>
+            <span className="goldRule" aria-hidden="true" />
+            <p className="homeStoryText">
+              SatvaPusti brings together dry fruits, seeds and familiar everyday ingredients in
+              formulas designed for different routines.
+            </p>
+            <a className="btn btnTertiary" {...linkTo("about")}>
+              Read Our Story
+              <Icon name="arrow" />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {renderFamilyCta()}
     </>
   );
+
+  // Closing prompt for the one formula on sale; uses the same cart action and price data as
+  // its product card. Deliberately has no image until corrected Family pack artwork exists.
+  const renderFamilyCta = () => {
+    const family = products.find((product) => product.id === "family");
+    if (!family || isComingSoon(family.id)) return null;
+    const weight = getWeight(family);
+    const { offer } = family.prices[weight];
+    const stock = getStock(family.id, weight);
+    const isOutOfStock = inventoryLoaded && stock !== null && stock <= 0;
+
+    return (
+      <section className="section" aria-labelledby="familyCtaTitle">
+        <div className="container">
+          <div className="familyCta">
+            <div className="familyCtaCopy">
+              <p className="eyebrow">Available Now</p>
+              <h2 id="familyCtaTitle">Start with the Family Formula</h2>
+              <p>
+                12 recognisable ingredients, sweetened with traditional mishri. Mix 2 spoons into
+                200&nbsp;ml milk or warm water.
+              </p>
+            </div>
+            <div className="familyCtaBuy">
+              <p className="familyCtaPrice">
+                <span className="offerPrice">₹{offer}</span>
+                <span>{weight} · Inclusive of all taxes</span>
+              </p>
+              <button
+                className="btn btnPrimary btnBlock"
+                onClick={() => addToCart(family)}
+                disabled={isOutOfStock}
+              >
+                {isOutOfStock ? "Out of Stock" : `Add to Cart — ₹${offer * getQty(family)}`}
+              </button>
+              <a className="btn btnOnDark btnBlock" {...linkTo("product", "family")}>
+                View Family Formula
+                <Icon name="arrow" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  };
 
   const renderShop = () => (
     <>
