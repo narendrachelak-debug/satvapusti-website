@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import businessConfig from "../shared/business.json";
 import "./admin.css";
 import { adminFetch, getAdminToken, logoutAdmin } from "./adminApi";
-import { createDemoInvoiceOrders } from "./demoInvoiceData.mjs";
 
 const API_URL = "https://satvapusti-website.onrender.com";
 
@@ -481,14 +480,6 @@ return data.order;
 
   const dailySalesReport = buildSalesReport("daily");
   const monthlySalesReport = buildSalesReport("monthly");
-  const demoInvoiceOrders = useMemo(
-    () => createDemoInvoiceOrders(products.find((product) => product.productId === "family")),
-    [products]
-  );
-  const demoInvoiceQuantityKg = demoInvoiceOrders.reduce(
-    (total, order) => total + order.quantityKg,
-    0
-  );
 
   const saveManualCashSale = async (event) => {
     event.preventDefault();
@@ -593,7 +584,6 @@ return data.order;
     activeAdminView === "payments" ||
     activeAdminView === "customers";
   const showReports = activeAdminView === "dashboard" || activeAdminView === "reports";
-  const showDemoInvoices = activeAdminView === "demoInvoices";
   const showOrders =
     activeAdminView === "dashboard" ||
     activeAdminView === "orders" ||
@@ -607,7 +597,6 @@ return data.order;
     inventory: "Inventory Control",
     reports: "Sales Reports",
     customers: "Customer Directory",
-    demoInvoices: "Demo Invoice Simulator",
   };
 
   const copyAddress = (order) => {
@@ -725,10 +714,7 @@ ${order.mobile || ""}`;
 
   const buildGstInvoiceHtml = (order) => {
     const snapshot = order.pricingSnapshot;
-    const isDemoInvoice = order.isDemoInvoice === true;
-    const payment = isDemoInvoice
-      ? { type: "Demo only", status: "No real payment" }
-      : getPaymentClassification(order);
+    const payment = getPaymentClassification(order);
     const invoiceLogoUrl = `${window.location.origin}/banners/logo-banner.png`;
     const authorizedSignatureUrl = `${window.location.origin}/authorized-signature.png`;
     const paise = (value) => `₹${(Number(value || 0) / 100).toLocaleString("en-IN", {
@@ -777,14 +763,14 @@ ${order.mobile || ""}`;
 
     return `<!doctype html><html><head><meta charset="utf-8"><title>Tax Invoice - ${escapeHtml(order.orderId)}</title>
       <style>
-        *{box-sizing:border-box}body{margin:0;background:#eee;color:#17211b;font:12px Arial,sans-serif}.page{position:relative;width:297mm;min-height:210mm;margin:auto;padding:12mm;background:#fff}.top{display:flex;justify-content:space-between;gap:24px;border-bottom:2px solid #164c2b;padding-bottom:10px}.seller{flex:1;min-width:0}.invoiceLogo{display:block;width:330px;max-width:100%;height:76px;object-fit:contain;object-position:left center;margin:0 0 7px;border-radius:4px}.top h2{margin:0;text-align:right}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.box{border:1px solid #bbb;padding:9px}.box h3{margin:0 0 6px;color:#164c2b}p{margin:2px 0;line-height:1.45}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #bbb;padding:6px;vertical-align:top}th{background:#eaf6ee}.num{text-align:right;white-space:nowrap}.totals{display:grid;grid-template-columns:1fr 320px;gap:12px;margin-top:10px}.totalLine{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:5px}.grand{font-size:15px}.footer{display:flex;justify-content:space-between;margin-top:18px;align-items:flex-end}.sign{text-align:center;min-width:190px}.demoCorner{display:inline-block;border:1px solid #a00018;padding:4px 7px;color:#a00018;font-size:9px;font-weight:700;letter-spacing:.3px}.signatureMark{position:relative;width:180px;height:64px;overflow:hidden;margin:0 auto 3px;border-bottom:1px solid #222}.signatureMark img{position:absolute;width:220px;height:auto;left:50%;top:50%;transform:translate(-50%,-50%)}.actions{position:sticky;top:0;background:#222;padding:8px;text-align:center}.actions button{padding:8px 14px;background:#159451;color:white;border:0;border-radius:5px}@media print{body{background:#fff}.actions{display:none}.page{margin:0;padding:12mm;width:auto}.invoiceLogo,.signatureMark img{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-      </style></head><body><div class="actions"><button onclick="window.print()">${isDemoInvoice ? "Print / Save DEMO PDF" : "Print / Save PDF"}</button></div><main class="page">
+        *{box-sizing:border-box}body{margin:0;background:#eee;color:#17211b;font:12px Arial,sans-serif}.page{position:relative;width:297mm;min-height:210mm;margin:auto;padding:12mm;background:#fff}.top{display:flex;justify-content:space-between;gap:24px;border-bottom:2px solid #164c2b;padding-bottom:10px}.seller{flex:1;min-width:0}.invoiceLogo{display:block;width:330px;max-width:100%;height:76px;object-fit:contain;object-position:left center;margin:0 0 7px;border-radius:4px}.top h2{margin:0;text-align:right}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.box{border:1px solid #bbb;padding:9px}.box h3{margin:0 0 6px;color:#164c2b}p{margin:2px 0;line-height:1.45}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #bbb;padding:6px;vertical-align:top}th{background:#eaf6ee}.num{text-align:right;white-space:nowrap}.totals{display:grid;grid-template-columns:1fr 320px;gap:12px;margin-top:10px}.totalLine{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:5px}.grand{font-size:15px}.footer{display:flex;justify-content:space-between;margin-top:18px;align-items:flex-end}.sign{text-align:center;min-width:190px}.signatureMark{position:relative;width:180px;height:64px;overflow:hidden;margin:0 auto 3px;border-bottom:1px solid #222}.signatureMark img{position:absolute;width:220px;height:auto;left:50%;top:50%;transform:translate(-50%,-50%)}.actions{position:sticky;top:0;background:#222;padding:8px;text-align:center}.actions button{padding:8px 14px;background:#159451;color:white;border:0;border-radius:5px}@media print{body{background:#fff}.actions{display:none}.page{margin:0;padding:12mm;width:auto}.invoiceLogo,.signatureMark img{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+      </style></head><body><div class="actions"><button onclick="window.print()">Print / Save PDF</button></div><main class="page">
       <section class="top"><div class="seller"><img class="invoiceLogo" src="${escapeHtml(invoiceLogoUrl)}" alt="${escapeHtml(businessConfig.tradeName)}"><p><b>Legal Name:</b> ${escapeHtml(businessConfig.legalName)}</p><p><b>GSTIN:</b> ${escapeHtml(businessConfig.gstin)}</p><p>${sellerAddress}</p><p><b>State:</b> ${escapeHtml(businessConfig.stateName)} | <b>State Code:</b> ${escapeHtml(businessConfig.stateCode)}</p></div><div><h2>TAX INVOICE</h2><p><b>Invoice No:</b> ${escapeHtml(order.invoiceNumber || buildBillNumber(order))}</p><p><b>Invoice Date:</b> ${escapeHtml(formatDate(order.invoiceDate || order.createdAt))}</p><p><b>Order No:</b> ${escapeHtml(order.orderId)}</p><p><b>Payment:</b> ${escapeHtml(payment.status)} | ${escapeHtml(payment.type)}</p></div></section>
       <section class="grid"><div class="box"><h3>Billing Details</h3><p><b>${escapeHtml(order.customerLegalName || order.customerName)}</b></p><p>${escapeHtml(billingAddress)}</p><p><b>Billing State:</b> ${escapeHtml(snapshot.billingStateName)} (${escapeHtml(snapshot.billingStateCode)})</p>${order.customerGstin ? `<p><b>Customer GSTIN:</b> ${escapeHtml(order.customerGstin)}<br><b>Registration:</b> Registered (B2B)</p>` : `<p><b>Customer GSTIN:</b> Unregistered (B2C)</p>`}<p>Mobile: ${escapeHtml(order.mobile)} | Email: ${escapeHtml(order.email)}</p></div>
       <div class="box"><h3>Shipping Details</h3><p><b>${escapeHtml(order.customerName)}</b></p><p>${escapeHtml(shippingAddress)}</p><p><b>Shipping State:</b> ${escapeHtml(snapshot.shippingStateName)} (${escapeHtml(snapshot.shippingStateCode)})</p><p><b>Place of Supply:</b> ${escapeHtml(snapshot.placeOfSupplyState)} (${escapeHtml(snapshot.placeOfSupplyStateCode)})</p><p><b>Supply Type:</b> ${intraState ? "Intra-State" : "Inter-State"}</p></div></section>
       <table><thead><tr><th>#</th><th>Description</th><th>HSN</th><th>Pack</th><th>Qty</th><th>Unit</th><th>MRP</th><th>Discount</th><th>GST-inclusive price</th><th>Taxable value</th><th>GST rate</th>${taxHeaders}<th>Line total</th></tr></thead><tbody>${rows}</tbody></table>
       <section class="totals"><div class="box"><h3>Amount in Words</h3><p>${escapeHtml(numberToIndianWords(snapshot.finalPayablePaise / 100))}</p><p>Prices are inclusive of GST. Tax shown is extracted and is not added again.</p></div><div class="box"><div class="totalLine"><span>Taxable value</span><b>${paise(snapshot.taxableValuePaise)}</b></div>${taxTotals}<div class="totalLine"><span>Shipping</span><b>${paise(snapshot.shippingPaise)}</b></div><div class="totalLine"><span>Round-off</span><b>₹0.00</b></div><div class="totalLine grand"><span>Grand total</span><b>${paise(snapshot.finalPayablePaise)}</b></div></div></section>
-      <section class="footer"><p>${isDemoInvoice ? "Synthetic preview only — no real sale or payment." : "This is a computer-generated tax invoice."}</p><div class="sign">${isDemoInvoice ? '<span class="demoCorner">DEMO COPY — NOT VALID FOR TAX OR ACCOUNTING</span>' : `<div class="signatureMark"><img src="${escapeHtml(authorizedSignatureUrl)}" alt="Authorized signature"></div>Authorized Signatory<br>${escapeHtml(businessConfig.tradeName)}`}</div></section></main></body></html>`;
+      <section class="footer"><p>This is a computer-generated tax invoice.</p><div class="sign"><div class="signatureMark"><img src="${escapeHtml(authorizedSignatureUrl)}" alt="Authorized signature"></div>Authorized Signatory<br>${escapeHtml(businessConfig.tradeName)}</div></section></main></body></html>`;
   };
 
   const buildInvoiceHtml = (order) => {
@@ -1070,69 +1056,6 @@ ${order.mobile || ""}`;
 
     invoiceWindow.document.open();
     invoiceWindow.document.write(buildInvoiceHtml(order));
-    invoiceWindow.document.close();
-    invoiceWindow.focus();
-  };
-
-  const buildDemoInvoiceHtml = (demoOrder) => {
-    const taxableValuePaise = Math.round(
-      demoOrder.sellingPricePaise * 10000 / (10000 + demoOrder.gstRateBasisPoints)
-    );
-    const gstAmountPaise = demoOrder.sellingPricePaise - taxableValuePaise;
-    const cgstAmountPaise = Math.floor(gstAmountPaise / 2);
-    const pricingSnapshot = {
-      lines: [{
-        productName: "SatvaPusti Family Nutrition Formula",
-        hsnCode: demoOrder.hsnCode,
-        packSize: demoOrder.packSize,
-        quantity: 1,
-        mrpPaise: demoOrder.mrpPaise,
-        productDiscountPaise: Math.max(0, demoOrder.mrpPaise - demoOrder.sellingPricePaise),
-        couponDiscountPaise: 0,
-        sellingPricePaise: demoOrder.sellingPricePaise,
-        taxableValuePaise,
-        gstRateBasisPoints: demoOrder.gstRateBasisPoints,
-        cgstAmountPaise,
-        sgstAmountPaise: gstAmountPaise - cgstAmountPaise,
-        igstAmountPaise: 0,
-        lineConsiderationPaise: demoOrder.sellingPricePaise,
-      }],
-      supplyType: "INTRA_STATE",
-      shippingAddress: demoOrder.address,
-      taxableValuePaise,
-      cgstAmountPaise,
-      sgstAmountPaise: gstAmountPaise - cgstAmountPaise,
-      igstAmountPaise: 0,
-      shippingPaise: 0,
-      finalPayablePaise: demoOrder.sellingPricePaise,
-      billingStateName: businessConfig.stateName,
-      billingStateCode: businessConfig.stateCode,
-      shippingStateName: businessConfig.stateName,
-      shippingStateCode: businessConfig.stateCode,
-      placeOfSupplyState: businessConfig.stateName,
-      placeOfSupplyStateCode: businessConfig.stateCode,
-    };
-
-    return buildGstInvoiceHtml({
-      ...demoOrder,
-      isDemoInvoice: true,
-      invoiceNumber: demoOrder.orderId,
-      invoiceDate: new Date(`${demoOrder.date}T12:00:00+05:30`),
-      paymentMethod: "DEMO",
-      paymentStatus: "Demo",
-      pricingSnapshot,
-    });
-  };
-
-  const openDemoInvoice = (demoOrder) => {
-    const invoiceWindow = window.open("", "_blank");
-    if (!invoiceWindow) {
-      alert("Please allow popups to preview a demo invoice");
-      return;
-    }
-
-    invoiceWindow.document.open();
-    invoiceWindow.document.write(buildDemoInvoiceHtml(demoOrder));
     invoiceWindow.document.close();
     invoiceWindow.focus();
   };
@@ -1554,13 +1477,6 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           >
             <span>Reports</span>
             <b>{dailySalesReport.length}</b>
-          </button>
-          <button
-            className={activeAdminView === "demoInvoices" ? "active" : ""}
-            onClick={() => setActiveAdminView("demoInvoices")}
-          >
-            <span>Demo Invoices</span>
-            <b>DEMO</b>
           </button>
           <button
             className={activeAdminView === "customers" ? "active" : ""}
@@ -2321,53 +2237,6 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           </div>
         </div>
       )}
-
-        {showDemoInvoices && (
-          <section>
-            <div style={{ ...reportBoxStyle, marginBottom: "14px" }}>
-              <h2>DEMO ONLY — isolated from real orders</h2>
-              <p>
-                These 120 synthetic records are generated in this browser only. They
-                do not use the customer list, reach the database, change reports,
-                affect inventory, or represent real sales.
-              </p>
-              <p>
-                <b>Demo customers:</b> {demoInvoiceOrders.length}
-                {" | "}<b>Demo quantity:</b> {demoInvoiceQuantityKg.toLocaleString("en-IN")} kg
-                {" | "}<b>Distribution:</b> 20 × 250 g, 90 × 1 kg, 10 × 500 g
-              </p>
-              <p>Open any demo invoice, then use “Print / Save DEMO PDF” to test PDF download.</p>
-            </div>
-            <div className="adminSectionHeader">
-              <h2>Demo Invoice Previews</h2>
-              <span>{demoInvoiceOrders.length} DEMO records</span>
-            </div>
-            <div className="adminOrderList" style={{ maxHeight: "70vh", overflowY: "auto" }}>
-              <div className="adminOrderHeader">
-                <span>Demo ID</span>
-                <span>Customer</span>
-                <span>Package</span>
-                <span>Quantity</span>
-                <span>Demo amount</span>
-                <span>Action</span>
-              </div>
-              {demoInvoiceOrders.map((demoOrder) => (
-                <div key={demoOrder.orderId} className="adminOrderCard">
-                  <div className="adminOrderSummary">
-                    <div><h3>{demoOrder.orderId}</h3><p>DEMO</p></div>
-                    <div><b>{demoOrder.customerName}</b><p>NO REAL CONTACT</p></div>
-                    <div><b>Family</b><p>{demoOrder.weight}</p></div>
-                    <div><b>{demoOrder.quantityKg} kg</b></div>
-                    <div><b>₹{demoOrder.totalAmount.toLocaleString("en-IN")}</b><p>DEMO ONLY</p></div>
-                    <button onClick={() => openDemoInvoice(demoOrder)} style={buttonStyle}>
-                      Demo Invoice
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
       {showOrders && (
         <>
