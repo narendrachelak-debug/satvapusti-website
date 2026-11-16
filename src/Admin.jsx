@@ -83,7 +83,7 @@ export default function Admin() {
   const [orders, setOrders] = useState([]);
   const [manualCashSales, setManualCashSales] = useState([]);
   const [manualCashSalePeriod, setManualCashSalePeriod] = useState("2026-10");
-  const [manualCashSaleKg, setManualCashSaleKg] = useState("120");
+  const [manualCashSaleKg, setManualCashSaleKg] = useState("");
   const [manualCashSaleMessage, setManualCashSaleMessage] = useState("");
   const [savingManualCashSale, setSavingManualCashSale] = useState(false);
   const [search, setSearch] = useState("");
@@ -480,6 +480,37 @@ return data.order;
 
   const dailySalesReport = buildSalesReport("daily");
   const monthlySalesReport = buildSalesReport("monthly");
+  const demoInvoiceOrders = useMemo(
+    () =>
+      Array.from({ length: 120 }, (_, index) => {
+        const weight = index < 20 ? "250G" : index >= 110 ? "500G" : "1KG";
+        const familyProduct = products.find((product) => product.productId === "family");
+        const fallbackPrices = { "250G": 499, "500G": 999, "1KG": 1799 };
+        const price = Number(
+          familyProduct?.weights?.[weight]?.offer ?? fallbackPrices[weight]
+        );
+        const packKg = weight === "250G" ? 0.25 : weight === "500G" ? 0.5 : 1;
+
+        return {
+          orderId: `DEMO-${String(index + 1).padStart(3, "0")}`,
+          customerName: `Demo Customer ${String(index + 1).padStart(3, "0")}`,
+          mobile: "DEMO ONLY — NO REAL NUMBER",
+          city: "Demo City",
+          address: "Synthetic test data — not a real delivery address",
+          pincode: "000000",
+          date: `2026-10-${String((index % 30) + 1).padStart(2, "0")}`,
+          weight,
+          quantityKg: packKg,
+          unitPrice: price,
+          totalAmount: price,
+        };
+      }),
+    [products]
+  );
+  const demoInvoiceQuantityKg = demoInvoiceOrders.reduce(
+    (total, order) => total + order.quantityKg,
+    0
+  );
 
   const saveManualCashSale = async (event) => {
     event.preventDefault();
@@ -584,6 +615,7 @@ return data.order;
     activeAdminView === "payments" ||
     activeAdminView === "customers";
   const showReports = activeAdminView === "dashboard" || activeAdminView === "reports";
+  const showDemoInvoices = activeAdminView === "demoInvoices";
   const showOrders =
     activeAdminView === "dashboard" ||
     activeAdminView === "orders" ||
@@ -597,6 +629,7 @@ return data.order;
     inventory: "Inventory Control",
     reports: "Sales Reports",
     customers: "Customer Directory",
+    demoInvoices: "Demo Invoice Simulator",
   };
 
   const copyAddress = (order) => {
@@ -1060,6 +1093,53 @@ ${order.mobile || ""}`;
     invoiceWindow.focus();
   };
 
+  const buildDemoInvoiceHtml = (demoOrder) => {
+    const weightLabel = demoOrder.weight === "250G"
+      ? "250 g"
+      : demoOrder.weight === "500G"
+        ? "500 g"
+        : "1 kg";
+
+    return `<!doctype html><html><head><meta charset="utf-8"><title>DEMO Invoice ${escapeHtml(demoOrder.orderId)}</title>
+      <style>
+        *{box-sizing:border-box}body{margin:0;background:#eee;color:#17211b;font:14px Arial,sans-serif}
+        .actions{position:sticky;top:0;background:#222;padding:10px;text-align:center}
+        .actions button{padding:9px 14px;background:#159451;color:white;border:0;border-radius:5px}
+        .page{position:relative;overflow:hidden;max-width:900px;min-height:700px;margin:20px auto;padding:36px;background:#fff}
+        .watermark{position:absolute;top:42%;left:10%;z-index:0;color:rgba(180,0,0,.12);font-size:64px;font-weight:800;transform:rotate(-25deg);text-align:center;pointer-events:none}
+        .content{position:relative;z-index:1}.banner{padding:14px;background:#fff0f0;border:2px solid #b00020;color:#8b0019;text-align:center;font-weight:800}
+        header{display:flex;justify-content:space-between;gap:20px;margin:22px 0;border-bottom:2px solid #333;padding-bottom:14px}
+        h1{font-size:24px;margin:0 0 8px}p{line-height:1.5}table{width:100%;border-collapse:collapse;margin-top:24px}
+        th,td{border:1px solid #aaa;padding:10px;text-align:left}.num{text-align:right}
+        .note{margin-top:24px;padding:12px;background:#fff8df;border:1px solid #d5aa32}
+        @media print{body{background:#fff}.actions{display:none}.page{margin:0;max-width:none;min-height:auto;padding:20px}.watermark{position:fixed}}
+      </style></head><body><div class="actions"><button onclick="window.print()">Print / Save DEMO PDF</button></div>
+      <main class="page"><div class="watermark">DEMO<br>NOT A TAX INVOICE</div><div class="content">
+      <div class="banner">DEMO ONLY — NOT A TAX INVOICE — NO REAL SALE</div>
+      <header><div><h1>Invoice Preview</h1><p>SatvaPusti Family Nutrition Formula</p></div>
+      <div><b>Demo ID:</b> ${escapeHtml(demoOrder.orderId)}<br><b>Demo date:</b> ${escapeHtml(demoOrder.date)}</div></header>
+      <p><b>Customer:</b> ${escapeHtml(demoOrder.customerName)}<br><b>Contact:</b> DEMO ONLY — NO REAL NUMBER<br>
+      <b>Address:</b> Synthetic test data — not a real delivery address</p>
+      <table><thead><tr><th>Product</th><th>Pack</th><th class="num">Qty</th><th class="num">Demo unit price</th><th class="num">Demo total</th></tr></thead>
+      <tbody><tr><td>SatvaPusti Family Nutrition Formula</td><td>${escapeHtml(weightLabel)}</td><td class="num">1</td>
+      <td class="num">₹${demoOrder.unitPrice.toLocaleString("en-IN")}</td><td class="num">₹${demoOrder.totalAmount.toLocaleString("en-IN")}</td></tr></tbody></table>
+      <div class="note">Synthetic document for dashboard and print/PDF testing only. It is not proof of purchase, a tax invoice, bill of supply, or an accounting record.</div>
+      </div></main></body></html>`;
+  };
+
+  const openDemoInvoice = (demoOrder) => {
+    const invoiceWindow = window.open("", "_blank");
+    if (!invoiceWindow) {
+      alert("Please allow popups to preview a demo invoice");
+      return;
+    }
+
+    invoiceWindow.document.open();
+    invoiceWindow.document.write(buildDemoInvoiceHtml(demoOrder));
+    invoiceWindow.document.close();
+    invoiceWindow.focus();
+  };
+
   const openPackingSlip = (order) => {
     const slipWindow = window.open("", "_blank");
     if (!slipWindow) {
@@ -1477,6 +1557,13 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           >
             <span>Reports</span>
             <b>{dailySalesReport.length}</b>
+          </button>
+          <button
+            className={activeAdminView === "demoInvoices" ? "active" : ""}
+            onClick={() => setActiveAdminView("demoInvoices")}
+          >
+            <span>Demo Invoices</span>
+            <b>DEMO</b>
           </button>
           <button
             className={activeAdminView === "customers" ? "active" : ""}
@@ -2036,9 +2123,9 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
         <div style={reportBoxStyle}>
           <h3>Manual Cash Sales Aggregate</h3>
           <p>
-            Record a real historical SatvaPusti Family quantity without inventing
-            customer names or phone numbers. This does not create individual orders
-            or add revenue.
+            Enter only an actual, reconciled SatvaPusti Family quantity. This creates
+            an anonymous monthly total, not individual invoices. Leave blank if the
+            real quantity is unknown.
           </p>
           <form onSubmit={saveManualCashSale}>
             <label style={{ display: "block", marginBottom: "10px" }}>
@@ -2237,6 +2324,53 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           </div>
         </div>
       )}
+
+        {showDemoInvoices && (
+          <section>
+            <div style={{ ...reportBoxStyle, marginBottom: "14px" }}>
+              <h2>DEMO ONLY — isolated from real orders</h2>
+              <p>
+                These 120 synthetic records are generated in this browser only. They
+                do not use the customer list, reach the database, change reports,
+                affect inventory, or represent real sales.
+              </p>
+              <p>
+                <b>Demo customers:</b> {demoInvoiceOrders.length}
+                {" | "}<b>Demo quantity:</b> {demoInvoiceQuantityKg.toLocaleString("en-IN")} kg
+                {" | "}<b>Distribution:</b> 20 × 250 g, 90 × 1 kg, 10 × 500 g
+              </p>
+              <p>Open any demo invoice, then use “Print / Save DEMO PDF” to test PDF download.</p>
+            </div>
+            <div className="adminSectionHeader">
+              <h2>Demo Invoice Previews</h2>
+              <span>{demoInvoiceOrders.length} DEMO records</span>
+            </div>
+            <div className="adminOrderList" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+              <div className="adminOrderHeader">
+                <span>Demo ID</span>
+                <span>Customer</span>
+                <span>Package</span>
+                <span>Quantity</span>
+                <span>Demo amount</span>
+                <span>Action</span>
+              </div>
+              {demoInvoiceOrders.map((demoOrder) => (
+                <div key={demoOrder.orderId} className="adminOrderCard">
+                  <div className="adminOrderSummary">
+                    <div><h3>{demoOrder.orderId}</h3><p>DEMO</p></div>
+                    <div><b>{demoOrder.customerName}</b><p>NO REAL CONTACT</p></div>
+                    <div><b>Family</b><p>{demoOrder.weight}</p></div>
+                    <div><b>{demoOrder.quantityKg} kg</b></div>
+                    <div><b>₹{demoOrder.totalAmount.toLocaleString("en-IN")}</b><p>DEMO ONLY</p></div>
+                    <button onClick={() => openDemoInvoice(demoOrder)} style={buttonStyle}>
+                      Demo Invoice
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
       {showOrders && (
         <>
