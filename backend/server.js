@@ -4,6 +4,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const orderRoutes = require("./routes/orderRoutes");
+const manualCashSaleRoutes = require("./routes/manualCashSaleRoutes");
 const business = require("./config/business");
 const { GST_STATES } = require("./data/gstStates");
 const { calculateOrder, rupeesToPaise } = require("./services/pricingService");
@@ -491,6 +492,7 @@ app.put("/api/products/:id", requireAdmin, async (req, res) => {
 });
 
 app.use("/api/orders", orderRoutes);
+app.use("/api/admin/manual-cash-sales", manualCashSaleRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI, {

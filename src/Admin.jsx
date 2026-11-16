@@ -81,6 +81,11 @@ export default function Admin() {
   }, []);
 
   const [orders, setOrders] = useState([]);
+  const [manualCashSales, setManualCashSales] = useState([]);
+  const [manualCashSalePeriod, setManualCashSalePeriod] = useState("2026-10");
+  const [manualCashSaleKg, setManualCashSaleKg] = useState("120");
+  const [manualCashSaleMessage, setManualCashSaleMessage] = useState("");
+  const [savingManualCashSale, setSavingManualCashSale] = useState(false);
   const [search, setSearch] = useState("");
   const [savingId, setSavingId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -151,15 +156,31 @@ export default function Admin() {
     }
   };
 
+  const loadManualCashSales = async () => {
+    try {
+      const res = await adminFetch(`${API_URL}/api/admin/manual-cash-sales`);
+      const data = await res.json();
+      if (!res.ok || !data.success || !Array.isArray(data.sales)) {
+        throw new Error(data.message || "Manual cash sales could not be loaded");
+      }
+      setManualCashSales(data.sales);
+    } catch (error) {
+      console.log("Load manual cash sales error:", error);
+      setManualCashSaleMessage("Manual cash sales could not be loaded. Please retry after checking the admin connection.");
+    }
+  };
+
   useEffect(() => {
     loadOrders();
     loadInventory();
     loadProducts();
+    loadManualCashSales();
 
     const interval = setInterval(() => {
       loadOrders();
       loadInventory();
       loadProducts();
+      loadManualCashSales();
     }, 10000);
 
     return () => clearInterval(interval);
@@ -195,6 +216,18 @@ export default function Admin() {
       day: `${parts.year}-${parts.month}-${parts.day}`,
       month: `${parts.year}-${parts.month}`,
     };
+  };
+
+  const getOrderQuantityKg = (order) => {
+    const items = Array.isArray(order.items) && order.items.length ? order.items : [order];
+    return items.reduce((total, item) => {
+      const match = String(item.weight || "").match(/^(\d+(?:\.\d+)?)\s*(kg|g)$/i);
+      if (!match) return total;
+
+      const weightValue = Number(match[1]);
+      const itemKg = match[2].toLowerCase() === "kg" ? weightValue : weightValue / 1000;
+      return total + itemKg * Number(item.quantity || 0);
+    }, 0);
   };
 
   const updateLocalOrder = (id, field, value) => {
@@ -415,13 +448,30 @@ return data.order;
           : parts.day;
 
       if (!acc[key]) {
-        acc[key] = { period: key, orders: 0, revenue: 0 };
+        acc[key] = { period: key, orders: 0, revenue: 0, quantityKg: 0, manualCashSaleKg: 0 };
       }
 
       acc[key].orders += 1;
       acc[key].revenue += Number(order.totalAmount || 0);
+      acc[key].quantityKg += getOrderQuantityKg(order);
       return acc;
     }, {});
+
+    if (type === "monthly") {
+      manualCashSales.forEach((sale) => {
+        if (!grouped[sale.period]) {
+          grouped[sale.period] = {
+            period: sale.period,
+            orders: 0,
+            revenue: 0,
+            quantityKg: 0,
+            manualCashSaleKg: 0,
+          };
+        }
+        grouped[sale.period].quantityKg += Number(sale.quantityKg || 0);
+        grouped[sale.period].manualCashSaleKg += Number(sale.quantityKg || 0);
+      });
+    }
 
     return Object.values(grouped)
       .sort((a, b) => b.period.localeCompare(a.period))
@@ -430,6 +480,39 @@ return data.order;
 
   const dailySalesReport = buildSalesReport("daily");
   const monthlySalesReport = buildSalesReport("monthly");
+
+  const saveManualCashSale = async (event) => {
+    event.preventDefault();
+    setSavingManualCashSale(true);
+    setManualCashSaleMessage("");
+
+    try {
+      const res = await adminFetch(`${API_URL}/api/admin/manual-cash-sales`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          period: manualCashSalePeriod,
+          quantityKg: manualCashSaleKg,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.sale) {
+        throw new Error(data.message || "Manual cash sale could not be saved");
+      }
+
+      setManualCashSales((current) =>
+        [...current.filter((sale) => sale.period !== data.sale.period), data.sale]
+          .sort((a, b) => b.period.localeCompare(a.period))
+      );
+      setManualCashSaleMessage(
+        `${data.sale.period}: ${Number(data.sale.quantityKg).toLocaleString("en-IN")} kg saved as an aggregate cash sale.`
+      );
+    } catch (error) {
+      setManualCashSaleMessage(error.message || "Manual cash sale could not be saved");
+    } finally {
+      setSavingManualCashSale(false);
+    }
+  };
 
   const customerSummaries = useMemo(() => {
     const customerMap = new Map();
@@ -1928,7 +2011,7 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           ) : (
             dailySalesReport.map((item) => (
               <p key={item.period}>
-                <b>{item.period}</b> | Orders: {item.orders} | Revenue: ₹{item.revenue.toLocaleString()}
+                <b>{item.period}</b> | Orders: {item.orders} | Quantity: {item.quantityKg.toLocaleString("en-IN", { maximumFractionDigits: 3 })} kg | Revenue: ₹{item.revenue.toLocaleString()}
               </p>
             ))
           )}
@@ -1941,10 +2024,51 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
           ) : (
             monthlySalesReport.map((item) => (
               <p key={item.period}>
-                <b>{item.period}</b> | Orders: {item.orders} | Revenue: ₹{item.revenue.toLocaleString()}
+                <b>{item.period}</b> | Orders: {item.orders} | Quantity: {item.quantityKg.toLocaleString("en-IN", { maximumFractionDigits: 3 })} kg
+                {item.manualCashSaleKg > 0
+                  ? ` (includes ${item.manualCashSaleKg.toLocaleString("en-IN", { maximumFractionDigits: 3 })} kg manual cash aggregate)`
+                  : ""}
+                {" | "}Revenue: ₹{item.revenue.toLocaleString()}
               </p>
             ))
           )}
+        </div>
+        <div style={reportBoxStyle}>
+          <h3>Manual Cash Sales Aggregate</h3>
+          <p>
+            Record a real historical SatvaPusti Family quantity without inventing
+            customer names or phone numbers. This does not create individual orders
+            or add revenue.
+          </p>
+          <form onSubmit={saveManualCashSale}>
+            <label style={{ display: "block", marginBottom: "10px" }}>
+              Month
+              <input
+                type="month"
+                required
+                value={manualCashSalePeriod}
+                onChange={(event) => setManualCashSalePeriod(event.target.value)}
+                style={filterInputStyle}
+              />
+            </label>
+            <label style={{ display: "block", marginBottom: "10px" }}>
+              Quantity sold (kg)
+              <input
+                type="number"
+                min="0"
+                max="1000000"
+                step="0.001"
+                required
+                value={manualCashSaleKg}
+                onChange={(event) => setManualCashSaleKg(event.target.value)}
+                style={filterInputStyle}
+              />
+            </label>
+            <button type="submit" disabled={savingManualCashSale} style={smallButtonStyle}>
+              {savingManualCashSale ? "Saving..." : "Save monthly total"}
+            </button>
+          </form>
+          {manualCashSaleMessage && <p role="status">{manualCashSaleMessage}</p>}
         </div>
       </div>
       )}

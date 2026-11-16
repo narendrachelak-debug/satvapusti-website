@@ -52,6 +52,7 @@ test("password comparison is exact", () => {
 
 test("sensitive order and mutation routes require admin middleware", () => {
   const orderRoutes = fs.readFileSync(path.join(root, "backend/routes/orderRoutes.js"), "utf8");
+  const manualCashSaleRoutes = fs.readFileSync(path.join(root, "backend/routes/manualCashSaleRoutes.js"), "utf8");
   const server = fs.readFileSync(path.join(root, "backend/server.js"), "utf8");
   for (const route of ["/all", "/reports/sales", "/customer/:mobile", "/status/:id", "/admin/update/:id", "/whatsapp-template/:id/:template", "/admin/test-email"]) {
     assert.match(orderRoutes, new RegExp(`router\\.(?:get|post|put)\\(\\"${route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\", requireAdmin`));
@@ -59,4 +60,6 @@ test("sensitive order and mutation routes require admin middleware", () => {
   assert.match(server, /app\.put\("\/api\/inventory\/:productId\/:weight", requireAdmin/);
   assert.match(server, /app\.post\("\/api\/products", requireAdmin/);
   assert.match(server, /app\.put\("\/api\/products\/:id", requireAdmin/);
+  assert.match(manualCashSaleRoutes, /router\.get\("\/", requireAdmin/);
+  assert.match(manualCashSaleRoutes, /router\.put\("\/", requireAdmin/);
 });
