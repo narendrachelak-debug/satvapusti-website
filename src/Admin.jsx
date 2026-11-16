@@ -381,6 +381,11 @@ return data.order;
   }, [orders, search, dateFrom, dateTo, filters]);
 
   const totalOrders = orders.length;
+  const importedHistoricalInvoiceCount = orders.filter(
+    (order) =>
+      String(order.historicalImportKey || "").startsWith("oct-2026:") &&
+      order.paymentStatus === "Paid"
+  ).length;
 
   const pendingPayments = orders.filter(
     (o) => o.paymentStatus === "Pending"
@@ -1066,6 +1071,61 @@ ${order.mobile || ""}`;
     invoiceWindow.document.write(buildInvoiceHtml(order));
     invoiceWindow.document.close();
     invoiceWindow.focus();
+  };
+
+  const openCombinedHistoricalInvoices = () => {
+    const historicalOrders = orders
+      .filter(
+        (order) =>
+          String(order.historicalImportKey || "").startsWith("oct-2026:") &&
+          order.paymentStatus === "Paid"
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.invoiceDate || a.createdAt) - new Date(b.invoiceDate || b.createdAt)
+      );
+
+    if (!historicalOrders.length) {
+      alert("No imported October 2026 invoices are available.");
+      return;
+    }
+
+    try {
+      const invoicePages = historicalOrders.map((order) => {
+        const html = buildGstInvoiceHtml(order);
+        const page = html.match(/<main class="page">([\s\S]*?)<\/main>/)?.[1];
+        if (!page) throw new Error(`Invoice page is missing for order ${order.orderId}`);
+        return page;
+      });
+      const styleMatch = buildGstInvoiceHtml(historicalOrders[0]).match(
+        /<style>([\s\S]*?)<\/style>/
+      );
+      if (!styleMatch) throw new Error("Invoice styles could not be loaded");
+
+      const combinedHtml = `<!doctype html><html><head><meta charset="utf-8">
+        <title>October 2026 Tax Invoices</title>
+        <style>${styleMatch[1]}
+          @media print {
+            .combinedInvoicePage { page-break-after: always; break-after: page; }
+            .combinedInvoicePage:last-child { page-break-after: auto; break-after: auto; }
+          }
+        </style></head><body>
+        <div class="actions"><button onclick="window.print()">Print / Save combined PDF (${historicalOrders.length} invoices)</button></div>
+        ${invoicePages.map((page) => `<main class="page combinedInvoicePage">${page}</main>`).join("")}
+        </body></html>`;
+      const invoiceWindow = window.open("", "_blank");
+      if (!invoiceWindow) {
+        alert("Please allow popups to generate the combined invoices");
+        return;
+      }
+
+      invoiceWindow.document.open();
+      invoiceWindow.document.write(combinedHtml);
+      invoiceWindow.document.close();
+      invoiceWindow.focus();
+    } catch (error) {
+      alert(error.message || "The combined invoices could not be generated.");
+    }
   };
 
   const openPackingSlip = (order) => {
@@ -1849,6 +1909,15 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
 
       {activeAdminView !== "customers" && (
       <div className="adminButtonRow">
+        {activeAdminView === "orders" && (
+          <button
+            onClick={openCombinedHistoricalInvoices}
+            className="admin-action-button admin-inventory-button"
+            disabled={!importedHistoricalInvoiceCount}
+          >
+            October invoices (combined PDF) — {importedHistoricalInvoiceCount}
+          </button>
+        )}
         <button
           onClick={() => exportToCSV(filteredOrders)}
           className="admin-action-button admin-csv-button"
