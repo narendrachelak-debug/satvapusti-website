@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import businessConfig from "../shared/business.json";
 import "./admin.css";
 import { adminFetch, getAdminToken, logoutAdmin } from "./adminApi";
+import { createDemoInvoiceOrders } from "./demoInvoiceData.mjs";
 
 const API_URL = "https://satvapusti-website.onrender.com";
 
@@ -481,30 +482,7 @@ return data.order;
   const dailySalesReport = buildSalesReport("daily");
   const monthlySalesReport = buildSalesReport("monthly");
   const demoInvoiceOrders = useMemo(
-    () =>
-      Array.from({ length: 120 }, (_, index) => {
-        const weight = index < 20 ? "250G" : index >= 110 ? "500G" : "1KG";
-        const familyProduct = products.find((product) => product.productId === "family");
-        const fallbackPrices = { "250G": 499, "500G": 999, "1KG": 1799 };
-        const price = Number(
-          familyProduct?.weights?.[weight]?.offer ?? fallbackPrices[weight]
-        );
-        const packKg = weight === "250G" ? 0.25 : weight === "500G" ? 0.5 : 1;
-
-        return {
-          orderId: `DEMO-${String(index + 1).padStart(3, "0")}`,
-          customerName: `Demo Customer ${String(index + 1).padStart(3, "0")}`,
-          mobile: "DEMO ONLY — NO REAL NUMBER",
-          city: "Demo City",
-          address: "Synthetic test data — not a real delivery address",
-          pincode: "000000",
-          date: `2026-10-${String((index % 30) + 1).padStart(2, "0")}`,
-          weight,
-          quantityKg: packKg,
-          unitPrice: price,
-          totalAmount: price,
-        };
-      }),
+    () => createDemoInvoiceOrders(products.find((product) => product.productId === "family")),
     [products]
   );
   const demoInvoiceQuantityKg = demoInvoiceOrders.reduce(
@@ -747,7 +725,10 @@ ${order.mobile || ""}`;
 
   const buildGstInvoiceHtml = (order) => {
     const snapshot = order.pricingSnapshot;
-    const payment = getPaymentClassification(order);
+    const isDemoInvoice = order.isDemoInvoice === true;
+    const payment = isDemoInvoice
+      ? { type: "Demo only", status: "No real payment" }
+      : getPaymentClassification(order);
     const invoiceLogoUrl = `${window.location.origin}/banners/logo-banner.png`;
     const authorizedSignatureUrl = `${window.location.origin}/authorized-signature.png`;
     const paise = (value) => `₹${(Number(value || 0) / 100).toLocaleString("en-IN", {
@@ -796,14 +777,15 @@ ${order.mobile || ""}`;
 
     return `<!doctype html><html><head><meta charset="utf-8"><title>Tax Invoice - ${escapeHtml(order.orderId)}</title>
       <style>
-        *{box-sizing:border-box}body{margin:0;background:#eee;color:#17211b;font:12px Arial,sans-serif}.page{width:297mm;min-height:210mm;margin:auto;padding:12mm;background:#fff}.top{display:flex;justify-content:space-between;gap:24px;border-bottom:2px solid #164c2b;padding-bottom:10px}.seller{flex:1;min-width:0}.invoiceLogo{display:block;width:330px;max-width:100%;height:76px;object-fit:contain;object-position:left center;margin:0 0 7px;border-radius:4px}.top h2{margin:0;text-align:right}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.box{border:1px solid #bbb;padding:9px}.box h3{margin:0 0 6px;color:#164c2b}p{margin:2px 0;line-height:1.45}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #bbb;padding:6px;vertical-align:top}th{background:#eaf6ee}.num{text-align:right;white-space:nowrap}.totals{display:grid;grid-template-columns:1fr 320px;gap:12px;margin-top:10px}.totalLine{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:5px}.grand{font-size:15px}.footer{display:flex;justify-content:space-between;margin-top:18px;align-items:flex-end}.sign{text-align:center;min-width:190px}.signatureMark{position:relative;width:180px;height:64px;overflow:hidden;margin:0 auto 3px;border-bottom:1px solid #222}.signatureMark img{position:absolute;width:220px;height:auto;left:50%;top:50%;transform:translate(-50%,-50%)}.actions{position:sticky;top:0;background:#222;padding:8px;text-align:center}.actions button{padding:8px 14px;background:#159451;color:white;border:0;border-radius:5px}@media print{body{background:#fff}.actions{display:none}.page{margin:0;padding:0;width:auto}.invoiceLogo,.signatureMark img{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-      </style></head><body><div class="actions"><button onclick="window.print()">Print / Save PDF</button></div><main class="page">
-      <section class="top"><div class="seller"><img class="invoiceLogo" src="${escapeHtml(invoiceLogoUrl)}" alt="${escapeHtml(businessConfig.tradeName)}"><p><b>Legal Name:</b> ${escapeHtml(businessConfig.legalName)}</p><p><b>GSTIN:</b> ${escapeHtml(businessConfig.gstin)}</p><p>${sellerAddress}</p><p><b>State:</b> ${escapeHtml(businessConfig.stateName)} | <b>State Code:</b> ${escapeHtml(businessConfig.stateCode)}</p></div><div><h2>TAX INVOICE</h2><p><b>Invoice No:</b> ${escapeHtml(order.invoiceNumber || buildBillNumber(order))}</p><p><b>Invoice Date:</b> ${escapeHtml(formatDate(order.invoiceDate || order.createdAt))}</p><p><b>Order No:</b> ${escapeHtml(order.orderId)}</p><p><b>Payment:</b> ${escapeHtml(payment.status)} | ${escapeHtml(payment.type)}</p></div></section>
+        *{box-sizing:border-box}body{margin:0;background:#eee;color:#17211b;font:12px Arial,sans-serif}.page{position:relative;width:297mm;min-height:210mm;margin:auto;padding:12mm;background:#fff}.top{display:flex;justify-content:space-between;gap:24px;border-bottom:2px solid #164c2b;padding-bottom:10px}.seller{flex:1;min-width:0}.invoiceLogo{display:block;width:330px;max-width:100%;height:76px;object-fit:contain;object-position:left center;margin:0 0 7px;border-radius:4px}.top h2{margin:0;text-align:right}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.box{border:1px solid #bbb;padding:9px}.box h3{margin:0 0 6px;color:#164c2b}p{margin:2px 0;line-height:1.45}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #bbb;padding:6px;vertical-align:top}th{background:#eaf6ee}.num{text-align:right;white-space:nowrap}.totals{display:grid;grid-template-columns:1fr 320px;gap:12px;margin-top:10px}.totalLine{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:5px}.grand{font-size:15px}.footer{display:flex;justify-content:space-between;margin-top:18px;align-items:flex-end}.sign{text-align:center;min-width:190px}.signatureMark{position:relative;width:180px;height:64px;overflow:hidden;margin:0 auto 3px;border-bottom:1px solid #222}.signatureMark img{position:absolute;width:220px;height:auto;left:50%;top:50%;transform:translate(-50%,-50%)}.actions{position:sticky;top:0;background:#222;padding:8px;text-align:center}.actions button{padding:8px 14px;background:#159451;color:white;border:0;border-radius:5px}.demoWatermark{position:absolute;top:40%;left:10%;z-index:2;color:rgba(180,0,0,.15);font-size:60px;font-weight:800;text-align:center;transform:rotate(-25deg);pointer-events:none}.demoBanner{margin:10px 0;padding:8px;border:2px solid #a00018;color:#a00018;text-align:center;font-size:16px;font-weight:800}@media print{body{background:#fff}.actions{display:none}.page{margin:0;padding:12mm;width:auto}.invoiceLogo,.signatureMark img{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+      </style></head><body><div class="actions"><button onclick="window.print()">${isDemoInvoice ? "Print / Save DEMO PDF" : "Print / Save PDF"}</button></div><main class="page">
+      ${isDemoInvoice ? '<div class="demoWatermark">DEMO ONLY<br>NOT A TAX INVOICE</div><div class="demoBanner">DEMO ONLY — NOT A TAX INVOICE — NO REAL SALE</div>' : ""}
+      <section class="top"><div class="seller"><img class="invoiceLogo" src="${escapeHtml(invoiceLogoUrl)}" alt="${escapeHtml(businessConfig.tradeName)}"><p><b>Legal Name:</b> ${escapeHtml(businessConfig.legalName)}</p><p><b>GSTIN:</b> ${escapeHtml(businessConfig.gstin)}</p><p>${sellerAddress}</p><p><b>State:</b> ${escapeHtml(businessConfig.stateName)} | <b>State Code:</b> ${escapeHtml(businessConfig.stateCode)}</p></div><div><h2>${isDemoInvoice ? "DEMO INVOICE PREVIEW" : "TAX INVOICE"}</h2><p><b>${isDemoInvoice ? "Demo ID" : "Invoice No"}:</b> ${escapeHtml(order.invoiceNumber || buildBillNumber(order))}</p><p><b>${isDemoInvoice ? "Demo Date" : "Invoice Date"}:</b> ${escapeHtml(formatDate(order.invoiceDate || order.createdAt))}</p><p><b>${isDemoInvoice ? "Demo Order" : "Order No"}:</b> ${escapeHtml(order.orderId)}</p><p><b>Payment:</b> ${escapeHtml(payment.status)} | ${escapeHtml(payment.type)}</p></div></section>
       <section class="grid"><div class="box"><h3>Billing Details</h3><p><b>${escapeHtml(order.customerLegalName || order.customerName)}</b></p><p>${escapeHtml(billingAddress)}</p><p><b>Billing State:</b> ${escapeHtml(snapshot.billingStateName)} (${escapeHtml(snapshot.billingStateCode)})</p>${order.customerGstin ? `<p><b>Customer GSTIN:</b> ${escapeHtml(order.customerGstin)}<br><b>Registration:</b> Registered (B2B)</p>` : `<p><b>Customer GSTIN:</b> Unregistered (B2C)</p>`}<p>Mobile: ${escapeHtml(order.mobile)} | Email: ${escapeHtml(order.email)}</p></div>
       <div class="box"><h3>Shipping Details</h3><p><b>${escapeHtml(order.customerName)}</b></p><p>${escapeHtml(shippingAddress)}</p><p><b>Shipping State:</b> ${escapeHtml(snapshot.shippingStateName)} (${escapeHtml(snapshot.shippingStateCode)})</p><p><b>Place of Supply:</b> ${escapeHtml(snapshot.placeOfSupplyState)} (${escapeHtml(snapshot.placeOfSupplyStateCode)})</p><p><b>Supply Type:</b> ${intraState ? "Intra-State" : "Inter-State"}</p></div></section>
       <table><thead><tr><th>#</th><th>Description</th><th>HSN</th><th>Pack</th><th>Qty</th><th>Unit</th><th>MRP</th><th>Discount</th><th>GST-inclusive price</th><th>Taxable value</th><th>GST rate</th>${taxHeaders}<th>Line total</th></tr></thead><tbody>${rows}</tbody></table>
       <section class="totals"><div class="box"><h3>Amount in Words</h3><p>${escapeHtml(numberToIndianWords(snapshot.finalPayablePaise / 100))}</p><p>Prices are inclusive of GST. Tax shown is extracted and is not added again.</p></div><div class="box"><div class="totalLine"><span>Taxable value</span><b>${paise(snapshot.taxableValuePaise)}</b></div>${taxTotals}<div class="totalLine"><span>Shipping</span><b>${paise(snapshot.shippingPaise)}</b></div><div class="totalLine"><span>Round-off</span><b>₹0.00</b></div><div class="totalLine grand"><span>Grand total</span><b>${paise(snapshot.finalPayablePaise)}</b></div></div></section>
-      <section class="footer"><p>This is a computer-generated tax invoice.</p><div class="sign"><div class="signatureMark"><img src="${escapeHtml(authorizedSignatureUrl)}" alt="Authorized signature"></div>Authorized Signatory<br>${escapeHtml(businessConfig.tradeName)}</div></section></main></body></html>`;
+      <section class="footer"><p>${isDemoInvoice ? "Demo preview only — not a tax invoice or accounting record." : "This is a computer-generated tax invoice."}</p><div class="sign">${isDemoInvoice ? "DEMO SAMPLE<br>NO AUTHORIZED SIGNATURE" : `<div class="signatureMark"><img src="${escapeHtml(authorizedSignatureUrl)}" alt="Authorized signature"></div>Authorized Signatory<br>${escapeHtml(businessConfig.tradeName)}`}</div></section></main></body></html>`;
   };
 
   const buildInvoiceHtml = (order) => {
@@ -1094,37 +1076,53 @@ ${order.mobile || ""}`;
   };
 
   const buildDemoInvoiceHtml = (demoOrder) => {
-    const weightLabel = demoOrder.weight === "250G"
-      ? "250 g"
-      : demoOrder.weight === "500G"
-        ? "500 g"
-        : "1 kg";
+    const taxableValuePaise = Math.round(
+      demoOrder.sellingPricePaise * 10000 / (10000 + demoOrder.gstRateBasisPoints)
+    );
+    const gstAmountPaise = demoOrder.sellingPricePaise - taxableValuePaise;
+    const cgstAmountPaise = Math.floor(gstAmountPaise / 2);
+    const pricingSnapshot = {
+      lines: [{
+        productName: "SatvaPusti Family Nutrition Formula",
+        hsnCode: demoOrder.hsnCode,
+        packSize: demoOrder.packSize,
+        quantity: 1,
+        mrpPaise: demoOrder.mrpPaise,
+        productDiscountPaise: Math.max(0, demoOrder.mrpPaise - demoOrder.sellingPricePaise),
+        couponDiscountPaise: 0,
+        sellingPricePaise: demoOrder.sellingPricePaise,
+        taxableValuePaise,
+        gstRateBasisPoints: demoOrder.gstRateBasisPoints,
+        cgstAmountPaise,
+        sgstAmountPaise: gstAmountPaise - cgstAmountPaise,
+        igstAmountPaise: 0,
+        lineConsiderationPaise: demoOrder.sellingPricePaise,
+      }],
+      supplyType: "INTRA_STATE",
+      shippingAddress: demoOrder.address,
+      taxableValuePaise,
+      cgstAmountPaise,
+      sgstAmountPaise: gstAmountPaise - cgstAmountPaise,
+      igstAmountPaise: 0,
+      shippingPaise: 0,
+      finalPayablePaise: demoOrder.sellingPricePaise,
+      billingStateName: businessConfig.stateName,
+      billingStateCode: businessConfig.stateCode,
+      shippingStateName: businessConfig.stateName,
+      shippingStateCode: businessConfig.stateCode,
+      placeOfSupplyState: businessConfig.stateName,
+      placeOfSupplyStateCode: businessConfig.stateCode,
+    };
 
-    return `<!doctype html><html><head><meta charset="utf-8"><title>DEMO Invoice ${escapeHtml(demoOrder.orderId)}</title>
-      <style>
-        *{box-sizing:border-box}body{margin:0;background:#eee;color:#17211b;font:14px Arial,sans-serif}
-        .actions{position:sticky;top:0;background:#222;padding:10px;text-align:center}
-        .actions button{padding:9px 14px;background:#159451;color:white;border:0;border-radius:5px}
-        .page{position:relative;overflow:hidden;max-width:900px;min-height:700px;margin:20px auto;padding:36px;background:#fff}
-        .watermark{position:absolute;top:42%;left:10%;z-index:0;color:rgba(180,0,0,.12);font-size:64px;font-weight:800;transform:rotate(-25deg);text-align:center;pointer-events:none}
-        .content{position:relative;z-index:1}.banner{padding:14px;background:#fff0f0;border:2px solid #b00020;color:#8b0019;text-align:center;font-weight:800}
-        header{display:flex;justify-content:space-between;gap:20px;margin:22px 0;border-bottom:2px solid #333;padding-bottom:14px}
-        h1{font-size:24px;margin:0 0 8px}p{line-height:1.5}table{width:100%;border-collapse:collapse;margin-top:24px}
-        th,td{border:1px solid #aaa;padding:10px;text-align:left}.num{text-align:right}
-        .note{margin-top:24px;padding:12px;background:#fff8df;border:1px solid #d5aa32}
-        @media print{body{background:#fff}.actions{display:none}.page{margin:0;max-width:none;min-height:auto;padding:20px}.watermark{position:fixed}}
-      </style></head><body><div class="actions"><button onclick="window.print()">Print / Save DEMO PDF</button></div>
-      <main class="page"><div class="watermark">DEMO<br>NOT A TAX INVOICE</div><div class="content">
-      <div class="banner">DEMO ONLY — NOT A TAX INVOICE — NO REAL SALE</div>
-      <header><div><h1>Invoice Preview</h1><p>SatvaPusti Family Nutrition Formula</p></div>
-      <div><b>Demo ID:</b> ${escapeHtml(demoOrder.orderId)}<br><b>Demo date:</b> ${escapeHtml(demoOrder.date)}</div></header>
-      <p><b>Customer:</b> ${escapeHtml(demoOrder.customerName)}<br><b>Contact:</b> DEMO ONLY — NO REAL NUMBER<br>
-      <b>Address:</b> Synthetic test data — not a real delivery address</p>
-      <table><thead><tr><th>Product</th><th>Pack</th><th class="num">Qty</th><th class="num">Demo unit price</th><th class="num">Demo total</th></tr></thead>
-      <tbody><tr><td>SatvaPusti Family Nutrition Formula</td><td>${escapeHtml(weightLabel)}</td><td class="num">1</td>
-      <td class="num">₹${demoOrder.unitPrice.toLocaleString("en-IN")}</td><td class="num">₹${demoOrder.totalAmount.toLocaleString("en-IN")}</td></tr></tbody></table>
-      <div class="note">Synthetic document for dashboard and print/PDF testing only. It is not proof of purchase, a tax invoice, bill of supply, or an accounting record.</div>
-      </div></main></body></html>`;
+    return buildGstInvoiceHtml({
+      ...demoOrder,
+      isDemoInvoice: true,
+      invoiceNumber: demoOrder.orderId,
+      invoiceDate: new Date(`${demoOrder.date}T12:00:00+05:30`),
+      paymentMethod: "DEMO",
+      paymentStatus: "Demo",
+      pricingSnapshot,
+    });
   };
 
   const openDemoInvoice = (demoOrder) => {
