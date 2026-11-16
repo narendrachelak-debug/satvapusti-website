@@ -8,6 +8,7 @@
     "@vitejs/plugin-react": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "read-excel-file": "^9.3.17",
     "vite": "latest"
   },
   "devDependencies": {

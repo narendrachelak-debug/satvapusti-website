@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import businessConfig from "../shared/business.json";
 import "./admin.css";
 import { adminFetch, getAdminToken, logoutAdmin } from "./adminApi";
+import HistoricalSalesImporter from "./HistoricalSalesImporter";
 
 const API_URL = "https://satvapusti-website.onrender.com";
 
@@ -640,7 +641,14 @@ ${order.mobile || ""}`;
     const method = String(order.paymentMethod || "").toUpperCase();
     const status = order.paymentStatus || "Pending";
     const isCOD = method === "COD";
+    const isCash = method === "CASH";
 
+    if (isCash) {
+      return {
+        type: "Cash",
+        status: status === "Paid" ? "Paid" : status,
+      };
+    }
     if (isCOD) {
       return {
         type: "Cash on Delivery (COD)",
@@ -766,7 +774,7 @@ ${order.mobile || ""}`;
         *{box-sizing:border-box}body{margin:0;background:#eee;color:#17211b;font:12px Arial,sans-serif}.page{position:relative;width:297mm;min-height:210mm;margin:auto;padding:12mm;background:#fff}.top{display:flex;justify-content:space-between;gap:24px;border-bottom:2px solid #164c2b;padding-bottom:10px}.seller{flex:1;min-width:0}.invoiceLogo{display:block;width:330px;max-width:100%;height:76px;object-fit:contain;object-position:left center;margin:0 0 7px;border-radius:4px}.top h2{margin:0;text-align:right}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.box{border:1px solid #bbb;padding:9px}.box h3{margin:0 0 6px;color:#164c2b}p{margin:2px 0;line-height:1.45}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #bbb;padding:6px;vertical-align:top}th{background:#eaf6ee}.num{text-align:right;white-space:nowrap}.totals{display:grid;grid-template-columns:1fr 320px;gap:12px;margin-top:10px}.totalLine{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:5px}.grand{font-size:15px}.footer{display:flex;justify-content:space-between;margin-top:18px;align-items:flex-end}.sign{text-align:center;min-width:190px}.signatureMark{position:relative;width:180px;height:64px;overflow:hidden;margin:0 auto 3px;border-bottom:1px solid #222}.signatureMark img{position:absolute;width:220px;height:auto;left:50%;top:50%;transform:translate(-50%,-50%)}.actions{position:sticky;top:0;background:#222;padding:8px;text-align:center}.actions button{padding:8px 14px;background:#159451;color:white;border:0;border-radius:5px}@media print{body{background:#fff}.actions{display:none}.page{margin:0;padding:12mm;width:auto}.invoiceLogo,.signatureMark img{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
       </style></head><body><div class="actions"><button onclick="window.print()">Print / Save PDF</button></div><main class="page">
       <section class="top"><div class="seller"><img class="invoiceLogo" src="${escapeHtml(invoiceLogoUrl)}" alt="${escapeHtml(businessConfig.tradeName)}"><p><b>Legal Name:</b> ${escapeHtml(businessConfig.legalName)}</p><p><b>GSTIN:</b> ${escapeHtml(businessConfig.gstin)}</p><p>${sellerAddress}</p><p><b>State:</b> ${escapeHtml(businessConfig.stateName)} | <b>State Code:</b> ${escapeHtml(businessConfig.stateCode)}</p></div><div><h2>TAX INVOICE</h2><p><b>Invoice No:</b> ${escapeHtml(order.invoiceNumber || buildBillNumber(order))}</p><p><b>Invoice Date:</b> ${escapeHtml(formatDate(order.invoiceDate || order.createdAt))}</p><p><b>Order No:</b> ${escapeHtml(order.orderId)}</p><p><b>Payment:</b> ${escapeHtml(payment.status)} | ${escapeHtml(payment.type)}</p></div></section>
-      <section class="grid"><div class="box"><h3>Billing Details</h3><p><b>${escapeHtml(order.customerLegalName || order.customerName)}</b></p><p>${escapeHtml(billingAddress)}</p><p><b>Billing State:</b> ${escapeHtml(snapshot.billingStateName)} (${escapeHtml(snapshot.billingStateCode)})</p>${order.customerGstin ? `<p><b>Customer GSTIN:</b> ${escapeHtml(order.customerGstin)}<br><b>Registration:</b> Registered (B2B)</p>` : `<p><b>Customer GSTIN:</b> Unregistered (B2C)</p>`}<p>Mobile: ${escapeHtml(order.mobile)} | Email: ${escapeHtml(order.email)}</p></div>
+      <section class="grid"><div class="box"><h3>Billing Details</h3><p><b>${escapeHtml(order.customerLegalName || order.customerName)}</b></p><p>${escapeHtml(billingAddress)}</p><p><b>Billing State:</b> ${escapeHtml(snapshot.billingStateName)} (${escapeHtml(snapshot.billingStateCode)})</p>${order.customerGstin ? `<p><b>Customer GSTIN:</b> ${escapeHtml(order.customerGstin)}<br><b>Registration:</b> Registered (B2B)</p>` : `<p><b>Customer GSTIN:</b> Unregistered (B2C)</p>`}<p>Mobile: ${escapeHtml(order.mobile || "Not provided")} | Email: ${escapeHtml(order.email || "Not provided")}</p></div>
       <div class="box"><h3>Shipping Details</h3><p><b>${escapeHtml(order.customerName)}</b></p><p>${escapeHtml(shippingAddress)}</p><p><b>Shipping State:</b> ${escapeHtml(snapshot.shippingStateName)} (${escapeHtml(snapshot.shippingStateCode)})</p><p><b>Place of Supply:</b> ${escapeHtml(snapshot.placeOfSupplyState)} (${escapeHtml(snapshot.placeOfSupplyStateCode)})</p><p><b>Supply Type:</b> ${intraState ? "Intra-State" : "Inter-State"}</p></div></section>
       <table><thead><tr><th>#</th><th>Description</th><th>HSN</th><th>Pack</th><th>Qty</th><th>Unit</th><th>MRP</th><th>Discount</th><th>GST-inclusive price</th><th>Taxable value</th><th>GST rate</th>${taxHeaders}<th>Line total</th></tr></thead><tbody>${rows}</tbody></table>
       <section class="totals"><div class="box"><h3>Amount in Words</h3><p>${escapeHtml(numberToIndianWords(snapshot.finalPayablePaise / 100))}</p><p>Prices are inclusive of GST. Tax shown is extracted and is not added again.</p></div><div class="box"><div class="totalLine"><span>Taxable value</span><b>${paise(snapshot.taxableValuePaise)}</b></div>${taxTotals}<div class="totalLine"><span>Shipping</span><b>${paise(snapshot.shippingPaise)}</b></div><div class="totalLine"><span>Round-off</span><b>₹0.00</b></div><div class="totalLine grand"><span>Grand total</span><b>${paise(snapshot.finalPayablePaise)}</b></div></div></section>
@@ -2004,6 +2012,9 @@ ${order.trackingUrl ? `Track Here: ${order.trackingUrl}` : ""}`;
 
       {showReports && (
       <div style={reportsGridStyle}>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <HistoricalSalesImporter apiUrl={API_URL} onImported={loadOrders} />
+        </div>
         <div style={reportBoxStyle}>
           <h3>Daily Sales Report</h3>
           {dailySalesReport.length === 0 ? (

@@ -9,6 +9,7 @@ const { calculateOrder, validateGstin } = require("../services/pricingService");
 const { createRateLimiter, requireAdmin, safePasswordEqual } = require("../middleware/security");
 const { computeOrderSignature, ORDER_RETRY_WINDOW_MS } = require("../services/idempotency");
 const { deductInventoryOnce, restoreInventoryOnce } = require("../services/inventoryConcurrency");
+const { normalizeHistoricalSale } = require("../services/historicalSalesImport");
 const { COMING_SOON_MESSAGE, hasComingSoonItem } = require("../config/productAvailability");
 const {
   RazorpayError,
@@ -390,6 +391,222 @@ const getFinancialYear = (date = new Date()) => {
   const startYear = Number(parts.month) >= 4 ? year : year - 1;
   return `${startYear}-${String(startYear + 1).slice(-2)}`;
 };
+
+const getKolkataDateKey = (date) => {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date(date)).map((part) => [part.type, part.value])
+  );
+  return `${parts.year}-${parts.month}-${parts.day}`;
+};
+
+router.post("/admin/historical-sales/import", requireAdmin, async (req, res) => {
+  const { batchHash, sales, includePossibleDuplicates = false } = req.body || {};
+  if (typeof includePossibleDuplicates !== "boolean") {
+    return res.status(400).json({ success: false, message: "Duplicate confirmation must be true or false" });
+  }
+  if (!/^[a-f0-9]{64}$/i.test(String(batchHash || ""))) {
+    return res.status(400).json({ success: false, message: "Invalid sales workbook fingerprint" });
+  }
+  if (!Array.isArray(sales) || sales.length === 0 || sales.length > 110) {
+    return res.status(400).json({ success: false, message: "Import between 1 and 110 dated sales" });
+  }
+
+  let normalizedSales;
+  try {
+    normalizedSales = sales.map(normalizeHistoricalSale);
+    if (new Set(normalizedSales.map((sale) => sale.rowNumber)).size !== normalizedSales.length) {
+      throw new Error("The workbook contains duplicate source row numbers");
+    }
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+
+  try {
+    const importKeys = normalizedSales.map(
+      (sale) => `oct-2026:${batchHash.toLowerCase()}:${sale.rowNumber}`
+    );
+    const importedOrders = await Order.find({
+      historicalImportKey: { $in: importKeys },
+    }).select("historicalImportKey").lean();
+    const importedKeys = new Set(importedOrders.map((order) => order.historicalImportKey));
+    const newSales = normalizedSales.filter(
+      (sale) => !importedKeys.has(`oct-2026:${batchHash.toLowerCase()}:${sale.rowNumber}`)
+    );
+
+    if (!newSales.length) {
+      return res.json({
+        success: true,
+        importedCount: 0,
+        alreadyImportedCount: normalizedSales.length,
+        message: "These sales were already imported.",
+      });
+    }
+
+    await Order.collection.createIndex(
+      { historicalImportKey: 1 },
+      { unique: true, sparse: true }
+    );
+    const dates = newSales.map((sale) => sale.invoiceDate).sort();
+    const dayAfterLastSale = new Date(`${dates[dates.length - 1]}T00:00:00.000Z`);
+    dayAfterLastSale.setUTCDate(dayAfterLastSale.getUTCDate() + 1);
+    const minDate = new Date(`${dates[0]}T00:00:00+05:30`);
+    const maxDate = new Date(
+      `${dayAfterLastSale.toISOString().slice(0, 10)}T00:00:00+05:30`
+    );
+    const existingOrders = await Order.find({
+      paymentStatus: "Paid",
+      paymentDate: { $gte: minDate, $lt: maxDate },
+    }).select("customerName mobile items weight quantity totalAmount totalAmountPaise paymentDate").lean();
+
+    const possibleDuplicateRows = newSales
+      .filter((sale) => existingOrders.some((order) => {
+        const orderItems = Array.isArray(order.items) && order.items.length
+          ? order.items
+          : [{ weight: order.weight, quantity: order.quantity }];
+        const mobileDigits = (value) => String(value || "").replace(/\D/g, "");
+        return (
+          getKolkataDateKey(order.paymentDate) === sale.invoiceDate &&
+          String(order.customerName || "").trim().toLowerCase() === sale.customerName.toLowerCase() &&
+          Number(order.totalAmountPaise ?? Math.round(Number(order.totalAmount || 0) * 100)) === sale.pricePaise &&
+          orderItems.length === 1 &&
+          String(orderItems[0].weight || "").replace(/\s+/g, "").toUpperCase() === sale.weight &&
+          Number(orderItems[0].quantity || 1) === 1 &&
+          (!mobileDigits(order.mobile) || !mobileDigits(sale.mobile) ||
+            mobileDigits(order.mobile) === mobileDigits(sale.mobile))
+        );
+      }))
+      .map((sale) => sale.rowNumber);
+
+    if (possibleDuplicateRows.length && !includePossibleDuplicates) {
+      return res.status(409).json({
+        success: false,
+        code: "POSSIBLE_DUPLICATES",
+        rows: possibleDuplicateRows,
+        message: "Some rows may already exist as paid orders. Review the listed Excel rows before importing them.",
+      });
+    }
+
+    const quoteCache = new Map();
+    const pricedSales = [];
+    for (const sale of newSales) {
+      const stateKey = `${sale.stateCode}:${sale.weight}`;
+      if (!quoteCache.has(stateKey)) {
+        quoteCache.set(stateKey, await calculateOrder({
+          items: [{ productId: "family", weight: sale.weight, quantity: 1 }],
+          shippingStateCode: sale.stateCode,
+          billingStateCode: sale.stateCode,
+          couponDiscountPaise: 0,
+        }));
+      }
+
+      const pricing = quoteCache.get(stateKey);
+      if (pricing.finalPayablePaise !== sale.pricePaise) {
+        return res.status(409).json({
+          success: false,
+          code: "PRICE_MISMATCH",
+          message: `Excel row ${sale.rowNumber}: listed price does not match the current ${sale.weight} product price.`,
+        });
+      }
+      pricedSales.push({ sale, pricing });
+    }
+
+    const orderDocuments = [];
+    for (const { sale, pricing } of pricedSales) {
+      const invoiceDate = new Date(`${sale.invoiceDate}T00:00:00.000Z`);
+      const fullAddress = [sale.address, sale.city, sale.pincode].filter(Boolean).join(", ");
+      const orderId = await getNextOrderId();
+      const snapshot = {
+        ...pricing,
+        billingAddress: fullAddress,
+        shippingAddress: fullAddress,
+        customerGstin: "",
+        customerRegistrationType: "UNREGISTERED_B2C",
+        customerLegalName: "",
+        customerTradeName: "",
+      };
+      const items = pricing.lines.map((line) => ({
+        cartId: `${line.productId}-${line.weight}`,
+        productId: line.productId,
+        name: line.productName,
+        weight: line.weight,
+        quantity: line.quantity,
+        mrp: line.mrpPaise / 100,
+        offer: line.sellingPricePaise / 100,
+        image: line.image,
+      }));
+
+      orderDocuments.push({
+        orderId,
+        customerName: sale.customerName,
+        email: "",
+        mobile: sale.mobile,
+        address: sale.address,
+        city: sale.city,
+        pincode: sale.pincode,
+        country: "India",
+        billingAddress: fullAddress,
+        shippingAddress: fullAddress,
+        billingStateName: pricing.billingStateName,
+        billingStateCode: pricing.billingStateCode,
+        shippingStateName: pricing.shippingStateName,
+        shippingStateCode: pricing.shippingStateCode,
+        placeOfSupplyState: pricing.placeOfSupplyState,
+        placeOfSupplyStateCode: pricing.placeOfSupplyStateCode,
+        customerRegistrationType: "UNREGISTERED_B2C",
+        items,
+        product: "family",
+        weight: sale.weight,
+        quantity: 1,
+        mrp: pricing.lines[0].mrpPaise / 100,
+        offerPrice: sale.pricePaise / 100,
+        totalAmount: sale.pricePaise / 100,
+        totalAmountPaise: sale.pricePaise,
+        gatewayOrderAmountPaise: sale.pricePaise,
+        paymentAmountPaise: sale.pricePaise,
+        currency: "INR",
+        calculationVersion: pricing.calculationVersion,
+        pricingSnapshot: snapshot,
+        invoiceNumber: `SP/${getFinancialYear(invoiceDate)}/${orderId}`,
+        invoiceDate,
+        paymentMethod: "CASH",
+        paymentStatus: "Paid",
+        orderStatus: "Delivered",
+        paymentDate: invoiceDate,
+        inventoryDeducted: false,
+        historicalImportKey: `oct-2026:${batchHash.toLowerCase()}:${sale.rowNumber}`,
+        statusHistory: [{
+          status: "Delivered",
+          note: "Historical cash sale imported from the October 2026 sales list",
+          date: invoiceDate,
+        }],
+        createdAt: invoiceDate,
+        updatedAt: new Date(),
+      });
+    }
+
+    const createdOrders = await Order.insertMany(orderDocuments, {
+      ordered: true,
+      timestamps: false,
+    });
+    res.json({
+      success: true,
+      importedCount: createdOrders.length,
+      alreadyImportedCount: normalizedSales.length - newSales.length,
+      message: `${createdOrders.length} historical cash sales imported.`,
+    });
+  } catch (error) {
+    console.log("Historical sales import error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Historical sales could not be imported",
+    });
+  }
+});
 
 const sendNewOrderNotifications = async (order) => {
   console.log("Sending order received email:", {
